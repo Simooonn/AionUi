@@ -2,8 +2,9 @@
  * Resolve the aioncore binary path.
  *
  * Search order:
- *  1. Bundled with app (production)
- *  2. System PATH
+ *  1. Bundled with the packaged app (process.resourcesPath)
+ *  2. Dev fallback: the repo's own resources/ dir (process.cwd())
+ *  3. System PATH
  */
 
 import { existsSync, readdirSync } from 'node:fs';
@@ -73,9 +74,18 @@ export function resolveBinaryPath(): string {
     pathLookupCommand: process.platform === 'win32' ? `where ${BINARY_NAME}` : `which ${BINARY_NAME}`,
   };
 
-  const bundled = bundledPath(runtimeKey, binaryName, diagnostics);
+  // 1. Bundled with the packaged app: process.resourcesPath/bundled-aioncore/...
+  const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
+  const bundled = bundledPath(resourcesPath, runtimeKey, binaryName, diagnostics, true);
   if (bundled) return bundled;
 
+  // 2. Dev fallback: electron-vite dev does not point process.resourcesPath at
+  //    the repo, so also check the project's own resources/ dir. Mirrors the
+  //    `app.isPackaged ? process.resourcesPath : cwd/resources` pattern in tray.ts.
+  const devBundled = bundledPath(join(process.cwd(), 'resources'), runtimeKey, binaryName, diagnostics, false);
+  if (devBundled) return devBundled;
+
+  // 3. System PATH.
   const fromPath = resolveFromSystemPATH(diagnostics);
   if (fromPath) return fromPath;
 
@@ -90,22 +100,28 @@ export function resolveBinaryPath(): string {
  * Layout: bundled-aioncore/{platform}-{arch}/aioncore[.exe]
  */
 function bundledPath(
+  resourcesPath: string | undefined,
   runtimeKey: string,
   binaryName: string,
-  diagnostics: BackendBinaryResolveDiagnostics
+  diagnostics: BackendBinaryResolveDiagnostics,
+  recordDiagnostics: boolean
 ): string | null {
-  const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
   if (!resourcesPath) return null;
-  diagnostics.resourcesPath = resourcesPath;
 
   const bundledDir = join(resourcesPath, 'bundled-aioncore');
   const runtimeDir = join(bundledDir, runtimeKey);
   const candidate = join(runtimeDir, binaryName);
-  diagnostics.checkedBundledPath = candidate;
-  diagnostics.bundledDirExists = existsSync(bundledDir);
-  diagnostics.runtimeDirExists = existsSync(runtimeDir);
-  diagnostics.resourcesDirEntries = listDirEntries(resourcesPath);
-  diagnostics.runtimeDirEntries = listDirEntries(runtimeDir);
+
+  // Only the primary (packaged) location records diagnostics so a failure report
+  // describes the real install path rather than the dev fallback.
+  if (recordDiagnostics) {
+    diagnostics.resourcesPath = resourcesPath;
+    diagnostics.checkedBundledPath = candidate;
+    diagnostics.bundledDirExists = existsSync(bundledDir);
+    diagnostics.runtimeDirExists = existsSync(runtimeDir);
+    diagnostics.resourcesDirEntries = listDirEntries(resourcesPath);
+    diagnostics.runtimeDirEntries = listDirEntries(runtimeDir);
+  }
 
   if (existsSync(candidate)) return candidate;
   return null;

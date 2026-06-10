@@ -79,4 +79,19 @@ describe('resolveBinaryPath', () => {
       });
     }
   });
+
+  it('falls back to the repo resources/ dir in dev when the packaged location is empty', () => {
+    const runtimeKey = `${process.platform}-${process.arch}`;
+    const binaryName = process.platform === 'win32' ? 'aioncore.exe' : 'aioncore';
+    const devCandidate = join(process.cwd(), 'resources', 'bundled-aioncore', runtimeKey, binaryName);
+
+    // Packaged resourcesPath exists but holds no aioncore; only the dev path does.
+    setResourcesPath('/app/resources');
+    vi.mocked(existsSync).mockImplementation((path) => path === devCandidate);
+    vi.mocked(readdirSync).mockReturnValue([] as ReturnType<typeof readdirSync>);
+
+    expect(resolveBinaryPath()).toBe(devCandidate);
+    // System PATH lookup must not run once the dev fallback resolves.
+    expect(execSync).not.toHaveBeenCalled();
+  });
 });

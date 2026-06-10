@@ -45,6 +45,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   collectFeedbackLogs: () => ipcRenderer.invoke('feedback:collect-logs'),
   // Feedback: capture a screenshot of the current window
   captureFeedbackScreenshot: () => ipcRenderer.invoke('feedback:capture-screenshot'),
+  // ace:start import local CLI (Claude Code/Codex) sessions
+  importCliSessions: () => ipcRenderer.invoke('ace:import-cli-sessions'),
+  // ace:end
 });
 
 // Synchronously fetch the aioncore port and expose it to the renderer

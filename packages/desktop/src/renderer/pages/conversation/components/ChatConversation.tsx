@@ -31,7 +31,9 @@ import AionrsChat from '../platforms/aionrs/AionrsChat';
 import AionrsModelSelector from '../platforms/aionrs/AionrsModelSelector';
 import { useAionrsModelSelection } from '../platforms/aionrs/useAionrsModelSelection';
 import { useConversationRuntimeView } from '../runtime/useConversationRuntimeView';
-import { isLegacyReadOnlyConversationType } from '../utils/conversationRuntime';
+// ace:start read-only also covers CLI-imported conversations (extra.cli_session_id)
+import { isReadOnlyConversation } from '@/renderer/ace/readonly';
+// ace:end
 import LegacyReadOnlyConversation from '../platforms/legacy/LegacyReadOnlyConversation';
 // import SkillRuleGenerator from './components/SkillRuleGenerator'; // Temporarily hidden
 
@@ -222,8 +224,10 @@ const ChatConversation: React.FC<{
   const isMobile = Boolean(layout?.isMobile);
 
   const isAionrsConversation = conversation?.type === 'aionrs';
-  const isLegacyReadOnlyConversation = isLegacyReadOnlyConversationType(conversation?.type);
-  const resolvedHideSendBox = hideSendBox || isLegacyReadOnlyConversationType(conversation?.type);
+  // ace:start use shared read-only check (legacy types + CLI-imported)
+  const isLegacyReadOnlyConversation = isReadOnlyConversation(conversation);
+  const resolvedHideSendBox = hideSendBox || isReadOnlyConversation(conversation);
+  // ace:end
 
   // 使用统一的 Hook 获取预设助手信息（ACP/Codex 会话）
   // Use unified hook for preset assistant info (ACP/Codex conversations)

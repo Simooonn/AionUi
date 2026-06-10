@@ -4,7 +4,9 @@ import { Spin } from '@arco-design/web-react';
 import React, { Suspense, useCallback } from 'react';
 import { useAionrsModelSelection } from '@/renderer/pages/conversation/platforms/aionrs/useAionrsModelSelection';
 import { saveAionrsDefaultModel } from '@/renderer/pages/guid/hooks/agentSelectionUtils';
-import { isLegacyReadOnlyConversationType } from '@/renderer/pages/conversation/utils/conversationRuntime';
+// ace:start read-only also covers CLI-imported conversations (extra.cli_session_id)
+import { isReadOnlyConversation } from '@/renderer/ace/readonly';
+// ace:end
 import TeamChatEmptyState from './TeamChatEmptyState';
 
 const AcpChat = React.lazy(() => import('@/renderer/pages/conversation/platforms/acp/AcpChat'));
@@ -70,12 +72,13 @@ const TeamChatView: React.FC<TeamChatViewProps> = ({
   // Single source of truth for the team greeting. Each *Chat simply forwards `emptySlot`
   // to MessageList; the empty state itself reads team_id / backend / preset info from the
   // shared SWR-cached conversation record, so none of that needs to flow through props.
-  const resolvedHideSendBox = hideSendBox || isLegacyReadOnlyConversationType(conversation.type);
+  const resolvedHideSendBox = hideSendBox || isReadOnlyConversation(conversation); // ace: CLI-imported read-only
   const emptySlot = team_id ? (
     <TeamChatEmptyState conversation_id={conversation.id} icon={agent_icon} isLeader={isLeader} />
   ) : undefined;
   const content = (() => {
-    if (isLegacyReadOnlyConversationType(conversation.type)) {
+    if (isReadOnlyConversation(conversation)) {
+      // ace: CLI-imported conversations render read-only too
       return <LegacyReadOnlyConversation key={conversation.id} conversation={conversation} emptySlot={emptySlot} />;
     }
 

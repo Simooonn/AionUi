@@ -138,6 +138,29 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// ace:start expose registry primitives for the CLI-session resume feature
+// (per-conversation idle-agent eviction needs the same tree-liveness and
+// group-signal semantics as cleanup; re-exported instead of reimplemented).
+export type { RegisteredAgentProcess };
+
+/** Read the registry written by the aioncore binary (may be stale; binary owns it). */
+export async function readAgentProcessRegistry(dataDir: string): Promise<RegisteredAgentProcess[]> {
+  const registry = await readRegistry(resolveAgentProcessRegistryPath(dataDir));
+  return registry.processes;
+}
+
+export function isAgentProcessTreeAlive(entry: RegisteredAgentProcess): boolean {
+  return isRegisteredProcessTreeAlive(entry);
+}
+
+export async function terminateAgentProcess(
+  entry: RegisteredAgentProcess,
+  signal: 'SIGTERM' | 'SIGKILL'
+): Promise<void> {
+  return terminateRegisteredProcess(entry, signal);
+}
+// ace:end
+
 function runTaskkill(pid: number, force: boolean): Promise<void> {
   return new Promise((resolve) => {
     const args = ['/PID', String(pid), '/T'];

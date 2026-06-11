@@ -256,6 +256,7 @@ export type I18nKey =
   | 'common.viewMoreLines'
   | 'common.website'
   | 'common.workspace'
+  | 'conversation.ace.cliResumeUnavailable'
   | 'conversation.agentError.codes.AIONUI_CONVERSATION_BUSY.body'
   | 'conversation.agentError.codes.AIONUI_CONVERSATION_BUSY.title'
   | 'conversation.agentError.codes.AIONUI_INTERNAL_ERROR.body'

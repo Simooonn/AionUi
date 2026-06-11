@@ -97,7 +97,10 @@ function parseRolloutFile(filePath: string): CliSessionMeta | null {
 
   let updatedAt: number | undefined;
   try {
-    updatedAt = statSync(filePath).mtimeMs;
+    // mtimeMs is a FLOAT — round at the source: this value flows into
+    // extra.cli_updated_at and from there into sqlite INTEGER columns, where a
+    // REAL breaks aioncore's i64 row deserialization (whole-list 500).
+    updatedAt = Math.round(statSync(filePath).mtimeMs);
   } catch {
     updatedAt = undefined;
   }

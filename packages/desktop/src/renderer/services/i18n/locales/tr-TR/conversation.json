@@ -498,5 +498,8 @@
       }
     }
   },
-  "notFound": "Konuşma bulunamadı veya silinmiş"
+  "notFound": "Konuşma bulunamadı veya silinmiş",
+  "ace": {
+    "cliResumeUnavailable": "Orijinal CLI oturumu belleği devam ettirilemiyor; yeni bir oturum olarak devam edilecek"
+  }
 }

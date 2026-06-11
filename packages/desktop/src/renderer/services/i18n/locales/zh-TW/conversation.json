@@ -496,5 +496,8 @@
       }
     }
   },
-  "notFound": "會話不存在或已被刪除"
+  "notFound": "會話不存在或已被刪除",
+  "ace": {
+    "cliResumeUnavailable": "無法接續原 CLI 會話記憶，將作為新會話繼續"
+  }
 }

@@ -15,6 +15,9 @@ import {
 } from '@/common/chat/chatLib';
 import { useCallback, useEffect, useRef } from 'react';
 import { createContext } from '@renderer/utils/ui/createContext';
+// ace:start wire CLI resume + lazily sync CLI message history before loading from DB
+import { ensureCliConversationReady } from '@/renderer/ace/ensureCliMessagesImported';
+// ace:end
 
 const [useMessageList, MessageListProvider, useUpdateMessageList] = createContext([] as TMessage[]);
 const [useMessageListLoading, MessageListLoadingProvider, useUpdateMessageListLoading] = createContext(false);
@@ -652,7 +655,10 @@ export const useMessageLstCache = (key: string) => {
     if (!key) return;
     let cancelled = false;
     setLoading(true);
-    void loadMessages()
+    // ace:start wire resume + sync CLI history into the DB first (no-op for non-imported), then load
+    void ensureCliConversationReady(key)
+      .then(() => (cancelled ? undefined : loadMessages()))
+      // ace:end
       .catch((error) => {
         console.error('[useMessageLstCache] Failed to load messages from database:', error);
       })

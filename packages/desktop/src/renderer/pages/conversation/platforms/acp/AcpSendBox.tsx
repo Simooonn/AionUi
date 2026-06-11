@@ -31,6 +31,9 @@ import {
   useConversationCommandQueue,
   type ConversationCommandQueueItem,
 } from '@/renderer/pages/conversation/platforms/useConversationCommandQueue';
+// ace:start CLI-imported conversation resume wiring
+import { ensureCliResumeBeforeSend } from '@/renderer/ace/ensureCliMessagesImported';
+// ace:end
 import { usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import { useConversationRuntimeView } from '@/renderer/pages/conversation/runtime/useConversationRuntimeView';
 import { getConversationRuntimeWorkspaceErrorMessage } from '@/renderer/pages/conversation/utils/conversationCreateError';
@@ -265,6 +268,9 @@ const AcpSendBox: React.FC<{
 
       try {
         if (teamPermission) await teamPermission.warmupSession();
+        // ace:start re-wire CLI resume right before the send (covers queued commands too)
+        await ensureCliResumeBeforeSend(conversation_id);
+        // ace:end
         void checkAndUpdateTitle(conversation_id, input);
         const result = await ipcBridge.acpConversation.sendMessage.invoke({
           input: displayMessage,

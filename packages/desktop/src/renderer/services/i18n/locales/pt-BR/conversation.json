@@ -502,5 +502,8 @@
       }
     }
   },
-  "notFound": "Conversa não encontrada ou foi deletada"
+  "notFound": "Conversa não encontrada ou foi deletada",
+  "ace": {
+    "cliResumeUnavailable": "Não foi possível retomar a memória da sessão CLI original; continuando como uma nova sessão"
+  }
 }

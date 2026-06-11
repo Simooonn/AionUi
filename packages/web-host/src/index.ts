@@ -16,6 +16,16 @@ export {
 } from './backend-launcher.js';
 export type { BackendDirConfig, BackendLaunchOptions, BackendHandle, BackendStartOptions } from './backend-launcher.js';
 
+// ace:start registry primitives for the CLI-session resume feature
+export {
+  resolveAgentProcessRegistryPath,
+  readAgentProcessRegistry,
+  isAgentProcessTreeAlive,
+  terminateAgentProcess,
+} from './agent-process-registry.js';
+export type { RegisteredAgentProcess } from './agent-process-registry.js';
+// ace:end
+
 /**
  * Start WebHost (main entry point).
  *

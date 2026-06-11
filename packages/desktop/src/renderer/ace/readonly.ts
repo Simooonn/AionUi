@@ -1,8 +1,9 @@
 /**
- * Read-only detection that also covers CLI-imported conversations.
+ * Read-only detection for conversations.
  *
- * Imported CLI sessions are stored as type='acp' (the only creatable type) but must
- * render read-only with no send box. They are marked by extra.cli_session_id.
+ * CLI-imported conversations (extra.cli_session_id) are NO LONGER read-only:
+ * they are continuable via true ACP resume (see process/ace/sessionResume.ts).
+ * Only legacy conversation types still render read-only.
  */
 
 import type { TChatConversation } from '@/common/config/storage';
@@ -14,9 +15,8 @@ export function isImportedCliConversation(conversation?: TChatConversation | nul
   return !!extra?.cli_session_id;
 }
 
-/** True when the conversation should render read-only (legacy type OR CLI-imported). */
+/** True when the conversation should render read-only (legacy types only). */
 export function isReadOnlyConversation(conversation?: TChatConversation | null): boolean {
   if (!conversation) return false;
-  if (isLegacyReadOnlyConversationType(conversation.type)) return true;
-  return isImportedCliConversation(conversation);
+  return isLegacyReadOnlyConversationType(conversation.type);
 }

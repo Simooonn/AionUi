@@ -43,3 +43,38 @@ export type ImportCliSessionsResult = {
   failed: number;
   errors: string[];
 };
+
+/** One renderable item parsed from a CLI message turn. */
+export type ParsedCliItem = { kind: 'text'; text: string } | { kind: 'thinking'; text: string };
+
+/** One CLI message turn (a record) with its content items. */
+export type ParsedCliMessage = {
+  /** Stable record id → AionUi messages.msg_id (groups items of one turn). */
+  msgId: string;
+  role: 'user' | 'assistant';
+  createdAt?: number;
+  items: ParsedCliItem[];
+};
+
+export type ImportConversationMessagesResult = {
+  /** New message rows written. */
+  imported: number;
+  /** Rows already present (idempotent skip by message id). */
+  skipped: number;
+  /** Items that could not be mapped (e.g. tool_use in this version). */
+  unmapped: number;
+};
+
+/** Why a CLI-imported conversation could not be wired for true resume right now. */
+export type EnsureCliResumeReason =
+  | 'not-imported' // no cli_session_id → nothing to do
+  | 'schema-mismatch' // aioncore private schema changed → degraded to fresh-continue
+  | 'jsonl-missing' // CLI session file deleted → resume would be rejected
+  | 'busy' // agent mid-turn or respawn race → transient, retried on next open/send
+  | 'row-not-ready' // acp_session row not created by warmup yet → transient
+  | 'error'; // unexpected failure (logged)
+
+export type EnsureCliResumeResult = {
+  resumable: boolean;
+  reason?: EnsureCliResumeReason;
+};

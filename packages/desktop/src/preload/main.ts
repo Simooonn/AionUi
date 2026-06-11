@@ -47,6 +47,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   captureFeedbackScreenshot: () => ipcRenderer.invoke('feedback:capture-screenshot'),
   // ace:start import local CLI (Claude Code/Codex) sessions
   importCliSessions: () => ipcRenderer.invoke('ace:import-cli-sessions'),
+  importConversationMessages: (conversationId: string) =>
+    ipcRenderer.invoke('ace:import-conversation-messages', conversationId),
+  ensureCliResume: (conversationId: string) => ipcRenderer.invoke('ace:ensure-cli-resume', conversationId),
   // ace:end
 });
 

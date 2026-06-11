@@ -496,5 +496,8 @@
       }
     }
   },
-  "notFound": "Conversation not found or has been deleted"
+  "notFound": "Conversation not found or has been deleted",
+  "ace": {
+    "cliResumeUnavailable": "Cannot resume the original CLI session memory; continuing as a fresh session"
+  }
 }

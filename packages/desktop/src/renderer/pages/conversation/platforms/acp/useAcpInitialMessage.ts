@@ -5,6 +5,9 @@
  */
 
 import { ipcBridge } from '@/common';
+// ace:start CLI-imported conversation resume wiring
+import { ensureCliResumeBeforeSend } from '@/renderer/ace/ensureCliMessagesImported';
+// ace:end
 import type { TMessage } from '@/common/chat/chatLib';
 import type { TConversationRuntimeSummary } from '@/common/config/storage';
 import { parseError, uuid } from '@/common/utils';
@@ -66,6 +69,9 @@ export const useAcpInitialMessage = ({
         setAiProcessing(true);
 
         void checkAndUpdateTitle(conversation_id, input);
+        // ace:start re-wire CLI resume right before the initial auto-send
+        await ensureCliResumeBeforeSend(conversation_id);
+        // ace:end
         const result = await ipcBridge.acpConversation.sendMessage.invoke({
           input: displayMessage,
           conversation_id: conversation_id,

@@ -23,6 +23,10 @@ interface WorkspaceCollapseProps {
   siderCollapsed?: boolean;
   /** 标题尾部插槽 - 例如 hover 显示的菜单按钮，点击不会触发 onToggle */
   trailing?: React.ReactNode;
+  // ace:start gray the folder icon when the project's workspace dir is missing
+  /** 工作目录已失效时置灰文件夹图标（纯视觉） */
+  dimmed?: boolean;
+  // ace:end
 }
 
 /**
@@ -36,6 +40,9 @@ const WorkspaceCollapse: React.FC<WorkspaceCollapseProps> = ({
   className,
   siderCollapsed = false,
   trailing,
+  // ace:start
+  dimmed = false,
+  // ace:end
 }) => {
   // 侧栏折叠时，强制展开内容并隐藏头部
   const showContent = siderCollapsed || expanded;
@@ -48,7 +55,14 @@ const WorkspaceCollapse: React.FC<WorkspaceCollapseProps> = ({
           className='flex items-center gap-8px h-34px pl-10px pr-8px cursor-pointer hover:bg-fill-3 rd-8px transition-colors min-w-0 group'
           onClick={onToggle}
         >
-          <span className='size-22px flex items-center justify-center shrink-0 text-t-primary'>
+          <span
+            className={classNames(
+              'size-22px flex items-center justify-center shrink-0',
+              // ace:start gray the folder icon for a stale project
+              dimmed ? 'text-t-disabled' : 'text-t-primary'
+              // ace:end
+            )}
+          >
             {expanded ? (
               <FolderOpen theme='outline' size={16} fill='currentColor' className='line-height-0' />
             ) : (

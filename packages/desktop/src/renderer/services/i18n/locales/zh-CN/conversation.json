@@ -71,7 +71,9 @@
     "removeProjectTitle": "移除项目",
     "removeProject": "移除项目",
     "removeProjectConfirm": "确定要移除项目「{{name}}」吗？项目下的 {{count}} 个对话也会被一起移除。",
-    "newConversationInProject": "在此项目中新建对话"
+    "newConversationInProject": "在此项目中新建对话",
+    "localFileDeleteFailed": "部分本地会话文件未能删除",
+    "refreshProjects": "刷新项目状态"
   },
   "historySearch": {
     "tooltip": "检索会话",
@@ -498,6 +500,7 @@
   },
   "notFound": "会话不存在或已被删除",
   "ace": {
-    "cliResumeUnavailable": "无法接续原 CLI 会话记忆，将作为新会话继续"
+    "cliResumeUnavailable": "无法接续原 CLI 会话记忆，将作为新会话继续",
+    "compactSummary": "会话已压缩 · 展开查看摘要"
   }
 }

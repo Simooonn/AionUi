@@ -32,6 +32,9 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
     selected,
     menuVisible,
     dimIcon = false,
+    // ace:start stale-project subtree gray-out (visual only)
+    stale = false,
+    // ace:end
   } = props;
   const layout = useLayoutContext();
   const isMobile = layout?.isMobile ?? false;
@@ -61,7 +64,9 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
     // When the row is pinned, hovering reveals a pushpin marker that overlays
     // the leading icon. We dim the resting icon on hover so the pin reads cleanly.
     const pinnedHoverFade = isPinned ? 'group-hover:opacity-0 transition-opacity' : '';
-    const composedClass = classNames(pinnedHoverFade);
+    // ace:start desaturate + fade the colored logo when the parent project is stale
+    const composedClass = classNames(pinnedHoverFade, { 'grayscale opacity-50': stale });
+    // ace:end
 
     if (assistantInfo) {
       if (assistantInfo.isEmoji) {
@@ -188,7 +193,14 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
             popupHoverStay={false}
             position='top'
           >
-            <div className='chat-history__item-name overflow-hidden text-ellipsis block w-full text-14px font-[500] lh-24px whitespace-nowrap min-w-0 text-t-primary'>
+            <div
+              className={classNames(
+                'chat-history__item-name overflow-hidden text-ellipsis block w-full text-14px font-[500] lh-24px whitespace-nowrap min-w-0',
+                // ace:start gray the name when the parent project is stale
+                stale ? 'text-t-disabled' : 'text-t-primary'
+                // ace:end
+              )}
+            >
               <span className='block overflow-hidden text-ellipsis whitespace-nowrap'>{conversation.name}</span>
             </div>
           </Tooltip>

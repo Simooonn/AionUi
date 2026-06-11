@@ -71,7 +71,9 @@
     "removeProjectTitle": "Projeyi kaldır",
     "removeProject": "Projeyi kaldır",
     "removeProjectConfirm": "\"{{name}}\" projesi kaldırılsın mı? Projedeki {{count}} konuşma da kaldırılacak.",
-    "newConversationInProject": "Bu projede yeni konuşma"
+    "newConversationInProject": "Bu projede yeni konuşma",
+    "localFileDeleteFailed": "Bazı yerel oturum dosyaları silinemedi",
+    "refreshProjects": "Proje durumunu yenile"
   },
   "historySearch": {
     "tooltip": "Mesajları ara",
@@ -500,6 +502,7 @@
   },
   "notFound": "Konuşma bulunamadı veya silinmiş",
   "ace": {
-    "cliResumeUnavailable": "Orijinal CLI oturumu belleği devam ettirilemiyor; yeni bir oturum olarak devam edilecek"
+    "cliResumeUnavailable": "Orijinal CLI oturumu belleği devam ettirilemiyor; yeni bir oturum olarak devam edilecek",
+    "compactSummary": "Oturum sıkıştırıldı · özeti görmek için genişletin"
   }
 }

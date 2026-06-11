@@ -71,7 +71,9 @@
     "removeProjectTitle": "Видалити проєкт",
     "removeProject": "Видалити проєкт",
     "removeProjectConfirm": "Видалити проєкт «{{name}}»? Також буде видалено {{count}} розмов у ньому.",
-    "newConversationInProject": "Нова розмова в цьому проєкті"
+    "newConversationInProject": "Нова розмова в цьому проєкті",
+    "localFileDeleteFailed": "Деякі локальні файли сесій не вдалося видалити",
+    "refreshProjects": "Оновити статус проєктів"
   },
   "historySearch": {
     "tooltip": "Пошук повідомлень",
@@ -497,6 +499,7 @@
   },
   "notFound": "Розмову не знайдено або її видалено",
   "ace": {
-    "cliResumeUnavailable": "Не вдалося продовжити памʼять початкової сесії CLI; продовжуємо як нову сесію"
+    "cliResumeUnavailable": "Не вдалося продовжити памʼять початкової сесії CLI; продовжуємо як нову сесію",
+    "compactSummary": "Сесію стиснуто · розгорніть, щоб переглянути підсумок"
   }
 }

@@ -71,7 +71,9 @@
     "removeProjectTitle": "プロジェクトを削除",
     "removeProject": "プロジェクトを削除",
     "removeProjectConfirm": "プロジェクト「{{name}}」を削除しますか？プロジェクト内の {{count}} 件の会話も削除されます。",
-    "newConversationInProject": "このプロジェクト内で新しい会話"
+    "newConversationInProject": "このプロジェクト内で新しい会話",
+    "localFileDeleteFailed": "一部のローカルセッションファイルを削除できませんでした",
+    "refreshProjects": "プロジェクトの状態を更新"
   },
   "historySearch": {
     "tooltip": "メッセージを検索",
@@ -498,6 +500,7 @@
   },
   "notFound": "会話が存在しないか、削除されました",
   "ace": {
-    "cliResumeUnavailable": "元の CLI セッションの記憶を引き継げません。新しいセッションとして続行します"
+    "cliResumeUnavailable": "元の CLI セッションの記憶を引き継げません。新しいセッションとして続行します",
+    "compactSummary": "セッションが圧縮されました · 展開して要約を表示"
   }
 }

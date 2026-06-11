@@ -71,7 +71,9 @@
     "removeProjectTitle": "Remover projeto",
     "removeProject": "Remover projeto",
     "removeProjectConfirm": "Remover o projeto \"{{name}}\"? Suas {{count}} conversa(s) também serão removidas.",
-    "newConversationInProject": "Novo chat neste projeto"
+    "newConversationInProject": "Novo chat neste projeto",
+    "localFileDeleteFailed": "Não foi possível excluir alguns arquivos de sessão locais",
+    "refreshProjects": "Atualizar status do projeto"
   },
   "historySearch": {
     "tooltip": "Pesquisar mensagens",
@@ -504,6 +506,7 @@
   },
   "notFound": "Conversa não encontrada ou foi deletada",
   "ace": {
-    "cliResumeUnavailable": "Não foi possível retomar a memória da sessão CLI original; continuando como uma nova sessão"
+    "cliResumeUnavailable": "Não foi possível retomar a memória da sessão CLI original; continuando como uma nova sessão",
+    "compactSummary": "Sessão compactada · expanda para ver o resumo"
   }
 }

@@ -71,7 +71,9 @@
     "removeProjectTitle": "프로젝트 제거",
     "removeProject": "프로젝트 제거",
     "removeProjectConfirm": "\"{{name}}\" 프로젝트를 제거하시겠습니까? 프로젝트의 {{count}}개 대화도 함께 제거됩니다.",
-    "newConversationInProject": "이 프로젝트에서 새 대화"
+    "newConversationInProject": "이 프로젝트에서 새 대화",
+    "localFileDeleteFailed": "일부 로컬 세션 파일을 삭제하지 못했습니다",
+    "refreshProjects": "프로젝트 상태 새로고침"
   },
   "historySearch": {
     "tooltip": "메시지 검색",
@@ -498,6 +500,7 @@
   },
   "notFound": "대화를 찾을 수 없거나 삭제되었습니다",
   "ace": {
-    "cliResumeUnavailable": "원래 CLI 세션 기억을 이어갈 수 없어 새 세션으로 계속합니다"
+    "cliResumeUnavailable": "원래 CLI 세션 기억을 이어갈 수 없어 새 세션으로 계속합니다",
+    "compactSummary": "세션이 압축되었습니다 · 펼쳐서 요약 보기"
   }
 }

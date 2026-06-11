@@ -5,6 +5,9 @@
  */
 
 import type { TChatConversation } from '@/common/config/storage';
+// ace:start gray out stale-workspace projects
+import { useStaleWorkspaces } from '@/renderer/ace/useStaleWorkspaces';
+// ace:end
 import AionModal from '@/renderer/components/base/AionModal';
 import DirectorySelectionModal from '@/renderer/components/settings/DirectorySelectionModal';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
@@ -12,7 +15,7 @@ import { useCronJobsMap } from '@/renderer/pages/cron';
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Button, Dropdown, Empty, Input, Menu, Modal, Tooltip } from '@arco-design/web-react';
-import { Delete, FolderOpen, MoreOne, Plus, Right } from '@icon-park/react';
+import { Delete, FolderOpen, MoreOne, Plus, Refresh, Right } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -228,9 +231,11 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     ]
   );
 
-  const renderConversation = (conversation: TChatConversation, dimIcon = false) => {
+  const renderConversation = (conversation: TChatConversation, dimIcon = false, stale = false) => {
     const rowProps = getConversationRowProps(conversation);
-    return <ConversationRow key={conversation.id} {...rowProps} dimIcon={dimIcon} />;
+    // ace:start pass stale so rows of a missing-workspace project gray out
+    return <ConversationRow key={conversation.id} {...rowProps} dimIcon={dimIcon} stale={stale} />;
+    // ace:end
   };
 
   // Collect all sortable IDs for the pinned section
@@ -255,6 +260,14 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     }
     return groups;
   }, [timelineSections]);
+
+  // ace:start gray out projects whose workspace directory no longer exists; recheck() + checking for the refresh button
+  const {
+    stale: staleWorkspaces,
+    recheck: recheckWorkspaces,
+    checking: workspacesChecking,
+  } = useStaleWorkspaces(projectGroups.map((g) => g.workspace));
+  // ace:end
 
   // Conversations section: keep timeline grouping (today/yesterday/...) but only show non-workspace conversations.
   const conversationOnlySections = useMemo(
@@ -541,9 +554,56 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         {/* L1: Projects section — workspace folders, peer to conversations */}
         {projectGroups.length > 0 && (
           <div className='min-w-0'>
-            {!collapsed && <SectionLabel sectionKey='projects' label={t('conversation.history.projectsSection')} />}
+            {!collapsed && (
+              <SectionLabel
+                sectionKey='projects'
+                label={t('conversation.history.projectsSection')}
+                // ace:start refresh button: re-check all project dirs without restarting the app
+                trailing={
+                  <Tooltip content={t('conversation.history.refreshProjects')} position='top'>
+                    <span
+                      role='button'
+                      tabIndex={workspacesChecking ? -1 : 0}
+                      aria-label={t('conversation.history.refreshProjects')}
+                      aria-disabled={workspacesChecking}
+                      className={classNames(
+                        'flex-center transition-colors size-20px rd-4px sider-action-btn group-hover/label:opacity-100',
+                        // keep the spinner visible while checking even without label hover
+                        workspacesChecking
+                          ? 'opacity-100 cursor-default text-t-tertiary'
+                          : 'opacity-0 cursor-pointer text-t-tertiary hover:text-t-primary'
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (workspacesChecking) return;
+                        recheckWorkspaces();
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (workspacesChecking) return;
+                          recheckWorkspaces();
+                        }
+                      }}
+                    >
+                      <Refresh
+                        theme='outline'
+                        size='14'
+                        fill='currentColor'
+                        className={classNames('block leading-none', { 'animate-spin': workspacesChecking })}
+                      />
+                    </span>
+                  </Tooltip>
+                }
+                // ace:end
+              />
+            )}
             {!collapsedSections.has('projects') &&
               projectGroups.map((group) => {
+                // ace:start a project whose workspace dir is gone grays its whole subtree
+                const isStale = staleWorkspaces.has(group.workspace);
+                // ace:end
                 const projectMenu = (
                   <Menu
                     onClickMenuItem={(key) => {
@@ -566,33 +626,52 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
                       expanded={expandedWorkspaces.includes(group.workspace)}
                       onToggle={() => handleToggleWorkspace(group.workspace)}
                       siderCollapsed={collapsed}
+                      // ace:start gray the folder icon for a stale project
+                      dimmed={isStale}
+                      // ace:end
                       header={
-                        <span className='text-14px font-[500] truncate flex-1 text-t-primary min-w-0'>
+                        // ace:start gray displayName when workspace dir is missing
+                        <span
+                          className={classNames(
+                            'text-14px font-[500] truncate flex-1 min-w-0',
+                            isStale ? 'text-t-disabled' : 'text-t-primary'
+                          )}
+                          title={isStale ? group.workspace : undefined}
+                        >
                           {group.displayName}
                         </span>
+                        // ace:end
                       }
                       trailing={
                         <span className='flex items-center gap-6px'>
                           <Tooltip content={t('conversation.history.newConversationInProject')} position='top'>
                             <span
                               role='button'
-                              tabIndex={0}
+                              tabIndex={isStale ? -1 : 0}
                               aria-label={t('conversation.history.newConversationInProject')}
+                              // ace:start disable "new conversation" on a stale project (its dir is gone)
+                              aria-disabled={isStale}
                               className={classNames(
-                                'flex-center cursor-pointer transition-colors text-t-secondary hover:text-t-primary size-20px rd-4px sider-action-btn',
-                                isMobile ? 'flex' : 'hidden group-hover:flex'
+                                'flex-center transition-colors size-20px rd-4px sider-action-btn',
+                                isMobile ? 'flex' : 'hidden group-hover:flex',
+                                isStale
+                                  ? 'opacity-40 cursor-not-allowed text-t-disabled'
+                                  : 'cursor-pointer text-t-secondary hover:text-t-primary'
                               )}
                               onClick={(e) => {
                                 e.stopPropagation();
+                                if (isStale) return;
                                 void navigate('/guid', { state: { workspace: group.workspace } });
                               }}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
                                   e.preventDefault();
                                   e.stopPropagation();
+                                  if (isStale) return;
                                   void navigate('/guid', { state: { workspace: group.workspace } });
                                 }
                               }}
+                              // ace:end
                             >
                               <Plus theme='outline' size='14' fill='currentColor' className='block leading-none' />
                             </span>
@@ -619,7 +698,9 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
                       }
                     >
                       <div className={classNames('flex flex-col min-w-0', { 'mt-1px': !collapsed })}>
-                        {group.conversations.map((conversation) => renderConversation(conversation, true))}
+                        {/* ace:start gray child rows of a stale project */}
+                        {group.conversations.map((conversation) => renderConversation(conversation, true, isStale))}
+                        {/* ace:end */}
                       </div>
                     </WorkspaceCollapse>
                   </div>

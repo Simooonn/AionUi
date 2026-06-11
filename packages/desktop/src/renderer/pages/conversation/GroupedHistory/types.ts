@@ -62,6 +62,10 @@ export type ConversationRowProps = {
   getJobStatus: (conversation_id: string) => 'none' | 'active' | 'paused' | 'error' | 'unread';
   /** When true, the agent icon is dimmed by default and only shows full color on hover. Used inside project folders to reduce visual weight. */
   dimIcon?: boolean;
+  // ace:start gray out rows of a stale (missing-workspace) project
+  /** When true, this row belongs to a stale project: gray the name and desaturate the leading logo. Visual only. */
+  stale?: boolean;
+  // ace:end
 };
 
 export type WorkspaceGroupedHistoryProps = {

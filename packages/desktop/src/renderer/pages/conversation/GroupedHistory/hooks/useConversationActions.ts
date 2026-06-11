@@ -5,6 +5,9 @@
  */
 
 import { ipcBridge } from '@/common';
+// ace:start delete local CLI session files alongside DB rows
+import { deleteConversationsWithFiles } from '@/renderer/ace/deleteWithLocalFiles';
+// ace:end
 import type { TChatConversation } from '@/common/config/storage';
 import { refreshConversationCache } from '@/renderer/pages/conversation/utils/conversationCache';
 import { emitter } from '@/renderer/utils/emitter';
@@ -97,13 +100,24 @@ export const useConversationActions = ({
         okButtonProps: { status: 'warning' },
         onOk: async () => {
           try {
-            const success = await removeConversation(conversation_id);
+            // ace:start delete local file alongside DB (DB-first ordering inside helper)
+            const { dbResults, fileDeleteFailed } = await deleteConversationsWithFiles(
+              [conversation_id],
+              removeConversation
+            );
+            const success = dbResults[0];
+            // ace:end
             if (success) {
               emitter.emit('chat.history.refresh');
               Message.success(t('conversation.history.deleteSuccess'));
             } else {
               Message.error(t('conversation.history.deleteFailed'));
             }
+            // ace:start warn once if the local file could not be deleted
+            if (fileDeleteFailed) {
+              Message.warning(t('conversation.history.localFileDeleteFailed'));
+            }
+            // ace:end
           } catch (error) {
             console.error('Failed to remove conversation:', error);
             Message.error(t('conversation.history.deleteFailed'));
@@ -132,14 +146,21 @@ export const useConversationActions = ({
       onOk: async () => {
         const selectedIds = Array.from(selectedConversationIds);
         try {
-          const results = await Promise.all(selectedIds.map((conversation_id) => removeConversation(conversation_id)));
-          const successCount = results.filter(Boolean).length;
+          // ace:start delete local files alongside DB rows
+          const { dbResults, fileDeleteFailed } = await deleteConversationsWithFiles(selectedIds, removeConversation);
+          const successCount = dbResults.filter(Boolean).length;
+          // ace:end
           emitter.emit('chat.history.refresh');
           if (successCount > 0) {
             Message.success(t('conversation.history.batchDeleteSuccess', { count: successCount }));
           } else {
             Message.error(t('conversation.history.deleteFailed'));
           }
+          // ace:start warn once if any local file could not be deleted
+          if (fileDeleteFailed) {
+            Message.warning(t('conversation.history.localFileDeleteFailed'));
+          }
+          // ace:end
         } catch (error) {
           console.error('Failed to batch delete conversations:', error);
           Message.error(t('conversation.history.deleteFailed'));
@@ -255,8 +276,13 @@ export const useConversationActions = ({
     if (!removeProjectTarget) return;
     setRemoveProjectLoading(true);
     try {
-      const results = await Promise.all(removeProjectTarget.conversations.map((c) => removeConversation(c.id)));
-      const successCount = results.filter(Boolean).length;
+      // ace:start delete local files alongside the project's DB rows
+      const { dbResults, fileDeleteFailed } = await deleteConversationsWithFiles(
+        removeProjectTarget.conversations.map((c) => c.id),
+        removeConversation
+      );
+      const successCount = dbResults.filter(Boolean).length;
+      // ace:end
       emitter.emit('chat.history.refresh');
       if (successCount > 0) {
         Message.success(
@@ -267,6 +293,11 @@ export const useConversationActions = ({
       } else {
         Message.error(t('conversation.history.deleteFailed'));
       }
+      // ace:start warn once if any local file could not be deleted
+      if (fileDeleteFailed) {
+        Message.warning(t('conversation.history.localFileDeleteFailed'));
+      }
+      // ace:end
       setRemoveProjectTarget(null);
     } catch (error) {
       console.error('Failed to remove project:', error);

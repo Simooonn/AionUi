@@ -229,21 +229,24 @@ export function deleteOpencodeSessionRows(db: OpencodeDeleteDb, sessionIds: stri
     fkOn = false;
   }
   for (const raw of sessionIds) {
-    if (!isOpencodeSessionId(raw)) {
+    // Validate and USE the same normalized value (validate-vs-use divergence
+    // would make a padded id pass the gate yet match no row).
+    const id = typeof raw === 'string' ? raw.trim() : raw;
+    if (!isOpencodeSessionId(id)) {
       out[String(raw)] = { deleted: false, reason: 'out-of-scope' };
       continue;
     }
     if (!fkOn) {
       // Without cascade a bare DELETE would orphan message/part rows.
-      out[raw] = { deleted: false, reason: 'delete-failed' };
+      out[id] = { deleted: false, reason: 'delete-failed' };
       continue;
     }
     try {
-      const info = db.prepare('DELETE FROM session WHERE id = ?').run(raw);
-      out[raw] = Number(info.changes) > 0 ? { deleted: true } : { deleted: false, reason: 'no-file' };
+      const info = db.prepare('DELETE FROM session WHERE id = ?').run(id);
+      out[id] = Number(info.changes) > 0 ? { deleted: true } : { deleted: false, reason: 'no-file' };
     } catch (e) {
       console.warn('[ace:sessionFiles] opencode delete failed:', e instanceof Error ? e.message : String(e));
-      out[raw] = { deleted: false, reason: 'delete-failed' };
+      out[id] = { deleted: false, reason: 'delete-failed' };
     }
   }
   return out;
@@ -263,8 +266,12 @@ export async function deleteOpencodeSessions(sessionIds: string[]): Promise<Reco
   try {
     db.pragma('busy_timeout = 5000');
     return deleteOpencodeSessionRows(db as unknown as OpencodeDeleteDb, sessionIds);
-  } catch {
-    for (const id of sessionIds) out[String(id)] ??= { deleted: false, reason: 'delete-failed' };
+  } catch (e) {
+    // Write channel into a shared third-party DB — keep the failure observable.
+    // The pure core never throws mid-batch (it catches per id), so this catch
+    // only fires on open/pragma failure → the whole batch failed.
+    console.warn('[ace:sessionFiles] opencode db open/delete failed:', e instanceof Error ? e.message : String(e));
+    for (const id of sessionIds) out[String(id)] = { deleted: false, reason: 'delete-failed' };
     return out;
   } finally {
     db.close();

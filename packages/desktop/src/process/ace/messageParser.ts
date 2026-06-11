@@ -516,7 +516,11 @@ export function findSessionFile(source: CliSource, sessionId: string): string | 
   return source === 'claude-code' ? findClaudeFile(sessionId) : findCodexFile(sessionId);
 }
 
-/** Every on-disk file of one CLI session (gemini sessions may span several). */
+/** Every on-disk file of one CLI session (gemini sessions may span several).
+ * ⚠️ For opencode the single entry is the SHARED opencode.db (existence gate /
+ * parse input only) — new callers must never feed it to a deletion channel;
+ * resolveSessionFilePath deliberately short-circuits opencode before calling
+ * this. */
 export function findSessionFiles(source: CliSource, sessionId: string): string[] {
   if (source === 'gemini') return findGeminiFiles(sessionId);
   if (source === 'opencode') return findOpencodeFiles(sessionId);

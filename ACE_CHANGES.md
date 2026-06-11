@@ -227,4 +227,4 @@ opencode 没有每会话文件——全部数据在 `<XDG_DATA_HOME|~/.local/sha
 
 - `step-start`/`step-finish`/`patch`/`snapshot` part 为结构性记录，跳过不渲染（patch 的 diff 视图本期不做）。
 - compact 摘要本机无样本（`time_compacting` 全空）→ 出现样本后接 `aceCompactSummary` 现成折叠行。
-- 对 opencode.db 的 schema 耦合面（升级 opencode 后核对）：`session(id, directory, title, time_created, time_updated)` 列集 + message/part 的 data JSON 形状 + FK 级联拓扑；扫描器有 PRAGMA 列校验，mismatch 时**中止导入并报错**（不静默空集合）。
+- 对 opencode.db 的 schema 耦合面（升级 opencode 后核对）：`session(id, directory, title, time_created, time_updated)` 列集 + message/part 的 data JSON 形状 + FK 级联拓扑；扫描器有 PRAGMA 列校验，mismatch 时**中止导入并报错**（不静默空集合——这是格式漂移信号）。但"库打不开"（如 WAL 恢复被只读句柄拒绝、驱动加载失败）**只软跳过 opencode 扫描并日志**，不连坐其他三家 CLI 的导入（评审修复：原实现会让整次多 CLI 导入一起中止）。

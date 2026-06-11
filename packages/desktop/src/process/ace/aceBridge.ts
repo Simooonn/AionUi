@@ -76,10 +76,12 @@ ipcMain.handle('ace:unlink-session-files', async (_event, paths: string[]) => {
 
 // Controlled opencode session-row delete (db path hardcoded + id shape gated inside).
 ipcMain.handle('ace:delete-opencode-sessions', async (_event, sessionIds: string[]) => {
+  const ids = Array.isArray(sessionIds) ? sessionIds : [];
   try {
-    return await deleteOpencodeSessions(Array.isArray(sessionIds) ? sessionIds : []);
+    return await deleteOpencodeSessions(ids);
   } catch {
-    return {};
+    // Per-id failure (not {}) so the renderer's fileDeleteFailed flag still fires.
+    return Object.fromEntries(ids.map((id) => [String(id), { deleted: false, reason: 'delete-failed' }]));
   }
 });
 

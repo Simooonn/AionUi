@@ -47,13 +47,12 @@ function loadDriver(): DbCtor | null {
   return driver;
 }
 
-/** Read-only handle on opencode.db, or null when the DB does not exist. */
+/** Read-only handle on opencode.db, or null when the DB does not exist. Throws on open/driver failure. */
 function openOpencodeDb(): Db | null {
   const path = opencodeDbPath();
   if (!existsSync(path)) return null;
   const Ctor = loadDriver();
-  // DB present but driver unavailable would silently import nothing — fail loud.
-  if (!Ctor) throw new Error('opencode session scan unavailable: sqlite driver failed to load');
+  if (!Ctor) throw new Error('opencode access unavailable: sqlite driver failed to load');
   const db = new Ctor(path, { readonly: true, fileMustExist: true });
   db.pragma('busy_timeout = 5000');
   return db;
@@ -91,16 +90,20 @@ export function cleanOpencodeTitle(raw: unknown): string {
 /** Pure row → meta mapping (unit-tested with plain objects, no sqlite). */
 export function mapOpencodeSessionRow(row: OpencodeSessionRow): CliSessionMeta {
   const title = cleanOpencodeTitle(row.title);
+  // INTEGER columns upstream must never receive a REAL (see ACE_CHANGES
+  // float-binding incident) — round at the source like the other scanners.
+  const created = typeof row.time_created === 'number' ? Math.round(row.time_created) : undefined;
+  const updated = typeof row.time_updated === 'number' ? Math.round(row.time_updated) : undefined;
   return {
     source: 'opencode',
     sessionId: row.id,
     backend: 'opencode',
     title: title || row.id,
     workspace: typeof row.directory === 'string' && row.directory ? row.directory : undefined,
-    // INTEGER columns upstream must never receive a REAL (see ACE_CHANGES
-    // float-binding incident) — round at the source like the other scanners.
-    createdAt: typeof row.time_created === 'number' ? Math.round(row.time_created) : undefined,
-    updatedAt: typeof row.time_updated === 'number' ? Math.round(row.time_updated) : undefined,
+    // Cross-fallback like the codex precedent: never leave the sidebar sort key
+    // empty when only one of the two timestamps is present.
+    createdAt: created ?? updated,
+    updatedAt: updated ?? created,
   };
 }
 
@@ -111,7 +114,20 @@ export function mapOpencodeSessionRow(row: OpencodeSessionRow): CliSessionMeta {
  * "nothing to import" and mask an opencode format change.
  */
 export function parseOpencodeSessions(): CliSessionMeta[] {
-  const db = openOpencodeDb();
+  let db: Db | null;
+  try {
+    db = openOpencodeDb();
+  } catch (e) {
+    // "Can't OPEN the live DB" (e.g. WAL recovery refused on a readonly handle,
+    // or driver load failure) degrades opencode-only — it must not abort the
+    // whole multi-CLI import. Schema MISMATCH below stays loud: that is the
+    // format-drift signal a silent empty set would mask.
+    console.warn(
+      '[ace:opencodeParser] open failed, skipping opencode scan:',
+      e instanceof Error ? e.message : String(e)
+    );
+    return [];
+  }
   if (!db) return []; // machine without opencode
   try {
     const cols = new Set((db.prepare('PRAGMA table_info(session)').all() as { name: string }[]).map((c) => c.name));
@@ -227,7 +243,9 @@ function itemFromOpencodePart(data: OpencodePartData, role: 'user' | 'assistant'
     const img = typeof data.mime === 'string' && data.mime.startsWith('image/') ? imageFromDataUrl(data.url) : null;
     return img ? { kind: 'image', ...img } : null;
   }
-  // step-start / step-finish / patch / snapshot / unknown → structural, skipped.
+  // step-start / step-finish / patch / snapshot / unknown → structural part
+  // TYPES, skipped. (Distinct namespace from the tool NAME 'patch' mapped in
+  // opencodeToolKind — a tool part with tool:'patch' renders as an edit row.)
   return null;
 }
 

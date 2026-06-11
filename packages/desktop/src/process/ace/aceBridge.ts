@@ -11,6 +11,7 @@ import type {
 } from '@/common/ace/types';
 import { importCliSessions } from './importCliSessions';
 import { importConversationMessages } from './messageImporter';
+import { checkWorkspacesExist, resolveConversationFiles, unlinkSessionFiles } from './sessionFiles';
 import { ensureCliSessionResumable } from './sessionResume';
 
 ipcMain.handle('ace:import-cli-sessions', async (): Promise<ImportCliSessionsResult> => {
@@ -46,5 +47,33 @@ ipcMain.handle('ace:ensure-cli-resume', async (_event, conversationId: string): 
     return await ensureCliSessionResumable(conversationId);
   } catch {
     return { resumable: false, reason: 'error' };
+  }
+});
+
+// Resolve on-disk session file paths (called before DB delete); ids gated.
+ipcMain.handle('ace:resolve-conversation-files', async (_event, ids: string[]) => {
+  try {
+    const safe = Array.isArray(ids) ? ids.filter((id) => isSafeConversationId(id)) : [];
+    return await resolveConversationFiles(safe);
+  } catch {
+    return {};
+  }
+});
+
+// Delete on-disk session files (paths confined to CLI roots inside the impl).
+ipcMain.handle('ace:unlink-session-files', async (_event, paths: string[]) => {
+  try {
+    return await unlinkSessionFiles(Array.isArray(paths) ? paths : []);
+  } catch {
+    return {};
+  }
+});
+
+// Workspace existence map for sidebar gray-out.
+ipcMain.handle('ace:check-workspaces-exist', async (_event, paths: string[]) => {
+  try {
+    return checkWorkspacesExist(Array.isArray(paths) ? paths : []);
+  } catch {
+    return {};
   }
 });

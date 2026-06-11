@@ -18,8 +18,9 @@ import { ipcBridge } from '@/common';
 import type { CliSessionMeta, ImportCliSessionsResult, ImportedConversationExtra } from '@/common/ace/types';
 import { getDataPath } from '@process/utils';
 import { backfillImportedConversationActivity } from './aioncoreSchema';
-import { parseClaudeCodeSessions } from './claudeParser';
-import { parseCodexSessions } from './codexParser';
+import { parseClaudeCodeSessions } from './parsers/claudeParser';
+import { parseCodexSessions } from './parsers/codexParser';
+import { parseGeminiSessions } from './parsers/geminiParser';
 
 type CreateParams = Parameters<typeof ipcBridge.conversation.create.invoke>[0];
 
@@ -69,7 +70,7 @@ function buildCreateParams(meta: CliSessionMeta): CreateParams {
 /** Import all local CLI sessions (Claude Code + Codex); idempotent across repeated runs. */
 export async function importCliSessions(): Promise<ImportCliSessionsResult> {
   const result: ImportCliSessionsResult = { imported: 0, skipped: 0, failed: 0, errors: [] };
-  const sessions = [...parseClaudeCodeSessions(), ...parseCodexSessions()];
+  const sessions = [...parseClaudeCodeSessions(), ...parseCodexSessions(), ...parseGeminiSessions()];
   const existing = await fetchExistingCliSessionIds();
   if (existing === null) {
     // Without the dedup baseline every create would be a duplicate — refuse.

@@ -116,6 +116,10 @@ export async function ensureCliSessionResumable(conversationId: string): Promise
       return { resumable: false, reason: 'schema-mismatch' };
     }
 
+    // Existence gate only — the singular locator suffices even for gemini
+    // multi-file sessions (it returns the newest file by MTIME, deliberately a
+    // different signal from the scanner's replayed lastUpdated; any surviving
+    // file proves the session is loadable).
     const sessionFile = findSessionFile(imported.source, imported.sessionId);
     if (!sessionFile || !existsSync(sessionFile)) return { resumable: false, reason: 'jsonl-missing' };
 

@@ -3,7 +3,7 @@
  * Kept under common/ace so both process and renderer can share them.
  */
 
-export type CliSource = 'claude-code' | 'codex';
+export type CliSource = 'claude-code' | 'codex' | 'gemini';
 
 /** Parsed metadata for one CLI session (the source of truth stays in the CLI's own files). */
 export type CliSessionMeta = {
@@ -45,7 +45,28 @@ export type ImportCliSessionsResult = {
 };
 
 /** One renderable item parsed from a CLI message turn. */
-export type ParsedCliItem = { kind: 'text'; text: string } | { kind: 'thinking'; text: string };
+export type ParsedCliItem =
+  | { kind: 'text'; text: string }
+  | { kind: 'thinking'; text: string }
+  /** Inline image attachment (both CLIs embed base64 in the session file). */
+  | { kind: 'image'; mediaType: string; dataBase64: string }
+  /** Post-/compact summary wall — rendered as a collapsed, expandable block. */
+  | { kind: 'compact-summary'; text: string }
+  /** CLI notice record (Gemini error/info/warning) — rendered via the app's
+   * existing tips row (MessageTips natively handles all three types). */
+  | { kind: 'tip'; tipType: 'error' | 'info' | 'warning'; text: string }
+  /** Tool execution (Claude tool_use/tool_result, Codex function_call/_output)
+   * — rendered via the app's existing acp_tool_call row. */
+  | {
+      kind: 'tool';
+      callId: string;
+      name: string;
+      title: string;
+      toolKind: string;
+      status: 'completed' | 'failed';
+      rawInput?: unknown;
+      output?: string;
+    };
 
 /** One CLI message turn (a record) with its content items. */
 export type ParsedCliMessage = {

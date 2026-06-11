@@ -50,6 +50,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   importConversationMessages: (conversationId: string) =>
     ipcRenderer.invoke('ace:import-conversation-messages', conversationId),
   ensureCliResume: (conversationId: string) => ipcRenderer.invoke('ace:ensure-cli-resume', conversationId),
+  resolveConversationFiles: (ids: string[]) => ipcRenderer.invoke('ace:resolve-conversation-files', ids),
+  unlinkSessionFiles: (paths: string[]) => ipcRenderer.invoke('ace:unlink-session-files', paths),
+  checkWorkspacesExist: (paths: string[]) => ipcRenderer.invoke('ace:check-workspaces-exist', paths),
   // ace:end
 });
 

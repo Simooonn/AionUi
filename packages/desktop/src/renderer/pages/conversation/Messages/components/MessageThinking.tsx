@@ -9,6 +9,9 @@ import { Spin } from '@arco-design/web-react';
 import { Brain, Right } from '@icon-park/react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+// ace:start compact-summary rows (imported CLI sessions) render markdown on expand
+import MarkdownView from '@renderer/components/Markdown';
+// ace:end
 import styles from './MessageThinking.module.css';
 
 const MessageThinking: React.FC<{ message: IMessageThinking }> = ({ message }) => {
@@ -77,17 +80,37 @@ const MessageThinking: React.FC<{ message: IMessageThinking }> = ({ message }) =
     ? `${t('conversation.thinking.complete', { defaultValue: 'Thought complete' })} · ${formatDuration(duration || 0)}`
     : `${subject || t('conversation.thinking.label', { defaultValue: 'Thinking...' })} · ${formatElapsedTime(elapsedTime)}`;
 
+  // ace:start compact-summary rows (imported CLI sessions): fixed one-line
+  // label instead of "Thought complete · 0s", markdown body on expand.
+  const aceCompactSummary = (message.content as { aceCompactSummary?: boolean }).aceCompactSummary === true;
+  const displaySummary = aceCompactSummary
+    ? t('conversation.ace.compactSummary', { defaultValue: 'Session compacted · expand to view the summary' })
+    : summaryText;
+  // ace:end
+
   return (
     <div className={styles.container}>
       <div className={styles.header} onClick={() => setExpanded((v) => !v)}>
         <span className={styles.headerIcon}>{!isDone ? <Spin size={12} /> : <Brain theme='outline' size='14' />}</span>
-        <span className={styles.summary}>{summaryText}</span>
+        {/* ace:start */}
+        <span className={styles.summary}>{displaySummary}</span>
+        {/* ace:end */}
         <span className={`${styles.arrow} ${expanded ? styles.arrowExpanded : ''}`}>
           <Right theme='outline' size='12' />
         </span>
       </div>
       <div ref={bodyRef} className={`${styles.body} ${!expanded ? styles.collapsed : ''}`}>
-        {text}
+        {/* ace:start markdown body needs normal whitespace (the container is
+            pre-wrap for raw thinking text, which doubles every markdown gap)
+            and compact block margins */}
+        {aceCompactSummary ? (
+          <div className='whitespace-normal [&_p]:my-4px [&_ul]:my-4px [&_ol]:my-4px [&_li]:my-2px [&_pre]:my-6px [&_h1]:my-6px [&_h2]:my-6px [&_h3]:my-6px [&>div>*:first-child]:mt-0 [&>div>*:last-child]:mb-0'>
+            <MarkdownView>{text}</MarkdownView>
+          </div>
+        ) : (
+          text
+        )}
+        {/* ace:end */}
       </div>
     </div>
   );

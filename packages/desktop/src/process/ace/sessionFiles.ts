@@ -16,10 +16,11 @@ import { existsSync, lstatSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, normalize, sep } from 'node:path';
 import { getDataPath } from '@process/utils';
-import type { CliSource } from '@/common/ace/types';
+import type { CliSource, ResolvedFile, UnlinkResult } from '@/common/ace/types';
 import { hasCoupledSchema } from './aioncoreSchema';
 import { cliImageCacheDir } from './messageImporter';
 import { findSessionFiles } from './messageParser';
+import { opencodeDbPath } from './parsers/opencodeParser';
 
 const BACKEND_DB = 'aionui-backend.db';
 const HOME_ROOT = homedir();
@@ -29,39 +30,52 @@ const GEMINI_TMP_ROOT = join(HOME_ROOT, '.gemini', 'tmp');
 
 type Db = import('better-sqlite3').Database;
 
-export type ResolvedFile = {
-  path?: string;
-  /** Further files of the SAME session (gemini ACP resume continues a session
-   * in new files sharing one sessionId — all must be deleted together). */
-  extraPaths?: string[];
-  /** App-owned cache of the session's materialized inline images (a directory). */
-  imageCacheDir?: string;
-};
-export type UnlinkResult = { deleted: boolean; reason?: 'no-file' | 'out-of-scope' | 'delete-failed' };
+export type { ResolvedFile, UnlinkResult };
+
+/** opencode session ids: 'ses_' + alnum run (verified on all real ids: 26 chars, len 30). */
+export function isOpencodeSessionId(sid: unknown): sid is string {
+  return typeof sid === 'string' && /^ses_[A-Za-z0-9]{8,}$/.test(sid.trim());
+}
 
 /**
  * Reject empty/short session ids before they reach findSessionFile. The codex
  * locator uses a substring match (`name.includes(sid)`), so a blank id would
  * match the first rollout walked and delete an unrelated session.
  */
-function isResolvableSessionId(sid: unknown): sid is string {
-  // Require a leading hex run so a value like "rollout-" (which the codex
-  // substring locator would match against every rollout) is rejected.
+function isResolvableSessionId(source: CliSource, sid: unknown): sid is string {
+  if (source === 'opencode') return isOpencodeSessionId(sid);
+  // File-based CLIs: require a leading hex run so a value like "rollout-"
+  // (which the codex substring locator would match against every rollout) is
+  // rejected.
   return typeof sid === 'string' && /^[0-9a-fA-F]{8,}(-[0-9a-fA-F]+)*$/.test(sid.trim());
 }
 
-/** Resolve a conversation to its on-disk CLI session file (imported or app-created). */
-function resolveSessionFilePath(db: Db, conversationId: string): ResolvedFile {
+/** Map an app-created conversation's extra.backend to its CLI source. */
+function sourceFromBackend(backend: string | undefined): CliSource {
+  if (backend === 'codex') return 'codex';
+  if (backend === 'gemini') return 'gemini';
+  if (backend === 'opencode') return 'opencode';
+  return 'claude-code';
+}
+
+/**
+ * Resolve a conversation to its local CLI session data (imported or app-created).
+ * opencode conversations resolve to a { kind: 'opencode' } DESCRIPTOR, never a
+ * path: their "session file" is the shared opencode.db, and this function's
+ * `path` flows straight into unlinkSessionFiles. The opencode branch therefore
+ * MUST NOT call findSessionFiles (🔴 regression-tested).
+ */
+export function resolveSessionFilePath(db: Db, conversationId: string): ResolvedFile {
   const conv = db.prepare('SELECT extra FROM conversations WHERE id = ?').get(conversationId) as
     | { extra?: string }
     | undefined;
-  if (!conv) return {};
+  if (!conv) return { kind: 'file' };
 
   let extra: { cli_session_id?: string; cli_source?: CliSource; backend?: string } = {};
   try {
     extra = JSON.parse(conv.extra ?? '{}') as typeof extra;
   } catch {
-    return {};
+    return { kind: 'file' };
   }
 
   let source: CliSource | undefined;
@@ -76,18 +90,23 @@ function resolveSessionFilePath(db: Db, conversationId: string): ResolvedFile {
       | { session_id?: string | null }
       | undefined;
     if (row?.session_id) {
-      source = extra.backend === 'codex' ? 'codex' : 'claude-code';
+      source = sourceFromBackend(extra.backend);
       sessionId = row.session_id;
     }
   }
 
-  if (!source || !isResolvableSessionId(sessionId)) return {};
+  if (!source || !isResolvableSessionId(source, sessionId)) return { kind: 'file' };
   const cacheDir = cliImageCacheDir(sessionId);
+  const imageCacheDir = existsSync(cacheDir) ? cacheDir : undefined;
+  if (source === 'opencode') {
+    return { kind: 'opencode', opencodeSessionId: sessionId, imageCacheDir };
+  }
   const files = findSessionFiles(source, sessionId);
   return {
+    kind: 'file',
     path: files[0],
     extraPaths: files.length > 1 ? files.slice(1) : undefined,
-    imageCacheDir: existsSync(cacheDir) ? cacheDir : undefined,
+    imageCacheDir,
   };
 }
 
@@ -167,6 +186,89 @@ export async function unlinkSessionFiles(paths: string[]): Promise<Record<string
     }
   }
   return out;
+}
+
+// --- opencode controlled DB-delete channel ------------------------------------
+// opencode sessions are rows in ONE shared SQLite DB — there is no per-session
+// file to unlink. The ONLY write this fork ever performs on opencode.db is the
+// session-row DELETE below: db path hardcoded (never caller-supplied), id shape
+// validated, FK cascade asserted ON. The unlink whitelist above deliberately
+// does NOT include the opencode data dir, so even a leaked path cannot become
+// a whole-DB deletion.
+
+/** Minimal sqlite surface shared by better-sqlite3 and node:sqlite (tests). */
+export type OpencodeDeleteDb = {
+  exec(sql: string): unknown;
+  prepare(sql: string): {
+    run(...args: unknown[]): { changes: number | bigint };
+    get(...args: unknown[]): unknown;
+  };
+};
+
+/**
+ * Pure core: delete session rows by id with FK cascade. Referential cleanup is
+ * driven by opencode's OWN schema declarations (message/session_message/
+ * session_input/session_share/session_context_epoch/todo cascade directly,
+ * part cascades via message — verified with PRAGMA foreign_key_list), so the
+ * connection-level pragma MUST be on; if it cannot be asserted, every delete is
+ * refused (fail-loud beats silent orphan rows).
+ *
+ * Batch semantics are per-id autocommit: a busy failure on one id never rolls
+ * back earlier ids — same best-effort contract as unlinkSessionFiles.
+ * Child sessions (parent_id) deliberately do NOT cascade (no FK upstream):
+ * every session is its own conversation, deletion follows each conversation.
+ */
+export function deleteOpencodeSessionRows(db: OpencodeDeleteDb, sessionIds: string[]): Record<string, UnlinkResult> {
+  const out: Record<string, UnlinkResult> = {};
+  let fkOn = false;
+  try {
+    db.exec('PRAGMA foreign_keys = ON');
+    const row = db.prepare('PRAGMA foreign_keys').get() as { foreign_keys?: number | bigint } | undefined;
+    fkOn = Number(row?.foreign_keys) === 1;
+  } catch {
+    fkOn = false;
+  }
+  for (const raw of sessionIds) {
+    if (!isOpencodeSessionId(raw)) {
+      out[String(raw)] = { deleted: false, reason: 'out-of-scope' };
+      continue;
+    }
+    if (!fkOn) {
+      // Without cascade a bare DELETE would orphan message/part rows.
+      out[raw] = { deleted: false, reason: 'delete-failed' };
+      continue;
+    }
+    try {
+      const info = db.prepare('DELETE FROM session WHERE id = ?').run(raw);
+      out[raw] = Number(info.changes) > 0 ? { deleted: true } : { deleted: false, reason: 'no-file' };
+    } catch (e) {
+      console.warn('[ace:sessionFiles] opencode delete failed:', e instanceof Error ? e.message : String(e));
+      out[raw] = { deleted: false, reason: 'delete-failed' };
+    }
+  }
+  return out;
+}
+
+/** Shell: open opencode.db read-write (busy-tolerant) and run the controlled delete. */
+export async function deleteOpencodeSessions(sessionIds: string[]): Promise<Record<string, UnlinkResult>> {
+  const out: Record<string, UnlinkResult> = {};
+  if (!Array.isArray(sessionIds) || !sessionIds.length) return out;
+  const dbPath = opencodeDbPath();
+  if (!existsSync(dbPath)) {
+    for (const id of sessionIds) out[String(id)] = { deleted: false, reason: 'no-file' };
+    return out;
+  }
+  const BetterSqlite3 = (await import('better-sqlite3')).default;
+  const db = new BetterSqlite3(dbPath);
+  try {
+    db.pragma('busy_timeout = 5000');
+    return deleteOpencodeSessionRows(db as unknown as OpencodeDeleteDb, sessionIds);
+  } catch {
+    for (const id of sessionIds) out[String(id)] ??= { deleted: false, reason: 'delete-failed' };
+    return out;
+  } finally {
+    db.close();
+  }
 }
 
 /**

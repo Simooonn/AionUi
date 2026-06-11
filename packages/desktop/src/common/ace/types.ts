@@ -3,7 +3,35 @@
  * Kept under common/ace so both process and renderer can share them.
  */
 
-export type CliSource = 'claude-code' | 'codex' | 'gemini';
+export type CliSource = 'claude-code' | 'codex' | 'gemini' | 'opencode';
+
+/**
+ * What "delete this conversation's local CLI data" resolves to — a discriminated
+ * union shared by main (sessionFiles) and renderer (deleteWithLocalFiles).
+ *
+ * The 'opencode' arm structurally has NO path-shaped field: opencode sessions
+ * are rows in ONE shared SQLite DB, and a db path flowing into the file-unlink
+ * channel would destroy every session at once. The type makes that
+ * inexpressible (plan opencode-cli-adapter.md, decision A1/D1).
+ */
+export type ResolvedFile =
+  | {
+      kind: 'file';
+      path?: string;
+      /** Further files of the SAME session (gemini ACP resume continues a session
+       * in new files sharing one sessionId — all must be deleted together). */
+      extraPaths?: string[];
+      /** App-owned cache of the session's materialized inline images (a directory). */
+      imageCacheDir?: string;
+    }
+  | {
+      kind: 'opencode';
+      /** Deleted via the controlled DB-delete channel (sessionFiles.deleteOpencodeSessions). */
+      opencodeSessionId: string;
+      imageCacheDir?: string;
+    };
+
+export type UnlinkResult = { deleted: boolean; reason?: 'no-file' | 'out-of-scope' | 'delete-failed' };
 
 /** Parsed metadata for one CLI session (the source of truth stays in the CLI's own files). */
 export type CliSessionMeta = {

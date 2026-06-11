@@ -11,7 +11,12 @@ import type {
 } from '@/common/ace/types';
 import { importCliSessions } from './importCliSessions';
 import { importConversationMessages } from './messageImporter';
-import { checkWorkspacesExist, resolveConversationFiles, unlinkSessionFiles } from './sessionFiles';
+import {
+  checkWorkspacesExist,
+  deleteOpencodeSessions,
+  resolveConversationFiles,
+  unlinkSessionFiles,
+} from './sessionFiles';
 import { ensureCliSessionResumable } from './sessionResume';
 
 ipcMain.handle('ace:import-cli-sessions', async (): Promise<ImportCliSessionsResult> => {
@@ -64,6 +69,15 @@ ipcMain.handle('ace:resolve-conversation-files', async (_event, ids: string[]) =
 ipcMain.handle('ace:unlink-session-files', async (_event, paths: string[]) => {
   try {
     return await unlinkSessionFiles(Array.isArray(paths) ? paths : []);
+  } catch {
+    return {};
+  }
+});
+
+// Controlled opencode session-row delete (db path hardcoded + id shape gated inside).
+ipcMain.handle('ace:delete-opencode-sessions', async (_event, sessionIds: string[]) => {
+  try {
+    return await deleteOpencodeSessions(Array.isArray(sessionIds) ? sessionIds : []);
   } catch {
     return {};
   }

@@ -52,6 +52,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ensureCliResume: (conversationId: string) => ipcRenderer.invoke('ace:ensure-cli-resume', conversationId),
   resolveConversationFiles: (ids: string[]) => ipcRenderer.invoke('ace:resolve-conversation-files', ids),
   unlinkSessionFiles: (paths: string[]) => ipcRenderer.invoke('ace:unlink-session-files', paths),
+  deleteOpencodeSessions: (sessionIds: string[]) => ipcRenderer.invoke('ace:delete-opencode-sessions', sessionIds),
   checkWorkspacesExist: (paths: string[]) => ipcRenderer.invoke('ace:check-workspaces-exist', paths),
   // ace:end
 });

@@ -184,3 +184,47 @@
 - **`~/.zshrc` 已加 `export GEMINI_MODEL=gemini-3.1-pro-preview`**（2026-06-12）：Gemini CLI 0.46 的默认模型已下线（Google API 404 "Requested entity was not found"），导致应用内新建/续聊 gemini 会话首句必失败（UNKNOWN_UPSTREAM_ERROR），且 agent 随之被驱逐 → 右上角切换模型也连带 502（"oneshot canceled"，请求落在死 agent 上；warmup 期 aioncore 自发的 `session/set_model` 实证可成功，机制本身没坏）。实测解析链 `argv.model || env.GEMINI_MODEL || settings.model?.name` 中 **settings 通道不生效**（嵌套/平铺两种写法均 404，疑似 CLI bug），`-m` 与 env 均可用。`~/.gemini/settings.json` 里同时保留了 `model.name`（当前无效，留作 CLI 修复后的接力）。Gemini CLI 修复 settings 模型配置或更新默认模型后，可移除 zshrc 行。注意：dev 从终端启动才继承 env；Dock 启动的安装版不继承（届时需 launchctl setenv 或等 CLI 修复）。
 
 - **已踩坑（gemini 模型切换 404 连环）**：应用内模型列表来自 gemini agent 广播目录，其中含 **`gemini-3.1-pro-preview-customtools`** 这类带后缀变体——`session/set_model` 会确认成功，但下一句 prompt 在 Google API 上 404（"Requested entity was not found"）→ agent 被驱逐 → 再切任何模型都"切换模型失败"（请求落在死 agent 上）。且该坏模型 id 持久化在 `acp_session.session_config.runtime.current_model_id`，每次重生都复发。修复配方：`UPDATE acp_session SET session_config = json_set(session_config,'$.runtime.current_model_id','gemini-2.5-pro') WHERE ...`（2026-06-12 已修 3 个会话）。应用内实测可用：`gemini-2.5-pro`；终端实测可用：无后缀的 `gemini-3.1-pro-preview`。避免选带 `-customtools` 后缀的条目。
+
+## 功能：opencode 五条管线适配
+
+> 计划：`.omc/plans/opencode-cli-adapter.md`（共识 iteration 4：Architect APPROVE + Critic APPROVED）；规格：`.omc/specs/deep-interview-opencode-cli-adapter.md`（ambiguity 12%, PASSED）。
+
+### 与既有三家的根本差异：存储是共享 SQLite 库
+
+opencode 没有每会话文件——全部数据在 `<XDG_DATA_HOME|~/.local/share>/opencode/opencode.db`（drizzle，WAL）里：`session` 行自带 directory/title/time\_\*列，`message.data`/`part.data` 是 JSON。由此：
+
+- **"会话文件存在" ⇒ "session 行存在"**：`findOpencodeFiles(sessionId)` 返回 `[opencode.db]` 当且仅当行存在——messageImporter 的 keep-imported 自愈与 sessionResume 的存在性门零改动复用。
+- **🔴 整库误删防线（安全关键）**：该路径**绝不能**流入文件删除通道（删一个=毁全部会话）。三道防线：`ResolvedFile` 改判别联合（`common/ace/types.ts`），`'opencode'` 臂**结构上没有 path 字段**（编译期不可表达）；`unlinkSessionFiles` 白名单**不含** opencode 目录；双分支（imported+app-created）回归测试钉死。
+- **唯一写通道**：`sessionFiles.deleteOpencodeSessionRows`——库路径硬编码、id 形态校验（`/^ses_[A-Za-z0-9]{8,}$/`，实证全部真实 id 为 `ses_`+26 位字母数字）、`PRAGMA foreign_keys=ON` 执行前断言（断言失败拒删，fail-loud 防孤儿行）、逐 id 自动提交（部分成功是预期契约）。级联实证：message/session_message/session_input/session_share/session_context_epoch/todo 直接 CASCADE，part 经 message 传递；**`session.parent_id` 无 FK** → 删父会话不级联子会话（有意行为：子会话本就是独立导入的 conversation；opencode 自身 UI 对孤儿 parent_id 的容忍度未验证）。
+
+### 新增文件（纯新增）
+
+| 文件                                                         | 作用                                                                                                                               |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/desktop/src/process/ace/parsers/opencodeParser.ts` | 只读扫描 opencode.db → 会话元数据（全部导入含子/global/空会话）；message/part → ParsedCliItem；库路径单一事实源 `opencodeDbPath()` |
+| `packages/desktop/src/process/ace/parsers/parseHelpers.ts`   | toolTitle/capText/boundedRawInput/imageFromDataUrl 共享工具（messageParser 与 opencodeParser 共用，保持依赖单向）                  |
+
+### opencode 分支挂点
+
+- `common/ace/types.ts`：`CliSource` 加 `'opencode'`；**`ResolvedFile` 判别联合**（`'file'` 臂 = 原 path/extraPaths/imageCacheDir 逐字段照搬；`'opencode'` 臂 = `{opencodeSessionId, imageCacheDir?}`）挪入 common 供主/渲染两侧共享。
+- `messageParser.ts`：`findSessionFile(s)`/`parseSessionFiles` 加 opencode 分支；本地工具函数迁出至 `parsers/parseHelpers.ts`。
+- `sessionFiles.ts`：`isResolvableSessionId` 按 source 分派（hex 规则原样保留给 claude/codex/gemini）；`resolveSessionFilePath` 的 imported/app-created 两分支均产 opencode 描述符（app-created 按 `extra.backend` n 路分派）；新增 `deleteOpencodeSessionRows`（纯核）/`deleteOpencodeSessions`（薄壳）。
+- `aceBridge.ts`：加 `ace:delete-opencode-sessions` handler。
+- `preload/main.ts`：ace marker 块内加 `deleteOpencodeSessions`（既有 marker 区，无新增挂载点）。
+- `renderer/ace/deleteWithLocalFiles.ts`：本地 `ResolvedFile` 重复定义删除、改 import common 联合；按 `kind` 分流（file→unlink，opencode→DB delete，图片缓存走 file 通道）。
+- `importCliSessions.ts`：sessions 数组并入 `parseOpencodeSessions()`。
+- 噪音过滤：`synthetic:1` 标记文本一律跳过（opencode 自身注入标记）；`[Assistant Rules]` 前缀仅对 user 记录生效。`msgId = 'opencode-' + message.id`（`msg_…` 全局唯一，天然规避 codex 位置型 id 全局主键碰撞旧坑）。
+- 驱动加载：opencodeParser 经 `createRequire` **同步惰性**加载 better-sqlite3（find/parse 处于同步分派链；纯函数可被 vitest 导入而不触发原生模块）。
+
+### ⚠️ Resume spike 实证结论（2026-06-12，dev 实例 + 真实会话 ses_16cddf242ffe…）
+
+- **1a 路由门通过**：aioncore warmup 接受 `backend:'opencode'`——`acp_session` 行 `agent_backend='opencode'`、`session_status='idle'`，agent 由内置适配器以 `opencode acp` 拉起；handshake 报 **`loadSession=true`**（session_capabilities 含 resume）。warmup 自建的新会话**直接写进 opencode.db**（佐证 ACP 模式与 CLI 共享同一存储）。
+- **1b 写回门通过**：驱逐 idle agent → 直写 `acp_session.session_id=<真实 ses_ id>` → 应用内发一句：目标会话 message 行数 64→66（**追加进原 session，无新建**，总 session 数 36 不变）、`time_updated` 前进、回复准确说出原会话主题（zcf 卸载方法）——**全记忆真接续**。
+- 复证已知坑：手动 SIGTERM agent 后第一句报 -32603（Broken pipe / 重生竞态），重试即过——发送前 re-ensure 兜底有效，机制与 claude/codex 一致。
+- spike 副产物：opencode.db 多了 1 个 warmup 会话（`ses_148253247ffe…`，"New session - 2026-06-11T18:03…"）；探针两轮已留在目标真实会话内（无害问答）。
+
+### 限制（NON-GOAL）
+
+- `step-start`/`step-finish`/`patch`/`snapshot` part 为结构性记录，跳过不渲染（patch 的 diff 视图本期不做）。
+- compact 摘要本机无样本（`time_compacting` 全空）→ 出现样本后接 `aceCompactSummary` 现成折叠行。
+- 对 opencode.db 的 schema 耦合面（升级 opencode 后核对）：`session(id, directory, title, time_created, time_updated)` 列集 + message/part 的 data JSON 形状 + FK 级联拓扑；扫描器有 PRAGMA 列校验，mismatch 时**中止导入并报错**（不静默空集合）。

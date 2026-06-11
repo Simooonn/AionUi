@@ -102,7 +102,11 @@ describe('deleteWithLocalFiles.deleteConversationsWithFiles (DB-first order-zip)
           Object.fromEntries(
             ids.map((id) => [
               id,
-              { path: id === 'a' ? pathA : id === 'b' ? pathB : undefined, imageCacheDir: imageCacheDirs[id] },
+              {
+                kind: 'file',
+                path: id === 'a' ? pathA : id === 'b' ? pathB : undefined,
+                imageCacheDir: imageCacheDirs[id],
+              },
             ])
           ),
         unlinkSessionFiles: unlinkSpy,
@@ -161,7 +165,7 @@ describe('gemini multi-file delete + symlink refusal', () => {
     const unlinkSpy = vi.fn(async (paths: string[]) => Object.fromEntries(paths.map((p) => [p, { deleted: true }])));
     (globalThis as { window?: unknown }).window = {
       electronAPI: {
-        resolveConversationFiles: async () => ({ a: { path: orig, extraPaths: [cont] } }),
+        resolveConversationFiles: async () => ({ a: { kind: 'file', path: orig, extraPaths: [cont] } }),
         unlinkSessionFiles: unlinkSpy,
       },
     };
@@ -187,5 +191,173 @@ describe('gemini multi-file delete + symlink refusal', () => {
     expect(existsSync(target)).toBe(true); // symlink target untouched
     rmSync(cacheRoot, { recursive: true, force: true });
     rmSync(outside, { recursive: true, force: true });
+  });
+});
+
+// --- opencode delete channel (shared-DB rows, controlled delete) ---------------
+
+import { DatabaseSync } from 'node:sqlite';
+import {
+  deleteOpencodeSessionRows,
+  isOpencodeSessionId,
+  resolveSessionFilePath,
+  type OpencodeDeleteDb,
+} from '@process/ace/sessionFiles';
+import { opencodeDbPath } from '@process/ace/parsers/opencodeParser';
+
+const SES_A = 'ses_aaaaaaaa1111111111111111aa';
+const SES_B = 'ses_bbbbbbbb2222222222222222bb';
+
+describe('opencode id shape gate', () => {
+  it('accepts real ses_ ids, rejects bare prefix/short/foreign shapes', () => {
+    expect(isOpencodeSessionId('ses_16cddf242ffeTuUKGuQYpThw8a')).toBe(true);
+    expect(isOpencodeSessionId('ses_')).toBe(false);
+    expect(isOpencodeSessionId('ses_abc')).toBe(false); // < 8 chars after prefix
+    expect(isOpencodeSessionId('deadbeef-dead-dead-dead-deadbeefdead')).toBe(false);
+    expect(isOpencodeSessionId(undefined)).toBe(false);
+  });
+
+  it('existing hex validation is untouched: hex ids still resolve, ses_ ids never hit file locators', () => {
+    // (covered structurally: resolveSessionFilePath dispatches per source — see 🔴 tests below)
+    expect(isOpencodeSessionId('abcdef12')).toBe(false);
+  });
+});
+
+describe('🔴 whole-DB-deletion regression guards', () => {
+  it('unlinkSessionFiles REFUSES the opencode.db path (whitelist must never include it)', async () => {
+    const dbPath = opencodeDbPath();
+    const res = await unlinkSessionFiles([dbPath]);
+    expect(res[dbPath]).toEqual({ deleted: false, reason: 'out-of-scope' });
+  });
+
+  function backendDbWith(extra: object, acpSessionId?: string): DatabaseSync {
+    const db = new DatabaseSync(':memory:');
+    db.exec('CREATE TABLE conversations (id TEXT PRIMARY KEY, extra TEXT)');
+    db.exec('CREATE TABLE acp_session (conversation_id TEXT, session_id TEXT)');
+    db.prepare('INSERT INTO conversations VALUES (?, ?)').run('conv1', JSON.stringify(extra));
+    if (acpSessionId) db.prepare('INSERT INTO acp_session VALUES (?, ?)').run('conv1', acpSessionId);
+    return db;
+  }
+
+  it('IMPORTED opencode conversation resolves to a descriptor with NO path', () => {
+    const db = backendDbWith({ cli_session_id: SES_A, cli_source: 'opencode', backend: 'opencode' });
+    const r = resolveSessionFilePath(db as never, 'conv1');
+    expect(r.kind).toBe('opencode');
+    expect(r).not.toHaveProperty('path');
+    expect(r.kind === 'opencode' && r.opencodeSessionId).toBe(SES_A);
+  });
+
+  it('APP-CREATED opencode conversation (acp_session route) also resolves to the descriptor', () => {
+    const db = backendDbWith({ backend: 'opencode' }, SES_B);
+    const r = resolveSessionFilePath(db as never, 'conv1');
+    expect(r.kind).toBe('opencode');
+    expect(r).not.toHaveProperty('path');
+    expect(r.kind === 'opencode' && r.opencodeSessionId).toBe(SES_B);
+  });
+});
+
+describe('deleteOpencodeSessionRows (FK-cascade controlled delete)', () => {
+  /** Schema subset mirroring opencode.db's verified CASCADE topology. */
+  function opencodeDbFixture(): DatabaseSync {
+    const db = new DatabaseSync(':memory:');
+    db.exec(`
+      CREATE TABLE session (id TEXT PRIMARY KEY);
+      CREATE TABLE message (id TEXT PRIMARY KEY, session_id TEXT NOT NULL,
+        FOREIGN KEY (session_id) REFERENCES session(id) ON DELETE CASCADE);
+      CREATE TABLE part (id TEXT PRIMARY KEY, message_id TEXT NOT NULL,
+        FOREIGN KEY (message_id) REFERENCES message(id) ON DELETE CASCADE);
+    `);
+    for (const [ses, msg, prt] of [
+      [SES_A, 'msg_a', 'prt_a'],
+      [SES_B, 'msg_b', 'prt_b'],
+    ]) {
+      db.prepare('INSERT INTO session VALUES (?)').run(ses);
+      db.prepare('INSERT INTO message VALUES (?, ?)').run(msg, ses);
+      db.prepare('INSERT INTO part VALUES (?, ?)').run(prt, msg);
+    }
+    return db;
+  }
+  const count = (db: DatabaseSync, sql: string) => Number((db.prepare(sql).get() as { c: number }).c);
+
+  it('deletes one session with transitive cascade; sibling sessions stay intact', () => {
+    const db = opencodeDbFixture();
+    const res = deleteOpencodeSessionRows(db as unknown as OpencodeDeleteDb, [SES_A]);
+    expect(res[SES_A]).toEqual({ deleted: true });
+    expect(count(db, 'SELECT COUNT(*) c FROM session')).toBe(1);
+    expect(count(db, `SELECT COUNT(*) c FROM message WHERE session_id = '${SES_A}'`)).toBe(0);
+    expect(count(db, "SELECT COUNT(*) c FROM part WHERE message_id = 'msg_a'")).toBe(0);
+    // sibling untouched, cascade did not over-reach
+    expect(count(db, `SELECT COUNT(*) c FROM message WHERE session_id = '${SES_B}'`)).toBe(1);
+    expect(count(db, "SELECT COUNT(*) c FROM part WHERE message_id = 'msg_b'")).toBe(1);
+  });
+
+  it('rejects malformed ids (out-of-scope) and reports missing rows as no-file', () => {
+    const db = opencodeDbFixture();
+    const res = deleteOpencodeSessionRows(db as unknown as OpencodeDeleteDb, [
+      '../../etc/passwd',
+      'ses_missing999999999999999999',
+    ]);
+    expect(res['../../etc/passwd']).toEqual({ deleted: false, reason: 'out-of-scope' });
+    expect(res['ses_missing999999999999999999']).toEqual({ deleted: false, reason: 'no-file' });
+    expect(count(db, 'SELECT COUNT(*) c FROM session')).toBe(2);
+  });
+
+  it('refuses every delete when the foreign_keys pragma cannot be asserted ON (orphan guard)', () => {
+    const stub: OpencodeDeleteDb = {
+      exec() {
+        throw new Error('pragma unavailable');
+      },
+      prepare() {
+        throw new Error('must not prepare when fk is off');
+      },
+    };
+    const res = deleteOpencodeSessionRows(stub, [SES_A]);
+    expect(res[SES_A]).toEqual({ deleted: false, reason: 'delete-failed' });
+  });
+});
+
+describe('mixed-batch order-zip routing (file + opencode descriptors)', () => {
+  afterEach(() => {
+    delete (globalThis as { window?: unknown }).window;
+    vi.restoreAllMocks();
+  });
+
+  it('routes opencode descriptors to the DB channel, files to unlink; image caches ride the file channel', async () => {
+    const CLAUDE = join(homedir(), '.claude', 'projects');
+    const filePath = join(CLAUDE, 'p', 'cccccccc-cccc-cccc-cccc-cccccccccccc.jsonl');
+    const unlinkSpy = vi.fn(async (paths: string[]) => Object.fromEntries(paths.map((p) => [p, { deleted: true }])));
+    const opencodeSpy = vi.fn(async (ids: string[]) => Object.fromEntries(ids.map((i) => [i, { deleted: true }])));
+    (globalThis as { window?: unknown }).window = {
+      electronAPI: {
+        resolveConversationFiles: async () => ({
+          a: { kind: 'file', path: filePath },
+          b: { kind: 'opencode', opencodeSessionId: SES_A, imageCacheDir: '/data/ace-cli-images/ses-x' },
+          c: { kind: 'opencode', opencodeSessionId: SES_B },
+        }),
+        unlinkSessionFiles: unlinkSpy,
+        deleteOpencodeSessions: opencodeSpy,
+      },
+    };
+    // 'c' DB-delete fails → its opencode row must NOT be deleted.
+    const { dbResults, fileDeleteFailed } = await deleteConversationsWithFiles(
+      ['a', 'b', 'c'],
+      async (id) => id !== 'c'
+    );
+    expect(dbResults).toEqual([true, true, false]);
+    expect(unlinkSpy).toHaveBeenCalledWith([filePath, '/data/ace-cli-images/ses-x']);
+    expect(opencodeSpy).toHaveBeenCalledWith([SES_A]);
+    expect(fileDeleteFailed).toBe(false);
+  });
+
+  it('propagates fileDeleteFailed from the opencode channel', async () => {
+    (globalThis as { window?: unknown }).window = {
+      electronAPI: {
+        resolveConversationFiles: async () => ({ a: { kind: 'opencode', opencodeSessionId: SES_A } }),
+        unlinkSessionFiles: vi.fn(async () => ({})),
+        deleteOpencodeSessions: async () => ({ [SES_A]: { deleted: false, reason: 'delete-failed' } }),
+      },
+    };
+    const { fileDeleteFailed } = await deleteConversationsWithFiles(['a'], async () => true);
+    expect(fileDeleteFailed).toBe(true);
   });
 });

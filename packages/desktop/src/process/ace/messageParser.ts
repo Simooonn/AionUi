@@ -8,6 +8,8 @@ import { homedir } from 'node:os';
 import { join, sep } from 'node:path';
 import type { CliSource, ParsedCliItem, ParsedCliMessage } from '@/common/ace/types';
 import { geminiTexts } from './parsers/geminiParser';
+import { findOpencodeFiles, parseOpencodeMessages } from './parsers/opencodeParser';
+import { boundedRawInput, capText, imageFromDataUrl, toolTitle } from './parsers/parseHelpers';
 
 const CLAUDE_PROJECTS = join(homedir(), '.claude', 'projects');
 const CODEX_DIR = join(homedir(), '.codex');
@@ -287,20 +289,12 @@ function itemsFromClaudeContent(
   return items;
 }
 
-/** Split a data URL into media type + base64 payload (Codex inlines images this way). */
-function imageFromDataUrl(url: unknown): { mediaType: string; dataBase64: string } | null {
-  if (typeof url !== 'string') return null;
-  const m = /^data:(image\/[\w.+-]+);base64,([\s\S]+)$/.exec(url);
-  return m ? { mediaType: m[1], dataBase64: m[2] } : null;
-}
-
 // --- tool-call extraction ----------------------------------------------------
 // Tool executions become `tool` items, later written as acp_tool_call rows in
 // the exact shape aioncore persists for live turns — the app's existing
 // compact tool-row UI (and tool grouping) renders them with zero new UI code.
-
-const TOOL_OUTPUT_CAP = 8000;
-const TOOL_TITLE_ARG_KEYS = ['command', 'cmd', 'file_path', 'path', 'pattern', 'url', 'query', 'skill', 'description'];
+// toolTitle/capText/boundedRawInput/imageFromDataUrl live in parsers/parseHelpers
+// (shared with the opencode parser without a circular import).
 
 /** ACP tool-call kind for a Claude Code tool name (drives the row icon). */
 function claudeToolKind(name: string): string {
@@ -310,21 +304,6 @@ function claudeToolKind(name: string): string {
   if (name === 'Grep' || name === 'Glob') return 'search';
   if (name === 'WebFetch' || name === 'WebSearch') return 'fetch';
   return 'other';
-}
-
-/** "Name primary-arg" one-line title, like the live claude-agent-acp titles. */
-function toolTitle(name: string, input: unknown): string {
-  if (input && typeof input === 'object') {
-    for (const key of TOOL_TITLE_ARG_KEYS) {
-      const v = (input as Record<string, unknown>)[key];
-      if (typeof v === 'string' && v.trim()) return `${name} ${v.replace(/\s+/g, ' ').trim().slice(0, 100)}`;
-    }
-  }
-  return name;
-}
-
-function capText(v: string): string {
-  return v.length > TOOL_OUTPUT_CAP ? `${v.slice(0, TOOL_OUTPUT_CAP)}…` : v;
 }
 
 /** Text form of a Claude tool_result content (string or content-item array). */
@@ -341,15 +320,6 @@ function toolResultText(content: unknown): string | undefined {
 }
 
 type ToolItem = Extract<ParsedCliItem, { kind: 'tool' }>;
-
-/** raw_input is display metadata; drop oversized ones (e.g. Workflow scripts). */
-function boundedRawInput(input: unknown): unknown {
-  try {
-    return JSON.stringify(input).length <= 4000 ? input : undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 function parseClaude(filePath: string): ParsedCliMessage[] {
   const out: ParsedCliMessage[] = [];
@@ -537,15 +507,19 @@ function parseGeminiFiles(filePaths: string[], sessionId: string): ParsedCliMess
     .map((x) => x.m);
 }
 
-/** Locate the primary on-disk CLI session file, or null when deleted. */
+/** Locate the primary on-disk CLI session file, or null when deleted.
+ * For opencode the "file" is the SHARED DB (existence gate only — never a
+ * deletion target; see findOpencodeFiles). */
 export function findSessionFile(source: CliSource, sessionId: string): string | null {
   if (source === 'gemini') return findGeminiFiles(sessionId)[0] ?? null;
+  if (source === 'opencode') return findOpencodeFiles(sessionId)[0] ?? null;
   return source === 'claude-code' ? findClaudeFile(sessionId) : findCodexFile(sessionId);
 }
 
 /** Every on-disk file of one CLI session (gemini sessions may span several). */
 export function findSessionFiles(source: CliSource, sessionId: string): string[] {
   if (source === 'gemini') return findGeminiFiles(sessionId);
+  if (source === 'opencode') return findOpencodeFiles(sessionId);
   const f = findSessionFile(source, sessionId);
   return f ? [f] : [];
 }
@@ -559,6 +533,8 @@ export function parseSessionFile(source: CliSource, filePath: string, sessionId:
 export function parseSessionFiles(source: CliSource, filePaths: string[], sessionId: string): ParsedCliMessage[] {
   if (!filePaths.length) return [];
   if (source === 'gemini') return parseGeminiFiles(filePaths, sessionId);
+  // opencode reads the shared DB directly; filePaths is just the existence gate.
+  if (source === 'opencode') return parseOpencodeMessages(sessionId);
   return source === 'claude-code' ? parseClaude(filePaths[0]) : parseCodex(filePaths[0], sessionId);
 }
 

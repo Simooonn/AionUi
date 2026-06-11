@@ -854,3 +854,166 @@ describe('gemini import scanner (projectHash workspace recovery)', () => {
     expect(meta?.sessionId).toBe('cccc3333-1-2-3-4');
   });
 });
+
+// --- opencode parser (pure core; the shared-DB shells never run under vitest) ---
+
+import {
+  cleanOpencodeTitle,
+  isOpencodeInjectedText,
+  mapOpencodeMessages,
+  mapOpencodeSessionRow,
+} from '@process/ace/parsers/opencodeParser';
+
+describe('opencodeParser.cleanOpencodeTitle', () => {
+  it('strips the markdown "# Conversation Title:" wrapper (real-data shape)', () => {
+    expect(cleanOpencodeTitle('# Conversation Title: "Claude Code vs OpenCode"')).toBe('Claude Code vs OpenCode');
+    expect(cleanOpencodeTitle('## Conversation Title: no quotes here')).toBe('no quotes here');
+    // real-data: bold residue inside the wrapper ('**Problem Ticket Analytics…**')
+    expect(cleanOpencodeTitle('# Conversation Title: "**Bold Title**"')).toBe('Bold Title');
+  });
+
+  it('keeps plain titles and trims; non-strings/empty become empty string', () => {
+    expect(cleanOpencodeTitle('  zcf卸载方法问题 ')).toBe('zcf卸载方法问题');
+    expect(cleanOpencodeTitle('# heading only')).toBe('heading only');
+    expect(cleanOpencodeTitle(null)).toBe('');
+    expect(cleanOpencodeTitle('   ')).toBe('');
+  });
+});
+
+describe('opencodeParser.mapOpencodeSessionRow', () => {
+  it('maps columns, rounds times (INTEGER discipline), falls back title→id', () => {
+    const meta = mapOpencodeSessionRow({
+      id: 'ses_16cddf242ffeTuUKGuQYpThw8a',
+      directory: '/Users/x/proj',
+      title: '# Conversation Title: "T"',
+      time_created: 1780586871614.7, // a REAL here once 500'd the whole sidebar
+      time_updated: 1780586871614.2,
+    });
+    expect(meta).toEqual({
+      source: 'opencode',
+      sessionId: 'ses_16cddf242ffeTuUKGuQYpThw8a',
+      backend: 'opencode',
+      title: 'T',
+      workspace: '/Users/x/proj',
+      createdAt: 1780586871615,
+      updatedAt: 1780586871614,
+    });
+  });
+
+  it('empty directory → undefined workspace; unusable title → session id', () => {
+    const meta = mapOpencodeSessionRow({
+      id: 'ses_abc12345678',
+      directory: '',
+      title: '   ',
+      time_created: null,
+      time_updated: null,
+    });
+    expect(meta.workspace).toBeUndefined();
+    expect(meta.title).toBe('ses_abc12345678');
+    expect(meta.createdAt).toBeUndefined();
+  });
+});
+
+describe('opencodeParser.mapOpencodeMessages (all part types)', () => {
+  const msg = (id: string, role: string, t = 1000) => ({ id, time_created: t, data: JSON.stringify({ role }) });
+  const part = (id: string, message_id: string, data: object) => ({ id, message_id, data: JSON.stringify(data) });
+
+  it('maps text/reasoning/tool/file parts onto existing ParsedCliItem variants', () => {
+    const out = mapOpencodeMessages(
+      [msg('msg_1', 'user'), msg('msg_2', 'assistant', 2000.6)],
+      [
+        part('prt_1', 'msg_1', { type: 'text', text: '帮我查一下' }),
+        part('prt_2', 'msg_2', { type: 'reasoning', text: 'thinking…' }),
+        part('prt_3', 'msg_2', {
+          type: 'tool',
+          tool: 'webfetch',
+          callID: 'call_1',
+          state: { status: 'completed', input: { url: 'https://x' }, output: 'page text' },
+        }),
+        part('prt_4', 'msg_2', {
+          type: 'file',
+          mime: 'image/png',
+          url: 'data:image/png;base64,aGVsbG8=',
+        }),
+        part('prt_5', 'msg_2', { type: 'text', text: 'answer' }),
+      ]
+    );
+    expect(out).toHaveLength(2);
+    expect(out[0]).toMatchObject({ msgId: 'opencode-msg_1', role: 'user', createdAt: 1000 });
+    expect(out[0].items).toEqual([{ kind: 'text', text: '帮我查一下' }]);
+    expect(out[1].createdAt).toBe(2001); // rounded
+    expect(out[1].items).toEqual([
+      { kind: 'thinking', text: 'thinking…' },
+      {
+        kind: 'tool',
+        callId: 'call_1',
+        name: 'webfetch',
+        title: 'webfetch https://x',
+        toolKind: 'fetch',
+        status: 'completed',
+        rawInput: { url: 'https://x' },
+        output: 'page text',
+      },
+      { kind: 'image', mediaType: 'image/png', dataBase64: 'aGVsbG8=' },
+      { kind: 'text', text: 'answer' },
+    ]);
+  });
+
+  it('filters synthetic-flagged text everywhere and [Assistant Rules] on USER records only', () => {
+    const out = mapOpencodeMessages(
+      [msg('msg_u', 'user'), msg('msg_a', 'assistant')],
+      [
+        part('prt_1', 'msg_u', { type: 'text', text: '[Assistant Rules]\n## Available Skills…' }),
+        part('prt_2', 'msg_u', { type: 'text', text: 'real ask', synthetic: 1 }),
+        part('prt_3', 'msg_u', { type: 'text', text: '真实问题' }),
+        // assistants may legitimately QUOTE the marker — kept verbatim
+        part('prt_4', 'msg_a', { type: 'text', text: '[Assistant Rules] is a harness wall' }),
+      ]
+    );
+    expect(out[0].items).toEqual([{ kind: 'text', text: '真实问题' }]);
+    expect(out[1].items).toEqual([{ kind: 'text', text: '[Assistant Rules] is a harness wall' }]);
+    expect(isOpencodeInjectedText('  [Assistant Rules] x')).toBe(true);
+    expect(isOpencodeInjectedText('normal')).toBe(false);
+  });
+
+  it('tool error state → failed; structural parts and unknown types are skipped', () => {
+    const out = mapOpencodeMessages(
+      [msg('msg_1', 'assistant')],
+      [
+        part('prt_0', 'msg_1', { type: 'step-start' }),
+        part('prt_1', 'msg_1', {
+          type: 'tool',
+          tool: 'bash',
+          callID: 'call_2',
+          state: { status: 'error', input: { command: 'false' } },
+        }),
+        part('prt_2', 'msg_1', { type: 'step-finish' }),
+        part('prt_3', 'msg_1', { type: 'patch' }),
+        part('prt_4', 'msg_1', { type: 'snapshot' }),
+        part('prt_5', 'msg_1', { type: 'totally-new-kind' }),
+        part('prt_6', 'msg_1', { type: 'file', mime: 'application/pdf', url: 'data:application/pdf;base64,eA==' }),
+      ]
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0].items).toEqual([
+      expect.objectContaining({ kind: 'tool', name: 'bash', toolKind: 'execute', status: 'failed' }),
+    ]);
+  });
+
+  it('tolerates malformed JSON and drops empty/non-chat messages', () => {
+    const out = mapOpencodeMessages(
+      [
+        { id: 'msg_bad', time_created: 1, data: '{not json' },
+        { id: 'msg_sys', time_created: 2, data: JSON.stringify({ role: 'system' }) },
+        { id: 'msg_empty', time_created: 3, data: JSON.stringify({ role: 'user' }) },
+        msg('msg_ok', 'user', 4),
+      ],
+      [
+        { id: 'prt_bad', message_id: 'msg_ok', data: '{not json' },
+        part('prt_ok', 'msg_ok', { type: 'text', text: 'hi' }),
+      ]
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0].msgId).toBe('opencode-msg_ok');
+  });
+});

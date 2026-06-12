@@ -407,6 +407,8 @@
   "channels.discordDesc": "Converse com o assistente do AionUi pelo Discord",
   "channels.larkTitle": "Lark (Feishu)",
   "channels.larkDesc": "Converse com o assistente do AionUi pelo Lark",
+  "channels.larkIntlTitle": "Lark (Internacional)",
+  "channels.larkIntlDesc": "Converse com o assistente AionUi via Lark (open.larksuite.com)",
   "channels.dingtalkTitle": "DingTalk",
   "channels.dingtalkDesc": "Converse com o assistente do AionUi pelo DingTalk",
   "channels.weixinTitle": "WeChat",
@@ -785,6 +787,7 @@
   "lark": {
     "appId": "ID do Aplicativo",
     "devConsoleLink": "Console de Desenvolvedor Feishu",
+    "devConsoleLinkIntl": "Console do Desenvolvedor Lark",
     "appIdDescSuffix": "para obter seu ID do Aplicativo",
     "appSecret": "Segredo do Aplicativo",
     "appSecretDescSuffix": "para obter o Segredo do Aplicativo",

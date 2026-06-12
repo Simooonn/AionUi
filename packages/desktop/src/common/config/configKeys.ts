@@ -64,6 +64,12 @@ export type ConfigKeyMap = {
   'assistant.lark.agent':
     | { agent_type: string; backend?: string; id?: string; custom_agent_id?: string; name?: string }
     | undefined;
+  // ace:start lark_intl channel preference keys (Lark International)
+  'assistant.lark_intl.defaultModel': { id: string; use_model: string } | undefined;
+  'assistant.lark_intl.agent':
+    | { agent_type: string; backend?: string; id?: string; custom_agent_id?: string; name?: string }
+    | undefined;
+  // ace:end
   'assistant.dingtalk.defaultModel': { id: string; use_model: string } | undefined;
   'assistant.dingtalk.agent':
     | { agent_type: string; backend?: string; id?: string; custom_agent_id?: string; name?: string }

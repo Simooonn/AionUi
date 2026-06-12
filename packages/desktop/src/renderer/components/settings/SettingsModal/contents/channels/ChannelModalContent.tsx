@@ -28,6 +28,9 @@ import WecomConfigForm from './WecomConfigForm';
 type ChannelModelConfigKey =
   | 'assistant.telegram.defaultModel'
   | 'assistant.lark.defaultModel'
+  // ace:start lark_intl channel
+  | 'assistant.lark_intl.defaultModel'
+  // ace:end
   | 'assistant.dingtalk.defaultModel'
   | 'assistant.weixin.defaultModel'
   | 'assistant.wecom.defaultModel';
@@ -45,7 +48,18 @@ type ExtensionFieldSchema = {
 
 type ExtensionFieldValues = Record<string, Record<string, string | number | boolean>>;
 
-const BUILTIN_CHANNEL_TYPES = new Set(['telegram', 'lark', 'dingtalk', 'weixin', 'wecom', 'slack', 'discord']);
+// ace:start lark_intl channel
+const BUILTIN_CHANNEL_TYPES = new Set([
+  'telegram',
+  'lark',
+  'lark_intl',
+  'dingtalk',
+  'weixin',
+  'wecom',
+  'slack',
+  'discord',
+]);
+// ace:end
 
 /**
  * Internal hook: wraps useGoogleModelSelection with configService persistence
@@ -125,6 +139,9 @@ const useChannelModelSelection = (configKey: ChannelModelConfigKey): GoogleModel
         const platform = configKey.replace('assistant.', '').replace('.defaultModel', '') as
           | 'telegram'
           | 'lark'
+          // ace:start lark_intl channel
+          | 'lark_intl'
+          // ace:end
           | 'dingtalk'
           | 'weixin'
           | 'wecom';
@@ -160,11 +177,17 @@ const ChannelModalContent: React.FC = () => {
   // Plugin state
   const [pluginStatus, setPluginStatus] = useState<IChannelPluginStatus | null>(null);
   const [larkPluginStatus, setLarkPluginStatus] = useState<IChannelPluginStatus | null>(null);
+  // ace:start lark_intl channel
+  const [larkIntlPluginStatus, setLarkIntlPluginStatus] = useState<IChannelPluginStatus | null>(null);
+  // ace:end
   const [dingtalkPluginStatus, setDingtalkPluginStatus] = useState<IChannelPluginStatus | null>(null);
   const [weixinPluginStatus, setWeixinPluginStatus] = useState<IChannelPluginStatus | null>(null);
   const [wecomPluginStatus, setWecomPluginStatus] = useState<IChannelPluginStatus | null>(null);
   const [enableLoading, setEnableLoading] = useState(false);
   const [larkEnableLoading, setLarkEnableLoading] = useState(false);
+  // ace:start lark_intl channel
+  const [larkIntlEnableLoading, setLarkIntlEnableLoading] = useState(false);
+  // ace:end
   const [dingtalkEnableLoading, setDingtalkEnableLoading] = useState(false);
   const [weixinEnableLoading, setWeixinEnableLoading] = useState(false);
   const [wecomEnableLoading, setWecomEnableLoading] = useState(false);
@@ -182,6 +205,9 @@ const ChannelModalContent: React.FC = () => {
     slack: true,
     discord: true,
     lark: true,
+    // ace:start lark_intl channel
+    lark_intl: true,
+    // ace:end
     dingtalk: true,
     weixin: true,
     wecom: true,
@@ -190,6 +216,9 @@ const ChannelModalContent: React.FC = () => {
   // Model selection state — uses unified hook with configService persistence
   const telegramModelSelection = useChannelModelSelection('assistant.telegram.defaultModel');
   const larkModelSelection = useChannelModelSelection('assistant.lark.defaultModel');
+  // ace:start lark_intl channel
+  const larkIntlModelSelection = useChannelModelSelection('assistant.lark_intl.defaultModel');
+  // ace:end
   const dingtalkModelSelection = useChannelModelSelection('assistant.dingtalk.defaultModel');
   const weixinModelSelection = useChannelModelSelection('assistant.weixin.defaultModel');
   const wecomModelSelection = useChannelModelSelection('assistant.wecom.defaultModel');
@@ -202,6 +231,9 @@ const ChannelModalContent: React.FC = () => {
       if (plugins) {
         const telegramPlugin = plugins.find((p) => p.type === 'telegram');
         const larkPlugin = plugins.find((p) => p.type === 'lark');
+        // ace:start lark_intl channel
+        const larkIntlPlugin = plugins.find((p) => p.type === 'lark_intl');
+        // ace:end
         const dingtalkPlugin = plugins.find((p) => p.type === 'dingtalk');
         const weixinPlugin = plugins.find((p) => p.type === 'weixin');
         const wecomPlugin = plugins.find((p) => p.type === 'wecom');
@@ -209,6 +241,9 @@ const ChannelModalContent: React.FC = () => {
 
         setPluginStatus(telegramPlugin || null);
         setLarkPluginStatus(larkPlugin || null);
+        // ace:start lark_intl channel
+        setLarkIntlPluginStatus(larkIntlPlugin || null);
+        // ace:end
         setDingtalkPluginStatus(dingtalkPlugin || null);
         setWeixinPluginStatus(weixinPlugin || null);
         setWecomPluginStatus(wecomPlugin || null);
@@ -271,6 +306,10 @@ const ChannelModalContent: React.FC = () => {
         setPluginStatus(status);
       } else if (status.type === 'lark') {
         setLarkPluginStatus(status);
+        // ace:start lark_intl channel
+      } else if (status.type === 'lark_intl') {
+        setLarkIntlPluginStatus(status);
+        // ace:end
       } else if (status.type === 'dingtalk') {
         setDingtalkPluginStatus(status);
       } else if (status.type === 'weixin') {
@@ -368,6 +407,40 @@ const ChannelModalContent: React.FC = () => {
       setLarkEnableLoading(false);
     }
   };
+
+  // ace:start lark_intl channel — enable/disable handler (mirrors Lark)
+  const handleToggleLarkIntlPlugin = async (enabled: boolean) => {
+    setLarkIntlEnableLoading(true);
+    try {
+      if (enabled) {
+        if (!larkIntlPluginStatus?.hasToken) {
+          Message.warning(t('settings.lark.credentialsRequired', 'Please configure Lark credentials first'));
+          setLarkIntlEnableLoading(false);
+          return;
+        }
+
+        await channel.enablePlugin.invoke({
+          plugin_id: 'lark_intl',
+          config: {},
+        });
+
+        Message.success(t('settings.lark.pluginEnabled', 'Lark bot enabled'));
+        await loadPluginStatus();
+      } else {
+        await channel.disablePlugin.invoke({
+          plugin_id: 'lark_intl',
+        });
+
+        Message.success(t('settings.lark.pluginDisabled', 'Lark bot disabled'));
+        await loadPluginStatus();
+      }
+    } catch (error: unknown) {
+      Message.error(error instanceof Error ? error.message : String(error));
+    } finally {
+      setLarkIntlEnableLoading(false);
+    }
+  };
+  // ace:end
 
   // Enable/Disable DingTalk plugin
   const handleToggleDingtalkPlugin = async (enabled: boolean) => {
@@ -681,6 +754,27 @@ const ChannelModalContent: React.FC = () => {
       ),
     };
 
+    // ace:start lark_intl channel — parallel card for Lark International (open.larksuite.com)
+    const larkIntlChannel: ChannelConfig = {
+      id: 'lark_intl',
+      title: t('settings.channels.larkIntlTitle', 'Lark (International)'),
+      description: t('settings.channels.larkIntlDesc', 'Chat with AionUi assistant via Lark (open.larksuite.com)'),
+      status: 'active',
+      enabled: larkIntlPluginStatus?.enabled || false,
+      disabled: larkIntlEnableLoading,
+      is_connected: larkIntlPluginStatus?.connected || false,
+      defaultModel: larkIntlModelSelection.current_model?.use_model,
+      content: (
+        <LarkConfigForm
+          platform='lark_intl'
+          pluginStatus={larkIntlPluginStatus}
+          modelSelection={larkIntlModelSelection}
+          onStatusChange={setLarkIntlPluginStatus}
+        />
+      ),
+    };
+    // ace:end
+
     const dingtalkChannel: ChannelConfig = {
       id: 'dingtalk',
       title: t('settings.channels.dingtalkTitle', 'DingTalk'),
@@ -789,6 +883,9 @@ const ChannelModalContent: React.FC = () => {
     return [
       telegramChannel,
       larkChannel,
+      // ace:start lark_intl channel
+      larkIntlChannel,
+      // ace:end
       dingtalkChannel,
       weixinChannel,
       wecomChannel,
@@ -803,6 +900,11 @@ const ChannelModalContent: React.FC = () => {
     extensionLoadingMap,
     telegramModelSelection,
     larkModelSelection,
+    // ace:start lark_intl channel
+    larkIntlPluginStatus,
+    larkIntlEnableLoading,
+    larkIntlModelSelection,
+    // ace:end
     dingtalkModelSelection,
     enableLoading,
     larkEnableLoading,
@@ -822,6 +924,9 @@ const ChannelModalContent: React.FC = () => {
   const getToggleHandler = (channelId: string) => {
     if (channelId === 'telegram') return handleTogglePlugin;
     if (channelId === 'lark') return handleToggleLarkPlugin;
+    // ace:start lark_intl channel
+    if (channelId === 'lark_intl') return handleToggleLarkIntlPlugin;
+    // ace:end
     if (channelId === 'dingtalk') return handleToggleDingtalkPlugin;
     if (channelId === 'weixin') return handleToggleWeixinPlugin;
     if (channelId === 'wecom') return handleToggleWecomPlugin;

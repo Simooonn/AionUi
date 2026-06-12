@@ -60,6 +60,10 @@ const ALL_LEGACY_KEYS: ConfigKey[] = [
   'assistant.telegram.agent',
   'assistant.lark.defaultModel',
   'assistant.lark.agent',
+  // ace:start lark_intl channel preference keys (Lark International)
+  'assistant.lark_intl.defaultModel',
+  'assistant.lark_intl.agent',
+  // ace:end
   'assistant.dingtalk.defaultModel',
   'assistant.dingtalk.agent',
   'assistant.weixin.defaultModel',

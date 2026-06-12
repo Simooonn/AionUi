@@ -405,6 +405,8 @@
   "channels.discordDesc": "Спілкуйтеся з асистентом AionUi через Discord",
   "channels.larkTitle": "Lark",
   "channels.larkDesc": "Спілкуйтеся з асистентом AionUi через Lark",
+  "channels.larkIntlTitle": "Lark (міжнародна)",
+  "channels.larkIntlDesc": "Спілкуйтеся з асистентом AionUi через Lark (open.larksuite.com)",
   "channels.dingtalkTitle": "DingTalk",
   "channels.dingtalkDesc": "Спілкуйтеся з асистентом AionUi через DingTalk",
   "channels.weixinTitle": "WeChat",
@@ -722,6 +724,7 @@
   "lark": {
     "appId": "App ID",
     "devConsoleLink": "Консоль розробника Feishu",
+    "devConsoleLinkIntl": "Консоль розробника Lark",
     "appIdDescSuffix": "для отримання App ID",
     "appSecret": "App Secret",
     "appSecretDescSuffix": "для отримання App Secret",

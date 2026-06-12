@@ -407,6 +407,8 @@
   "channels.discordDesc": "通过 Discord 与 AionUi 助手对话",
   "channels.larkTitle": "Lark",
   "channels.larkDesc": "通过 Lark 与 AionUi 助手对话",
+  "channels.larkIntlTitle": "Lark（国际版）",
+  "channels.larkIntlDesc": "通过 Lark 国际版（open.larksuite.com）与 AionUi 助手对话",
   "channels.dingtalkTitle": "钉钉",
   "channels.dingtalkDesc": "通过钉钉与 AionUi 助手对话",
   "channels.weixinTitle": "微信",
@@ -785,6 +787,7 @@
   "lark": {
     "appId": "App ID",
     "devConsoleLink": "飞书开放平台开发者后台",
+    "devConsoleLinkIntl": "Lark 开放平台开发者后台",
     "appIdDescSuffix": "获取 App ID",
     "appSecret": "App Secret",
     "appSecretDescSuffix": "获取 App Secret",

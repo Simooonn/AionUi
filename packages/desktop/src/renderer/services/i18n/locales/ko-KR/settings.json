@@ -407,6 +407,8 @@
   "channels.discordDesc": "Chat with AionUi assistant via Discord",
   "channels.larkTitle": "Lark",
   "channels.larkDesc": "Chat with AionUi assistant via Lark",
+  "channels.larkIntlTitle": "Lark (국제판)",
+  "channels.larkIntlDesc": "Lark 국제판(open.larksuite.com)으로 AionUi 어시스턴트와 채팅",
   "channels.dingtalkTitle": "DingTalk",
   "channels.dingtalkDesc": "Chat with AionUi assistant via DingTalk",
   "channels.weixinTitle": "WeChat",
@@ -775,6 +777,7 @@
   "lark": {
     "appId": "App ID",
     "devConsoleLink": "Feishu Developer Console",
+    "devConsoleLinkIntl": "Lark 개발자 콘솔",
     "appIdDescSuffix": "to get your App ID",
     "appSecret": "App Secret",
     "appSecretDescSuffix": "to get App Secret",

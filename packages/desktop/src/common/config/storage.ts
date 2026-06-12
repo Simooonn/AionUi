@@ -122,6 +122,19 @@ export interface IConfigStorageRefer {
     custom_agent_id?: string;
     name?: string;
   };
+  // ace:start lark_intl channel preference keys (Lark International)
+  // Lark International assistant default model
+  'assistant.lark_intl.defaultModel'?: {
+    id: string;
+    use_model: string;
+  };
+  // Lark International assistant agent selection
+  'assistant.lark_intl.agent'?: {
+    backend: string;
+    custom_agent_id?: string;
+    name?: string;
+  };
+  // ace:end
   // DingTalk assistant default model / DingTalk 助手默认模型
   'assistant.dingtalk.defaultModel'?: {
     id: string;

@@ -59,12 +59,34 @@ interface LarkConfigFormProps {
   pluginStatus: IChannelPluginStatus | null;
   modelSelection: GoogleModelSelection;
   onStatusChange: (status: IChannelPluginStatus | null) => void;
+  // ace:start lark_intl parametrization — same form serves Feishu and Lark International
+  /** Backend plugin id: 'lark' (Feishu, default) or 'lark_intl' (open.larksuite.com). */
+  platform?: 'lark' | 'lark_intl';
+  // ace:end
 }
 
 const LARK_DEV_DOCS_URL = 'https://open.feishu.cn/document/develop-an-echo-bot/introduction';
+// ace:start lark_intl parametrization
+const LARK_INTL_DEV_DOCS_URL = 'https://open.larksuite.com/document/develop-an-echo-bot/introduction';
+// ace:end
 
-const LarkConfigForm: React.FC<LarkConfigFormProps> = ({ pluginStatus, modelSelection, onStatusChange }) => {
+const LarkConfigForm: React.FC<LarkConfigFormProps> = ({
+  pluginStatus,
+  modelSelection,
+  onStatusChange,
+  // ace:start lark_intl parametrization
+  platform = 'lark',
+  // ace:end
+}) => {
   const { t } = useTranslation();
+  // ace:start lark_intl parametrization — platform-dependent constants
+  const isIntl = platform === 'lark_intl';
+  const devDocsUrl = isIntl ? LARK_INTL_DEV_DOCS_URL : LARK_DEV_DOCS_URL;
+  const agentConfigKey = isIntl ? ('assistant.lark_intl.agent' as const) : ('assistant.lark.agent' as const);
+  const modelConfigKey = isIntl
+    ? ('assistant.lark_intl.defaultModel' as const)
+    : ('assistant.lark.defaultModel' as const);
+  // ace:end
 
   // Lark credentials
   const [appId, setAppId] = useState('');
@@ -99,14 +121,18 @@ const LarkConfigForm: React.FC<LarkConfigFormProps> = ({ pluginStatus, modelSele
       const pairings = await channel.getPendingPairings.invoke();
       if (pairings) {
         // Filter for Lark platform only
-        setPendingPairings(pairings.filter((p) => p.platformType === 'lark'));
+        // ace:start lark_intl parametrization
+        setPendingPairings(pairings.filter((p) => p.platformType === platform));
+        // ace:end
       }
     } catch (error) {
       console.error('[LarkConfig] Failed to load pending pairings:', error);
     } finally {
       setPairingLoading(false);
     }
-  }, []);
+    // ace:start lark_intl parametrization
+  }, [platform]);
+  // ace:end
 
   // Load authorized users
   const loadAuthorizedUsers = useCallback(async () => {
@@ -115,14 +141,18 @@ const LarkConfigForm: React.FC<LarkConfigFormProps> = ({ pluginStatus, modelSele
       const users = await channel.getAuthorizedUsers.invoke();
       if (users) {
         // Filter for Lark platform only
-        setAuthorizedUsers(users.filter((u) => u.platformType === 'lark'));
+        // ace:start lark_intl parametrization
+        setAuthorizedUsers(users.filter((u) => u.platformType === platform));
+        // ace:end
       }
     } catch (error) {
       console.error('[LarkConfig] Failed to load authorized users:', error);
     } finally {
       setUsersLoading(false);
     }
-  }, []);
+    // ace:start lark_intl parametrization
+  }, [platform]);
+  // ace:end
 
   // Initial load
   useEffect(() => {
@@ -134,7 +164,9 @@ const LarkConfigForm: React.FC<LarkConfigFormProps> = ({ pluginStatus, modelSele
   useEffect(() => {
     const loadAgentsAndSelection = async () => {
       try {
-        const [agentsResp, saved] = await Promise.all([getAgents(), configService.get('assistant.lark.agent')]);
+        // ace:start lark_intl parametrization
+        const [agentsResp, saved] = await Promise.all([getAgents(), configService.get(agentConfigKey)]);
+        // ace:end
 
         if (Array.isArray(agentsResp)) {
           const list = agentsResp.filter(isSupportedNewConversationAgent).map((a) => ({
@@ -172,7 +204,9 @@ const LarkConfigForm: React.FC<LarkConfigFormProps> = ({ pluginStatus, modelSele
     };
 
     void loadAgentsAndSelection();
-  }, []);
+    // ace:start lark_intl parametrization
+  }, [agentConfigKey]);
+  // ace:end
 
   const persistSelectedAgent = async (agent: { agent_type: string; backend?: string; id?: string; name?: string }) => {
     // Write both `id` (new unified AgentMetadata field) and
@@ -186,9 +220,11 @@ const LarkConfigForm: React.FC<LarkConfigFormProps> = ({ pluginStatus, modelSele
       name: agent.name,
     };
     try {
-      await configService.set('assistant.lark.agent', payload);
+      // ace:start lark_intl parametrization
+      await configService.set(agentConfigKey, payload);
       await channel.syncChannelSettings
-        .invoke({ platform: 'lark' })
+        .invoke({ platform })
+        // ace:end
         .catch((err) => console.warn('[LarkConfig] syncChannelSettings failed:', err));
       Message.success(t('settings.assistant.agentSwitched', 'Agent switched successfully'));
     } catch (error) {
@@ -200,7 +236,9 @@ const LarkConfigForm: React.FC<LarkConfigFormProps> = ({ pluginStatus, modelSele
   // Listen for pairing requests
   useEffect(() => {
     const unsubscribe = channel.pairingRequested.on((request) => {
-      if (request.platformType !== 'lark') return;
+      // ace:start lark_intl parametrization
+      if (request.platformType !== platform) return;
+      // ace:end
       setPendingPairings((prev) => {
         const exists = prev.some((p) => p.code === request.code);
         if (exists) return prev;
@@ -208,12 +246,16 @@ const LarkConfigForm: React.FC<LarkConfigFormProps> = ({ pluginStatus, modelSele
       });
     });
     return () => unsubscribe();
-  }, []);
+    // ace:start lark_intl parametrization
+  }, [platform]);
+  // ace:end
 
   // Listen for user authorization
   useEffect(() => {
     const unsubscribe = channel.userAuthorized.on((user) => {
-      if (user.platformType !== 'lark') return;
+      // ace:start lark_intl parametrization
+      if (user.platformType !== platform) return;
+      // ace:end
       setAuthorizedUsers((prev) => {
         const exists = prev.some((u) => u.id === user.id);
         if (exists) return prev;
@@ -222,7 +264,9 @@ const LarkConfigForm: React.FC<LarkConfigFormProps> = ({ pluginStatus, modelSele
       setPendingPairings((prev) => prev.filter((p) => p.platformUserId !== user.platformUserId));
     });
     return () => unsubscribe();
-  }, []);
+    // ace:start lark_intl parametrization
+  }, [platform]);
+  // ace:end
 
   // Test Lark connection
   const handleTestConnection = async () => {
@@ -239,7 +283,9 @@ const LarkConfigForm: React.FC<LarkConfigFormProps> = ({ pluginStatus, modelSele
     try {
       // testPlugin returns { success, botUsername?, error? } directly
       const result = await channel.testPlugin.invoke({
-        plugin_id: 'lark',
+        // ace:start lark_intl parametrization
+        plugin_id: platform,
+        // ace:end
         token: '',
         extra_config: {
           app_id: appId.trim(),
@@ -269,7 +315,9 @@ const LarkConfigForm: React.FC<LarkConfigFormProps> = ({ pluginStatus, modelSele
   const handleAutoEnable = async () => {
     try {
       await channel.enablePlugin.invoke({
-        plugin_id: 'lark',
+        // ace:start lark_intl parametrization
+        plugin_id: platform,
+        // ace:end
         config: {
           credentials: {
             app_id: appId.trim(),
@@ -283,7 +331,9 @@ const LarkConfigForm: React.FC<LarkConfigFormProps> = ({ pluginStatus, modelSele
       Message.success(t('settings.lark.pluginEnabled', 'Lark bot enabled'));
       const plugins = await channel.getPluginStatus.invoke();
       if (plugins) {
-        const larkPlugin = plugins.find((p) => p.type === 'lark');
+        // ace:start lark_intl parametrization
+        const larkPlugin = plugins.find((p) => p.type === platform);
+        // ace:end
         onStatusChange(larkPlugin || null);
       }
     } catch (error: unknown) {
@@ -367,17 +417,20 @@ const LarkConfigForm: React.FC<LarkConfigFormProps> = ({ pluginStatus, modelSele
         label={t('settings.lark.appId', 'App ID')}
         description={
           <span>
+            {/* ace:start lark_intl parametrization — platform-specific developer console link */}
             <a
               className='text-primary hover:underline cursor-pointer text-12px'
-              href={LARK_DEV_DOCS_URL}
+              href={devDocsUrl}
               onClick={(e) => {
                 e.preventDefault();
-                openExternalUrl(LARK_DEV_DOCS_URL).catch(console.error);
+                openExternalUrl(devDocsUrl).catch(console.error);
               }}
             >
-              {t('settings.lark.devConsoleLink', 'Feishu Developer Console')}
-            </a>{' '}
-            {t('settings.lark.appIdDescSuffix', 'to get your App ID')}
+              {isIntl
+                ? t('settings.lark.devConsoleLinkIntl', 'Lark Developer Console')
+                : t('settings.lark.devConsoleLink', 'Feishu Developer Console')}
+            </a>
+            {/* ace:end */} {t('settings.lark.appIdDescSuffix', 'to get your App ID')}
           </span>
         }
         required
@@ -425,17 +478,20 @@ const LarkConfigForm: React.FC<LarkConfigFormProps> = ({ pluginStatus, modelSele
         label={t('settings.lark.appSecret', 'App Secret')}
         description={
           <span>
+            {/* ace:start lark_intl parametrization — platform-specific developer console link */}
             <a
               className='text-primary hover:underline cursor-pointer text-12px'
-              href={LARK_DEV_DOCS_URL}
+              href={devDocsUrl}
               onClick={(e) => {
                 e.preventDefault();
-                openExternalUrl(LARK_DEV_DOCS_URL).catch(console.error);
+                openExternalUrl(devDocsUrl).catch(console.error);
               }}
             >
-              {t('settings.lark.devConsoleLink', 'Feishu Developer Console')}
-            </a>{' '}
-            {t('settings.lark.appSecretDescSuffix', 'to get App Secret')}
+              {isIntl
+                ? t('settings.lark.devConsoleLinkIntl', 'Lark Developer Console')
+                : t('settings.lark.devConsoleLink', 'Feishu Developer Console')}
+            </a>
+            {/* ace:end */} {t('settings.lark.appSecretDescSuffix', 'to get App Secret')}
           </span>
         }
         required
@@ -648,7 +704,9 @@ const LarkConfigForm: React.FC<LarkConfigFormProps> = ({ pluginStatus, modelSele
                         void persistSelectedAgent(next);
 
                         if (next.agent_type === 'aionrs') {
-                          const savedModel = configService.get('assistant.lark.defaultModel');
+                          // ace:start lark_intl parametrization
+                          const savedModel = configService.get(modelConfigKey);
+                          // ace:end
                           const providers = modelSelection.providers;
                           const savedProviderExists = savedModel?.id && providers.some((p) => p.id === savedModel.id);
                           if (!savedProviderExists && providers.length > 0) {

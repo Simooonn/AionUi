@@ -259,3 +259,84 @@ opencode 没有每会话文件——全部数据在 `<XDG_DATA_HOME|~/.local/sha
 - 零 IPC 徽标：`useMessageLstCache`（`Messages/hooks.ts`）已收到 `result.total` 但丢弃，未来可外传省掉开会话时的 fetch（本期不动上游 hooks.ts）。
 - 移动端徽标补齐；hover 绝对时间 tooltip（Non-Goal）。
 - 上游缺陷（安全审查发现，非本期引入、未修）：`common/adapter/ipcBridge.ts` `getConversationMessages` URL 模板对 `conversation_id` 未做 `encodeURIComponent`（同文件 `getConversationMessage` 对 `message_id` 已编码）；本期徽标 hook 仅新增调用方。建议后续对齐修复。
+
+---
+
+## Lark 群通知 —— 会话完成/待决策/出错推送 24h 会话列表（2026-06-12）
+
+多会话并行时的 Lark 群提醒。计划：`.omc/plans/lark-session-notify.md`（共识迭代 3）；规格：`.omc/specs/deep-interview-lark-session-notify.md`。
+
+### 行为契约
+
+- **触发**：`turnCompleted` 状态 ∈ {`ai_waiting_input`, `ai_waiting_confirmation`, `error`}（`runtime.pending_confirmations > 0` 强制视为待决策）；`stopped` 不触发。
+- **频控**：60s 固定窗口防抖——首触发开窗、窗口内吸收不顺延、期满发一条最新快照；**期满空列表（会话删除/滑出 24h/列表级获取失败）零发送**。
+- **列表**：最后活跃（`getActivityTime`，与侧栏排序同源）距今 ≤24h 的会话；排序 🟡待决策 > 🔴出错 > 🔵进行中 > 🟢已完成、同档最新在前；每行 8 字段（序号/名称/秒档友好时间/类型/AI 摘要/项目目录/消息总数=API total/状态）；30 行封顶尾行"…还有 N 条"；正文固定中文（不走 i18n，设置 UI 文案走 i18n×9）。
+- **摘要**：最后一条用户消息（渲染端只取 string content——多模态/结构化跳过，不会把 JSON 串进摘要；预截 2000 字符，主进程侧再截一次）→ 任意协议 provider（三家 RotatingClient 统一 `createChatCompletion`）→ 5-30 字短语；**只对将渲染的前 30 行调模型**（排序后裁剪再摘要，结构性杜绝无界 LLM 调用），并发 5；按 `conversation:message` id 缓存（上限 500，**逐条淘汰最旧**而非整清）；失败/超时(8s)/未配模型 → 截原文 30 字兜底，消息照发。
+- **🔴 凭证红线**：app_id/app_secret/chat_id 走专用 IPC 直写主进程 ProcessConfig 本地文件——**绝不经渲染端 configService/ConfigStorage**（其写路径 `PUT /api/settings/client` 过 aioncore HTTP）；get-config 只回掩码（`has_secret` 布尔），secret 永不回读。
+- **降级**：任何失败（凭证错/限流/网络/摘要超时）console 静默，本窗口放弃、下窗口自愈；token 401/auth code 强制刷新重试一次。
+
+### 新增文件（纯新增）
+
+| 文件                                              | 作用                                                                                                                                                                                                        |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `common/ace/larkNotify.ts`                        | 共享纯函数：秒档友好时间、24h 窗口判定、四档状态解析/权重排序、消息排版（30 行封顶）、终态归一化；主/渲染两侧 + 单测共用                                                                                    |
+| `process/ace/larkNotifySender.ts`                 | 主进程发送器：tenant_access_token 缓存（提前 5min 刷新 + in-flight 并发去重 + 401 重试一次）、群文本消息、摘要（ClientFactory 多协议 + 消息 id 缓存 + 截断兜底）；fetch 可注入、零 electron 依赖（可单测）  |
+| `renderer/ace/larkNotify/windowController.ts`     | 60s 固定窗口控制器（fake-timers 可测）                                                                                                                                                                      |
+| `renderer/ace/larkNotify/assembleSnapshot.ts`     | 快照组装：`getUserConversations({limit:10000})`（沿用侧栏单次调用形态，替代计划中的 cursor 循环）→ 24h 过滤 → 并发 5 取 total/最后用户消息（`order:'DESC'`）→ 行级降级 → 排序                               |
+| `renderer/ace/larkNotify/useLarkNotifyTrigger.ts` | 触发 hook：自维护终态登记表（sync hook 的 Set 表达不了四档）；**配置在窗口期满时重读**（比计划的"窗口启动时"更新鲜且无竞态，微偏差）                                                                        |
+| `renderer/ace/larkNotify/LarkNotifySettings.tsx`  | 设置区块：开关/app_id/app_secret(password+占位)/chat_id/摘要模型选择/测试按钮                                                                                                                               |
+| `tests/unit/ace-lark-notify.test.ts`              | 19 测：时间档位、24h 边界、触发集（stopped 排除/pending 兜底）、状态优先级、四档排序、排版（?总数/30 行封顶）、固定窗口防抖、用户消息抽取（2000 截断/多模态空文本）、token 并发去重/缓存/401 重试、摘要缓存 |
+
+### marker 挂点
+
+- ~~`common/config/configKeys.ts` + `storage.ts`~~：**安全评审后撤销**——键若注册进公共类型面，渲染端 `ConfigStorage`/`configService`（写路径过 aioncore HTTP）就能编译通过地读到 secret。改为 `aceBridge.ts` 内主进程私有的类型收窄访问器（`LarkConfigStore`），键在渲染端类型面不可达。
+- `process/ace/aceBridge.ts`：4 个 handler（get-config 掩码 / save-config 空 secret 保留旧值 + 标识符字符集校验 + 凭证变更即重置 token 缓存 / test / send）；**send 入口对渲染端 rows 做信任边界再校验**（行数 ≤60、字段类型/长度/状态枚举、摘要文本重截 2000）——纯 ace 文件无需 marker。
+- `preload/main.ts`：既有 ace marker 区 + 4 方法。
+- `GroupedHistory/hooks/useConversationListSync.ts`：一行只读 getter `getGeneratingConversationIds`。
+- `renderer/hooks/context/ConversationHistoryContext.tsx`：`useLarkNotifyTrigger()` 单点挂载（app 级 Provider，单实例锁保证无重复订阅）。
+- `SettingsModal/contents/WebuiModalContent.tsx`：远程连接页新增第三个 **Groups** tab（WebUI / Channels / Groups），Lark 群通知设置挂在 Groups 下（浏览器 WebUI 模式不展示——依赖主进程 IPC）。（原 SystemModalContent 挂载已按用户要求迁移并移除）
+
+### 前提与已知边界
+
+- Lark 侧：开放平台自建应用开通 **im:message 发消息权限**、机器人已拉进目标群；chat*id 手动填写（oc* 开头）。
+- 仅应用运行期间有效；60s 窗口内退出应用则本条不发。
+- 触发会话可能因最后消息已超 24h 而不在自己触发的列表里（口径使然）。
+- secret 以明文存主进程本地配置文件（与既有配置同级风险）；加密为 Follow-up。
+- "发送测试消息"为手动验收项（真实打群）。
+
+## Lark（国际版）渠道 + 群通知双平台支持（2026-06-12）
+
+**背景**：Lark 国际版（open.larksuite.com）与飞书（open.feishu.cn）账号体系隔离、API 域名不同但协议同构。
+上游 aioncore 把飞书域名硬编码在 Lark 插件里，国际版应用连长连接时被服务端拒绝
+（`1000040351: Incorrect domain name`），配对请求永远不会出现。
+
+**AionCore 补丁**（不在本仓库，位于 `../AionCore`，需配套编译）：
+
+- `crates/aionui-channel/src/types.rs`：`PluginType` 新增 `LarkIntl`（serde/Display/from_str `"lark_intl"`）。
+- `crates/aionui-channel/src/plugins/lark/api.rs`：`LarkApi::new` 接收 domain 参数（`FEISHU_DOMAIN` / `LARK_INTL_DOMAIN`），
+  五个 REST/WS 端点 URL 改为实例字段拼接。
+- `crates/aionui-channel/src/plugins/lark/plugin.rs`：`LarkPlugin` 持有 `platform` + `domain`，
+  新增 `new_international()`；`platform` 穿透 ws_loop → handler，事件消息携带正确的 platform_type。
+- `plugins/mod.rs` / `manager.rs` / `message_service.rs` / `formatter.rs`：`LarkIntl` 分支
+  （工厂注册、默认名 "Lark Bot (International)"、ConversationSource/格式化复用 Lark）。
+- 部署：`cargo build --release` 后替换 `resources/bundled-aioncore/darwin-arm64/aioncore`（已 ad-hoc 签名）。
+  升级上游 aioncore 版本时需 rebase 该补丁（或等上游合并 domain 支持 PR）。
+
+**AionUi 侧（本仓库，ace 标记）**：
+
+- `common/config/storage.ts` / `configKeys.ts` / `configMigration.ts`：注册 `assistant.lark_intl.defaultModel` / `.agent`
+  偏好 key（非敏感，走 aioncore client_preferences，与上游渠道设计一致）。
+- `channels/LarkConfigForm.tsx`：参数化 `platform?: 'lark' | 'lark_intl'`（配对/用户过滤、enable/test plugin_id、
+  配置 key、开发者后台链接按平台切换）。
+- `channels/ChannelHeader.tsx`：`lark_intl` 复用 Lark 品牌 logo。
+- `channels/ChannelModalContent.tsx`：Channels 列表在 Lark 下方新增 **Lark（国际版）** 平行卡片
+  （独立状态/开关/模型选择，plugin_id `lark_intl`）。
+- i18n：`channels.larkIntlTitle/larkIntlDesc`、`lark.devConsoleLinkIntl` ×9 locales。
+
+**Groups 群通知双平台**（本仓库自有模块，无标记）：
+
+- `common/ace/types.ts`：`AceLarkNotifyConfig/Masked/Save` 新增 `domain?: 'feishu' | 'lark'`（缺省 feishu，向后兼容）。
+- `process/ace/larkNotifySender.ts`：REST base 按 domain 解析；token 缓存 key 含 domain（同 app_id 跨平台不串用）。
+- `process/ace/aceBridge.ts`：save/get 透传 domain（枚举闸门）；domain 变更同样重置 token 缓存。
+- `renderer/ace/larkNotify/LarkNotifySettings.tsx`：新增"平台"下拉（飞书 / Lark 国际版）；i18n `larkNotify.domain*` ×9。
+- 测试：`tests/unit/ace-lark-notify.test.ts` 新增 larksuite 路由 + 缓存隔离用例（23 用例全绿）。

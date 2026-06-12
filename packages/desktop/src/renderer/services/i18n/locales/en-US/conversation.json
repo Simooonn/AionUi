@@ -502,5 +502,15 @@
   "ace": {
     "cliResumeUnavailable": "Cannot resume the original CLI session memory; continuing as a fresh session",
     "compactSummary": "Session compacted · expand to view the summary"
+  },
+  "time": {
+    "justNow": "just now",
+    "minutes": "{{count}}m",
+    "hours": "{{count}}h",
+    "days": "{{count}}d",
+    "weeksAgo": "{{count}}w ago",
+    "monthsAgo": "{{count}}mo ago",
+    "yearsAgo": "{{count}}y ago",
+    "messageCount": "{{count}} messages"
   }
 }

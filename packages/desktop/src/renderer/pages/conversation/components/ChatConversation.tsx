@@ -34,6 +34,9 @@ import { useConversationRuntimeView } from '../runtime/useConversationRuntimeVie
 // ace:start read-only also covers CLI-imported conversations (extra.cli_session_id)
 import { isReadOnlyConversation } from '@/renderer/ace/readonly';
 // ace:end
+// ace:start header message-count badge (authoritative DB total)
+import { useConversationMessageCount } from '@/renderer/ace/useConversationMessageCount';
+// ace:end
 import LegacyReadOnlyConversation from '../platforms/legacy/LegacyReadOnlyConversation';
 // import SkillRuleGenerator from './components/SkillRuleGenerator'; // Temporarily hidden
 
@@ -42,6 +45,19 @@ const hasLoadedSkill = (conversation: TChatConversation | undefined, skillName: 
   const skills = (conversation?.extra as { skills?: string[] } | undefined)?.skills;
   return skills?.includes(skillName) ?? false;
 };
+
+// ace:start gray message-count badge shown next to the header title; hidden while count is unknown
+const ConversationMessageCountBadge: React.FC<{ conversation_id: string }> = ({ conversation_id }) => {
+  const { t } = useTranslation();
+  const count = useConversationMessageCount(conversation_id);
+  if (count === undefined) return null;
+  return (
+    <span className='shrink-0 text-12px text-t-secondary whitespace-nowrap'>
+      {t('conversation.time.messageCount', { count })}
+    </span>
+  );
+};
+// ace:end
 
 const _AssociatedConversation: React.FC<{ conversation_id: string }> = ({ conversation_id }) => {
   const { data } = useSWR(['getAssociateConversation', conversation_id], () =>
@@ -175,6 +191,9 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
 
   const chatLayoutProps = {
     title: conversation.name,
+    // ace:start header message-count badge (aionrs callsite)
+    titleSuffix: <ConversationMessageCountBadge conversation_id={conversation.id} />,
+    // ace:end
     siderTitle: sliderTitle,
     sider: <ChatSlider conversation={conversation} />,
     headerExtra: (
@@ -346,6 +365,9 @@ const ChatConversation: React.FC<{
     <ChatLayout
       title={conversation?.name}
       {...chatLayoutProps}
+      // ace:start header message-count badge (acp/main callsite)
+      titleSuffix={conversation ? <ConversationMessageCountBadge conversation_id={conversation.id} /> : undefined}
+      // ace:end
       headerExtra={headerExtraNode}
       siderTitle={sliderTitle}
       sider={<ChatSlider conversation={conversation} />}

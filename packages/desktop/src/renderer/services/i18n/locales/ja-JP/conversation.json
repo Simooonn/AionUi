@@ -502,5 +502,15 @@
   "ace": {
     "cliResumeUnavailable": "元の CLI セッションの記憶を引き継げません。新しいセッションとして続行します",
     "compactSummary": "セッションが圧縮されました · 展開して要約を表示"
+  },
+  "time": {
+    "justNow": "たった今",
+    "minutes": "{{count}} 分",
+    "hours": "{{count}} 時間",
+    "days": "{{count}} 日",
+    "weeksAgo": "{{count}} 週間前",
+    "monthsAgo": "{{count}}ヶ月前",
+    "yearsAgo": "{{count}} 年前",
+    "messageCount": "{{count}} 件"
   }
 }

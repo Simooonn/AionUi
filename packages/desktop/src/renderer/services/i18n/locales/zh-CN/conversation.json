@@ -502,5 +502,15 @@
   "ace": {
     "cliResumeUnavailable": "无法接续原 CLI 会话记忆，将作为新会话继续",
     "compactSummary": "会话已压缩 · 展开查看摘要"
+  },
+  "time": {
+    "justNow": "刚刚",
+    "minutes": "{{count}} 分钟",
+    "hours": "{{count}} 小时",
+    "days": "{{count}} 天",
+    "weeksAgo": "{{count}} 周前",
+    "monthsAgo": "{{count}} 月前",
+    "yearsAgo": "{{count}} 年前",
+    "messageCount": "{{count}} 条"
   }
 }

@@ -502,5 +502,15 @@
   "ace": {
     "cliResumeUnavailable": "Не удалось продолжить память исходной сессии CLI; продолжаем как новую сессию",
     "compactSummary": "Сессия сжата · разверните, чтобы увидеть сводку"
+  },
+  "time": {
+    "justNow": "только что",
+    "minutes": "{{count}} мин",
+    "hours": "{{count}} ч",
+    "days": "{{count}} дн",
+    "weeksAgo": "{{count}} нед. назад",
+    "monthsAgo": "{{count}} мес. назад",
+    "yearsAgo": "{{count}} г. назад",
+    "messageCount": "{{count}} сообщ."
   }
 }

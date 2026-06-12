@@ -508,5 +508,15 @@
   "ace": {
     "cliResumeUnavailable": "Não foi possível retomar a memória da sessão CLI original; continuando como uma nova sessão",
     "compactSummary": "Sessão compactada · expanda para ver o resumo"
+  },
+  "time": {
+    "justNow": "agora",
+    "minutes": "{{count}} min",
+    "hours": "{{count}} h",
+    "days": "{{count}} d",
+    "weeksAgo": "há {{count}} sem",
+    "monthsAgo": "há {{count}} m",
+    "yearsAgo": "há {{count}} a",
+    "messageCount": "{{count}} mensagens"
   }
 }

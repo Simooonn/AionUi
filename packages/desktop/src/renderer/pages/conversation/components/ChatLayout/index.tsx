@@ -40,6 +40,10 @@ const ChatLayout: React.FC<{
   /** Fallback agent name (used when no presetAssistant, e.g. from conversation.extra.agent_name) */
   agent_name?: string;
   headerExtra?: React.ReactNode;
+  // ace:start header title-suffix slot (e.g. message-count badge)
+  /** Rendered as a sibling right after the title container, before headerExtra; hidden while renaming */
+  titleSuffix?: React.ReactNode;
+  // ace:end
   workspaceEnabled?: boolean;
   /** Conversation ID for mode switching */
   conversation_id?: string;
@@ -213,6 +217,9 @@ const ChatLayout: React.FC<{
           }
         />
       </FlexFullContainer>
+      {/* ace:start title-suffix slot — sibling of the title container so it never steals width from / gets clipped by the title */}
+      {!editingTitle && props.titleSuffix && <div className='shrink-0 flex items-center'>{props.titleSuffix}</div>}
+      {/* ace:end */}
       <div className='flex items-center gap-12px shrink-0'>
         {props.headerExtra}
         {isWindowsRuntime && workspaceEnabled && (

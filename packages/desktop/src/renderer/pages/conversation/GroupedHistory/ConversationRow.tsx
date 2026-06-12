@@ -19,6 +19,11 @@ import { useTranslation } from 'react-i18next';
 import type { ConversationRowProps } from './types';
 import { getBackendKeyFromConversation } from './utils/exportHelpers';
 import { isConversationPinned } from './utils/groupingHelpers';
+// ace:start sidebar row relative-time label
+import { formatRelativeTime } from '@/renderer/ace/relativeTime';
+import { useRelativeTimeTick } from '@/renderer/ace/useRelativeTimeTick';
+import { getActivityTime } from '@/renderer/utils/chat/timeline';
+// ace:end
 
 const ConversationRow: React.FC<ConversationRowProps> = (props) => {
   const {
@@ -55,6 +60,10 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
   const cronStatus = getJobStatus(conversation.id);
   const siderTooltipProps = getSiderTooltipProps(tooltipEnabled);
   const inlineNameTooltipEnabled = !collapsed && !isMobile && !!conversation.name;
+  // ace:start relative time of the last activity (same source as sidebar sort)
+  const nowMs = useRelativeTimeTick();
+  const relativeTimeLabel = formatRelativeTime(getActivityTime(conversation), nowMs, t);
+  // ace:end
 
   const renderLeadingIcon = () => {
     if (cronStatus !== 'none') {
@@ -172,7 +181,13 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
           </span>
         )}
         <span className='size-22px flex items-center justify-center shrink-0 relative'>
-          {isGenerating && !batchMode ? <Spin size={16} /> : renderLeadingIcon()}
+          {/* ace:start light-blue generating spinner (semantic token, overrides Arco's .arco-spin-icon color) */}
+          {isGenerating && !batchMode ? (
+            <Spin size={16} className='[&_.arco-spin-icon]:text-[rgb(var(--primary-5))]' />
+          ) : (
+            renderLeadingIcon()
+          )}
+          {/* ace:end */}
           {/* Pinned indicator: only visible when row is hovered, overlays leading icon */}
           {!batchMode && isPinned && !isMobile && !isGenerating && (
             <span
@@ -206,6 +221,17 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
           </Tooltip>
         </FlexFullContainer>
 
+        {/* ace:start trailing relative-time label — yields to the unread dot and the hover/visible menu */}
+        {!batchMode &&
+          !collapsed &&
+          !!relativeTimeLabel &&
+          !(isMobile || menuVisible) &&
+          !(hasCompletionUnread && !isGenerating) && (
+            <span className='shrink-0 text-12px text-t-secondary whitespace-nowrap group-hover:hidden'>
+              {relativeTimeLabel}
+            </span>
+          )}
+        {/* ace:end */}
         {renderCompletionUnreadDot()}
         {!batchMode && (
           <div

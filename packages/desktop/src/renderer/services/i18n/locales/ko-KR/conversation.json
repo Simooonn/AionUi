@@ -502,5 +502,15 @@
   "ace": {
     "cliResumeUnavailable": "원래 CLI 세션 기억을 이어갈 수 없어 새 세션으로 계속합니다",
     "compactSummary": "세션이 압축되었습니다 · 펼쳐서 요약 보기"
+  },
+  "time": {
+    "justNow": "방금",
+    "minutes": "{{count}}분",
+    "hours": "{{count}}시간",
+    "days": "{{count}}일",
+    "weeksAgo": "{{count}}주 전",
+    "monthsAgo": "{{count}}개월 전",
+    "yearsAgo": "{{count}}년 전",
+    "messageCount": "{{count}}개"
   }
 }

@@ -501,5 +501,15 @@
   "ace": {
     "cliResumeUnavailable": "Не вдалося продовжити памʼять початкової сесії CLI; продовжуємо як нову сесію",
     "compactSummary": "Сесію стиснуто · розгорніть, щоб переглянути підсумок"
+  },
+  "time": {
+    "justNow": "щойно",
+    "minutes": "{{count}} хв",
+    "hours": "{{count}} год",
+    "days": "{{count}} дн",
+    "weeksAgo": "{{count}} тиж. тому",
+    "monthsAgo": "{{count}} міс. тому",
+    "yearsAgo": "{{count}} р. тому",
+    "messageCount": "{{count}} повідомл."
   }
 }

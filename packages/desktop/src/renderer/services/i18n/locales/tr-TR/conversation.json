@@ -504,5 +504,15 @@
   "ace": {
     "cliResumeUnavailable": "Orijinal CLI oturumu belleği devam ettirilemiyor; yeni bir oturum olarak devam edilecek",
     "compactSummary": "Oturum sıkıştırıldı · özeti görmek için genişletin"
+  },
+  "time": {
+    "justNow": "şimdi",
+    "minutes": "{{count}} dk",
+    "hours": "{{count}} sa",
+    "days": "{{count}} gün",
+    "weeksAgo": "{{count}} hf önce",
+    "monthsAgo": "{{count}} ay önce",
+    "yearsAgo": "{{count}} yıl önce",
+    "messageCount": "{{count}} mesaj"
   }
 }

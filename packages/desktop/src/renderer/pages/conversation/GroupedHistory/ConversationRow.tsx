@@ -181,9 +181,12 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
           </span>
         )}
         <span className='size-22px flex items-center justify-center shrink-0 relative'>
-          {/* ace:start light-blue generating spinner (semantic token, overrides Arco's .arco-spin-icon color) */}
+          {/* ace:start light-blue generating spinner — same blue as the completion
+              unread dot (#2C7FFF, renderCompletionUnreadDot). NOT an Arco --primary
+              token: this app's ConfigProvider primaryColor is gray (#4E5969), so
+              rgb(var(--primary-5)) resolved to gray. */}
           {isGenerating && !batchMode ? (
-            <Spin size={16} className='[&_.arco-spin-icon]:text-[rgb(var(--primary-5))]' />
+            <Spin size={16} className='[&_.arco-spin-icon]:text-#2C7FFF' />
           ) : (
             renderLeadingIcon()
           )}

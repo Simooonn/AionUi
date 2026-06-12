@@ -998,5 +998,24 @@
     "acpTool": "the managed ACP tool",
     "codexAcp": "the Codex ACP runtime component",
     "claudeAgentAcp": "the Claude ACP runtime component"
+  },
+  "larkNotify": {
+    "title": "Lark 그룹 알림",
+    "description": "세션이 완료되거나 결정이 필요할 때 최근 24시간 세션 목록을 Lark 그룹으로 전송",
+    "domain": "플랫폼",
+    "domainFeishu": "Feishu (open.feishu.cn)",
+    "domainLark": "Lark 국제판 (open.larksuite.com)",
+    "appId": "App ID",
+    "appSecret": "App Secret",
+    "appSecretSetPlaceholder": "설정됨 (비워두면 유지)",
+    "chatId": "그룹 Chat ID",
+    "summaryModel": "요약 모델",
+    "summaryModelPlaceholder": "요약에 사용할 모델 선택 (선택)",
+    "save": "저장",
+    "saveSuccess": "Lark 알림 설정이 저장되었습니다",
+    "saveFailed": "저장 실패",
+    "test": "테스트 메시지 보내기",
+    "testSuccess": "테스트 메시지를 보냈습니다",
+    "testFailed": "테스트 실패"
   }
 }

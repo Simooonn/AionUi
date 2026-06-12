@@ -998,5 +998,24 @@
     "acpTool": "受管 ACP 執行元件",
     "codexAcp": "Codex ACP 執行元件",
     "claudeAgentAcp": "Claude ACP 執行元件"
+  },
+  "larkNotify": {
+    "title": "Lark 群組通知",
+    "description": "會話完成或需人工決策時，向指定 Lark 群組推送近 24 小時會話列表",
+    "domain": "平台",
+    "domainFeishu": "飛書（open.feishu.cn）",
+    "domainLark": "Lark 國際版（open.larksuite.com）",
+    "appId": "App ID",
+    "appSecret": "App Secret",
+    "appSecretSetPlaceholder": "已設定（留空保持不變）",
+    "chatId": "群組 Chat ID",
+    "summaryModel": "摘要模型",
+    "summaryModelPlaceholder": "選擇用於產生摘要的模型（可選）",
+    "save": "儲存",
+    "saveSuccess": "Lark 通知設定已儲存",
+    "saveFailed": "儲存失敗",
+    "test": "傳送測試訊息",
+    "testSuccess": "測試訊息已傳送",
+    "testFailed": "測試失敗"
   }
 }

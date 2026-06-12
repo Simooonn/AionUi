@@ -127,3 +127,68 @@ export type EnsureCliResumeResult = {
   resumable: boolean;
   reason?: EnsureCliResumeReason;
 };
+
+// ---------------------------------------------------------------------------
+// Lark group notification (fork feature)
+// ---------------------------------------------------------------------------
+
+/** Display status of a session row in the Lark notification list. */
+export type LarkNotifyStatus = 'waiting_decision' | 'error' | 'generating' | 'done';
+
+/** Sort weight: lower = higher in the list (user-locked order). */
+export const LARK_NOTIFY_STATUS_WEIGHT: Record<LarkNotifyStatus, number> = {
+  waiting_decision: 0,
+  error: 1,
+  generating: 2,
+  done: 3,
+};
+
+/** One session row crossing the renderer→main IPC boundary (structured-clone safe, bounded). */
+export type LarkNotifyRow = {
+  conversation_id: string;
+  name: string;
+  /** Session type shown to the user, e.g. claude / codex / gemini / aionrs. */
+  backend: string;
+  workspace: string;
+  /** Last-activity epoch ms (same source as sidebar sort). */
+  activity_time: number;
+  /** Authoritative DB message-row count; null when the per-row fetch failed. */
+  total: number | null;
+  status: LarkNotifyStatus;
+  /** Plain text of the last user message, pre-extracted and truncated renderer-side. */
+  last_user_message: { id: string; text: string } | null;
+};
+
+/** Persisted notification config (main-process ProcessConfig only — never renderer storage). */
+export type AceLarkNotifyConfig = {
+  enabled: boolean;
+  app_id: string;
+  app_secret: string;
+  chat_id: string;
+  /** Open platform the app belongs to; absent = 'feishu' (backward compatible). */
+  domain?: AceLarkNotifyDomain;
+  summary_provider?: { id: string; use_model: string };
+};
+
+/** Which Lark open platform hosts the app (separate account systems). */
+export type AceLarkNotifyDomain = 'feishu' | 'lark';
+
+/** Config shape returned to the renderer: secret replaced by a presence flag. */
+export type AceLarkNotifyMaskedConfig = {
+  enabled: boolean;
+  app_id: string;
+  chat_id: string;
+  domain?: AceLarkNotifyDomain;
+  summary_provider?: { id: string; use_model: string };
+  has_secret: boolean;
+};
+
+/** Payload accepted by save-config: empty app_secret means "keep the stored one". */
+export type AceLarkNotifySaveConfig = {
+  enabled: boolean;
+  app_id: string;
+  app_secret?: string;
+  chat_id: string;
+  domain?: AceLarkNotifyDomain;
+  summary_provider?: { id: string; use_model: string };
+};

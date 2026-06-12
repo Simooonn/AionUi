@@ -134,6 +134,10 @@ const subscribeConversationListSync = (listener: () => void) => {
 
 const getConversationListSyncSnapshot = (): ConversationListSyncSnapshot => snapshotState;
 
+// ace:start read-only snapshot of the generating Set for the Lark-notify feature
+export const getGeneratingConversationIds = (): ReadonlySet<string> => generatingConversationIdsState;
+// ace:end
+
 const refreshConversations = () => {
   void ipcBridge.database.getUserConversations
     .invoke({ limit: 10000 })

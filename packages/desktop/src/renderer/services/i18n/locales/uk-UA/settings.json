@@ -916,5 +916,24 @@
     "acpTool": "the managed ACP tool",
     "codexAcp": "the Codex ACP runtime component",
     "claudeAgentAcp": "the Claude ACP runtime component"
+  },
+  "larkNotify": {
+    "title": "Сповіщення в групу Lark",
+    "description": "Надсилати список сесій за 24 год у групу Lark, коли сесія завершена або потребує рішення",
+    "domain": "Платформа",
+    "domainFeishu": "Feishu (open.feishu.cn)",
+    "domainLark": "Lark International (open.larksuite.com)",
+    "appId": "App ID",
+    "appSecret": "App Secret",
+    "appSecretSetPlaceholder": "Задано (залиште порожнім, щоб зберегти)",
+    "chatId": "Chat ID групи",
+    "summaryModel": "Модель для зведення",
+    "summaryModelPlaceholder": "Виберіть модель для зведень (необовʼязково)",
+    "save": "Зберегти",
+    "saveSuccess": "Налаштування сповіщень Lark збережено",
+    "saveFailed": "Не вдалося зберегти",
+    "test": "Надіслати тестове повідомлення",
+    "testSuccess": "Тестове повідомлення надіслано",
+    "testFailed": "Тест не пройдено"
   }
 }

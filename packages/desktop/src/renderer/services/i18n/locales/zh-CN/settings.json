@@ -997,5 +997,24 @@
     "conversation": "对话",
     "mcp": "MCP",
     "customAgent": "自定义 Agent"
+  },
+  "larkNotify": {
+    "title": "Lark 群通知",
+    "description": "会话完成或需人工决策时，向指定 Lark 群推送近 24 小时会话列表",
+    "domain": "平台",
+    "domainFeishu": "飞书（open.feishu.cn）",
+    "domainLark": "Lark 国际版（open.larksuite.com）",
+    "appId": "App ID",
+    "appSecret": "App Secret",
+    "appSecretSetPlaceholder": "已设置（留空保持不变）",
+    "chatId": "群 Chat ID",
+    "summaryModel": "摘要模型",
+    "summaryModelPlaceholder": "选择用于生成摘要的模型（可选）",
+    "save": "保存",
+    "saveSuccess": "Lark 通知配置已保存",
+    "saveFailed": "保存失败",
+    "test": "发送测试消息",
+    "testSuccess": "测试消息已发送",
+    "testFailed": "测试失败"
   }
 }

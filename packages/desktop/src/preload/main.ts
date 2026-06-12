@@ -54,6 +54,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   unlinkSessionFiles: (paths: string[]) => ipcRenderer.invoke('ace:unlink-session-files', paths),
   deleteOpencodeSessions: (sessionIds: string[]) => ipcRenderer.invoke('ace:delete-opencode-sessions', sessionIds),
   checkWorkspacesExist: (paths: string[]) => ipcRenderer.invoke('ace:check-workspaces-exist', paths),
+  larkNotifyGetConfig: () => ipcRenderer.invoke('ace:lark-notify-get-config'),
+  larkNotifySaveConfig: (config: unknown) => ipcRenderer.invoke('ace:lark-notify-save-config', config),
+  larkNotifyTest: () => ipcRenderer.invoke('ace:lark-notify-test'),
+  larkNotifySend: (rows: unknown[]) => ipcRenderer.invoke('ace:lark-notify-send', rows),
   // ace:end
 });
 

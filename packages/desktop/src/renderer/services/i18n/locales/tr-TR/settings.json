@@ -996,5 +996,24 @@
     "acpTool": "the managed ACP tool",
     "codexAcp": "the Codex ACP runtime component",
     "claudeAgentAcp": "the Claude ACP runtime component"
+  },
+  "larkNotify": {
+    "title": "Lark Grup Bildirimi",
+    "description": "Bir oturum bittiğinde veya kararınız gerektiğinde son 24 saatin oturum listesini Lark grubuna gönderir",
+    "domain": "Platform",
+    "domainFeishu": "Feishu (open.feishu.cn)",
+    "domainLark": "Lark Uluslararası (open.larksuite.com)",
+    "appId": "App ID",
+    "appSecret": "App Secret",
+    "appSecretSetPlaceholder": "Ayarlandı (korumak için boş bırakın)",
+    "chatId": "Grup Chat ID",
+    "summaryModel": "Özet modeli",
+    "summaryModelPlaceholder": "Özetler için bir model seçin (isteğe bağlı)",
+    "save": "Kaydet",
+    "saveSuccess": "Lark bildirim ayarları kaydedildi",
+    "saveFailed": "Kaydetme başarısız",
+    "test": "Test mesajı gönder",
+    "testSuccess": "Test mesajı gönderildi",
+    "testFailed": "Test başarısız"
   }
 }

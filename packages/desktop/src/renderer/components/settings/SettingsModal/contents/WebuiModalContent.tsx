@@ -20,6 +20,10 @@ import ChannelWeixinLogo from '@/renderer/assets/channel-logos/weixin.svg';
 import { isElectronDesktop } from '@/renderer/utils/platform';
 import { Button, Form, Input, Message, Switch, Tabs, Tooltip } from '@arco-design/web-react';
 import { CheckOne, Communication, Copy, Earth, EditTwo, Refresh } from '@icon-park/react';
+// ace:start Groups tab (Lark group notification) under remote-connection settings
+import { Peoples } from '@icon-park/react';
+import LarkNotifySettings from '@/renderer/ace/larkNotify/LarkNotifySettings';
+// ace:end
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSettingsViewMode } from '../settingsViewContext';
@@ -73,7 +77,9 @@ const WebuiModalContent: React.FC = () => {
   const { t } = useTranslation();
   const viewMode = useSettingsViewMode();
   const isPageMode = viewMode === 'page';
-  const [activeTab, setActiveTab] = useState<'webui' | 'channels'>('webui');
+  // ace:start third 'groups' tab
+  const [activeTab, setActiveTab] = useState<'webui' | 'channels' | 'groups'>('webui');
+  // ace:end
 
   // 检测是否在 Electron 桌面环境 / Check if running in Electron desktop environment
   const isDesktop = isElectronDesktop();
@@ -799,7 +805,7 @@ const WebuiModalContent: React.FC = () => {
     <div className='flex flex-col h-full w-full'>
       <Tabs
         activeTab={activeTab}
-        onChange={(key) => setActiveTab((key as 'webui' | 'channels') || 'webui')}
+        onChange={(key) => setActiveTab((key as 'webui' | 'channels' | 'groups') || 'webui')}
         type='line'
         className='mb-12px settings-remote-tabs'
       >
@@ -839,10 +845,31 @@ const WebuiModalContent: React.FC = () => {
             </span>
           }
         />
+        {/* ace:start Groups tab — group notifications (Lark) */}
+        <Tabs.TabPane
+          key='groups'
+          title={
+            <span
+              data-webui-tab='groups'
+              className={`inline-flex items-center gap-6px transition-colors ${activeTab === 'groups' ? 'text-t-primary font-600' : 'text-t-secondary'}`}
+            >
+              <Peoples theme='outline' size='15' />
+              <span>Groups</span>
+            </span>
+          }
+        />
+        {/* ace:end */}
       </Tabs>
 
+      {/* ace:start route the groups tab to the Lark notification settings */}
       {activeTab === 'webui' ? (
         webuiPanel
+      ) : activeTab === 'groups' ? (
+        <AionScrollArea className='flex-1 min-h-0 pb-16px' disableOverflow={isPageMode}>
+          <div className='px-[12px] md:px-[28px]'>
+            <LarkNotifySettings />
+          </div>
+        </AionScrollArea>
       ) : (
         <div className='flex-1 min-h-0'>
           <Suspense
@@ -852,6 +879,7 @@ const WebuiModalContent: React.FC = () => {
           </Suspense>
         </div>
       )}
+      {/* ace:end */}
 
       <AionModal
         visible={setUsernameModalVisible}

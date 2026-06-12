@@ -996,5 +996,24 @@
     "conversation": "Conversation",
     "mcp": "MCP",
     "customAgent": "Custom Agent"
+  },
+  "larkNotify": {
+    "title": "Lark Group Notification",
+    "description": "Push the last-24h session list to a Lark group when a session finishes or needs your decision",
+    "domain": "Platform",
+    "domainFeishu": "Feishu (open.feishu.cn)",
+    "domainLark": "Lark International (open.larksuite.com)",
+    "appId": "App ID",
+    "appSecret": "App Secret",
+    "appSecretSetPlaceholder": "Already set (leave empty to keep)",
+    "chatId": "Group Chat ID",
+    "summaryModel": "Summary model",
+    "summaryModelPlaceholder": "Pick a model for summaries (optional)",
+    "save": "Save",
+    "saveSuccess": "Lark notification config saved",
+    "saveFailed": "Save failed",
+    "test": "Send test message",
+    "testSuccess": "Test message sent",
+    "testFailed": "Test failed"
   }
 }

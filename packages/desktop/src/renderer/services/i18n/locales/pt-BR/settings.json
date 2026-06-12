@@ -999,5 +999,24 @@
   },
   "cdP": {
     "title": "CDP (Chrome DevTools Protocol)"
+  },
+  "larkNotify": {
+    "title": "Notificação de grupo Lark",
+    "description": "Envia a lista de sessões das últimas 24h para um grupo Lark quando uma sessão termina ou precisa de decisão",
+    "domain": "Plataforma",
+    "domainFeishu": "Feishu (open.feishu.cn)",
+    "domainLark": "Lark Internacional (open.larksuite.com)",
+    "appId": "App ID",
+    "appSecret": "App Secret",
+    "appSecretSetPlaceholder": "Já definido (deixe vazio para manter)",
+    "chatId": "Chat ID do grupo",
+    "summaryModel": "Modelo de resumo",
+    "summaryModelPlaceholder": "Escolha um modelo para resumos (opcional)",
+    "save": "Salvar",
+    "saveSuccess": "Configuração de notificação Lark salva",
+    "saveFailed": "Falha ao salvar",
+    "test": "Enviar mensagem de teste",
+    "testSuccess": "Mensagem de teste enviada",
+    "testFailed": "Falha no teste"
   }
 }

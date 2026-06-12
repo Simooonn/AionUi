@@ -998,5 +998,24 @@
     "acpTool": "the managed ACP tool",
     "codexAcp": "the Codex ACP runtime component",
     "claudeAgentAcp": "the Claude ACP runtime component"
+  },
+  "larkNotify": {
+    "title": "Lark グループ通知",
+    "description": "セッション完了または承認待ちのとき、直近 24 時間のセッション一覧を Lark グループに送信",
+    "domain": "プラットフォーム",
+    "domainFeishu": "Feishu（open.feishu.cn）",
+    "domainLark": "Lark 国際版（open.larksuite.com）",
+    "appId": "App ID",
+    "appSecret": "App Secret",
+    "appSecretSetPlaceholder": "設定済み（空欄のままで維持）",
+    "chatId": "グループ Chat ID",
+    "summaryModel": "要約モデル",
+    "summaryModelPlaceholder": "要約に使うモデルを選択（任意）",
+    "save": "保存",
+    "saveSuccess": "Lark 通知設定を保存しました",
+    "saveFailed": "保存に失敗しました",
+    "test": "テストメッセージを送信",
+    "testSuccess": "テストメッセージを送信しました",
+    "testFailed": "テストに失敗しました"
   }
 }

@@ -228,3 +228,34 @@ opencode 没有每会话文件——全部数据在 `<XDG_DATA_HOME|~/.local/sha
 - `step-start`/`step-finish`/`patch`/`snapshot` part 为结构性记录，跳过不渲染（patch 的 diff 视图本期不做）。
 - compact 摘要本机无样本（`time_compacting` 全空）→ 出现样本后接 `aceCompactSummary` 现成折叠行。
 - 对 opencode.db 的 schema 耦合面（升级 opencode 后核对）：`session(id, directory, title, time_created, time_updated)` 列集 + message/part 的 data JSON 形状 + FK 级联拓扑；扫描器有 PRAGMA 列校验，mismatch 时**中止导入并报错**（不静默空集合——这是格式漂移信号）。但"库打不开"（如 WAL 恢复被只读句柄拒绝、驱动加载失败）**只软跳过 opencode 扫描并日志**，不连坐其他三家 CLI 的导入（评审修复：原实现会让整次多 CLI 导入一起中止）。
+
+---
+
+## 会话消息计数徽标 + 侧栏相对时间 + 处理中转圈淡蓝（2026-06-12）
+
+仿 Codex 桌面端侧栏的三个纯展示特性（不改排序/行为）。计划：`.omc/plans/msg-count-and-relative-time.md`（共识迭代 3）。
+
+### 新增文件（纯新增）
+
+| 文件                                                               | 作用                                                                                                                                                                                                                                              |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/desktop/src/renderer/ace/relativeTime.ts`                | 纯函数相对时间格式器：刚刚/X 分钟/X 小时/X 天/X 周前/X 月前/X 年前（混合"前"后缀风格）；固定除数 `floor(days/7)`/`floor(days/30)` 月数封顶 11/`floor(days/365)`；`ts<=0`/非有限 → 空串（杜绝"56 年前"）                                           |
+| `packages/desktop/src/renderer/ace/useRelativeTimeTick.ts`         | 模块级共享 60s tick（`useSyncExternalStore`），订阅者引用计数，归零即 `clearInterval`                                                                                                                                                             |
+| `packages/desktop/src/renderer/ace/useConversationMessageCount.ts` | 权威消息总数 hook：开会话时 `getConversationMessages({page:0, page_size:1})` 读 `PaginatedResult.total`；订阅 `turnCompleted`（按 `event.session_id` 过滤、500ms 防抖）回合结束后重取；失败/加载中返回 `undefined`（徽标整体不渲染，best-effort） |
+| `tests/unit/ace-relative-time.test.ts`                             | 格式器全档位边界单测（59s/60s/59m/23h/24h/6d/7d/27d/30d/359d/**364d→11 月前封顶**/365d/730d）+ 退化输入 + 时钟漂移                                                                                                                                |
+
+### marker 挂点
+
+- `GroupedHistory/ConversationRow.tsx`：①导入 + 行内计算 `formatRelativeTime(getActivityTime(conversation), nowMs, t)`（与排序同源）；②尾部灰色小字时间标签——`batchMode`/`collapsed`/菜单可见/移动端/未读蓝点优先时隐藏，`group-hover:hidden` hover 让位菜单；③处理中 Spin 加 `[&_.arco-spin-icon]:text-[rgb(var(--primary-5))]`（Arco 默认 `.arco-spin-icon{color:rgb(var(--primary-6))}` 有自有规则，须更高优先级 arbitrary-variant 覆盖；primary-5 = 淡蓝语义 token，尺寸/触发条件不变）。
+- `ChatLayout/index.tsx`：新增 `titleSuffix?: React.ReactNode` 属性，渲染为 title `FlexFullContainer` 的兄弟节点（其后、`headerExtra` 之前），仅 `!editingTitle` 时显示（重命名时让位）。移动端不渲染 desktopHeader → 徽标移动端不显示（by design，Follow-up）。
+- `ChatConversation.tsx`：`ConversationMessageCountBadge` 组件（`count === undefined` 返回 null）；**两个** `ChatLayout` 调用点（aionrs 面板 `chatLayoutProps` + acp 主路径）均传 `titleSuffix`。
+
+### i18n
+
+`conversation.time.*` 8 key × 9 语言：`justNow/minutes/hours/days/weeksAgo/monthsAgo/yearsAgo/messageCount`（`{{count}}` 插值，无 `_one/_other` 复数后缀——repo 未配置 i18next 复数）。zh 保留混合后缀风格（低档无"前"、周/月/年带"前"）；非 CJK 语言用数字不变式缩写（en `{{count}}m` / `{{count}}w ago` 等）规避单复数问题。
+
+### Follow-up（未做，记录在计划 ADR）
+
+- 零 IPC 徽标：`useMessageLstCache`（`Messages/hooks.ts`）已收到 `result.total` 但丢弃，未来可外传省掉开会话时的 fetch（本期不动上游 hooks.ts）。
+- 移动端徽标补齐；hover 绝对时间 tooltip（Non-Goal）。
+- 上游缺陷（安全审查发现，非本期引入、未修）：`common/adapter/ipcBridge.ts` `getConversationMessages` URL 模板对 `conversation_id` 未做 `encodeURIComponent`（同文件 `getConversationMessage` 对 `message_id` 已编码）；本期徽标 hook 仅新增调用方。建议后续对齐修复。

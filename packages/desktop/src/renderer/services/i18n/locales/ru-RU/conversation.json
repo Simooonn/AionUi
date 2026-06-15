@@ -358,6 +358,14 @@
       "vscode": "VS Code",
       "terminal": "Терминал",
       "explorer": "Проводник"
+    },
+    "terminal": {
+      "tab": "Терминал",
+      "tabLabel": "Терминал {{index}}",
+      "exited": "Процесс завершён (код {{code}})",
+      "restart": "Перезапустить",
+      "capReached": "Достигнут предел в {{max}} терминалов",
+      "createFailed": "Не удалось открыть терминал"
     }
   },
   "minimap": {

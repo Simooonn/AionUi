@@ -358,6 +358,14 @@
       "vscode": "VS Code",
       "terminal": "終端機",
       "explorer": "檔案總管"
+    },
+    "terminal": {
+      "tab": "終端機",
+      "tabLabel": "終端機 {{index}}",
+      "exited": "處理程序已結束（代碼 {{code}}）",
+      "restart": "重新啟動",
+      "capReached": "最多只能開啟 {{max}} 個終端機",
+      "createFailed": "開啟終端機失敗"
     }
   },
   "minimap": {

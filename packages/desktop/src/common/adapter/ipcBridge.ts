@@ -82,6 +82,7 @@ import type {
 import type { Theme } from '@/common/theme/types';
 import type { ProtocolDetectionRequest, ProtocolDetectionResponse } from '../utils/protocolDetector';
 import { fromApiConversation, fromApiPaginatedConversations, toApiModelOptional } from './apiModelMapper';
+import { TERMINAL_EXIT_EVENT } from './constant';
 import {
   httpDelete,
   httpGet,
@@ -1109,6 +1110,90 @@ export const windowControls = {
   isMaximized: bridge.buildProvider<boolean, void>('window-controls:is-maximized'),
   maximizedChanged: bridge.buildEmitter<{ is_maximized: boolean }>('window-controls:maximized-changed'),
 };
+
+// ---------------------------------------------------------------------------
+// Terminal — embedded interactive terminal (control plane only).
+//
+// Control calls (create/resize/dispose/list) + the low-rate `exit` event stay on
+// the typed IPC bridge (Electron-native; the main process owns the PTYs). The
+// high-rate output byte stream, renderer input, and per-terminal sender binding
+// ride dedicated NATIVE channels (terminal:output / terminal:input / terminal:attach,
+// see terminalBridge.ts) because the typed bridge cannot expose `event.sender` and
+// would broadcast + cap the stream. A WebUI client has no host PTY, so the namespace
+// degrades to a clean-failing stub there (renderer routes via httpBridge to aioncore
+// and never reaches Electron `ipcMain`).
+// ---------------------------------------------------------------------------
+
+export type ITerminalStatus = 'running' | 'exited';
+
+export type ITerminalCreateParams = {
+  conversationId: string;
+  cwd: string;
+  cols: number;
+  rows: number;
+  shell?: string;
+};
+
+export type ITerminalCreateResult = {
+  terminalId: string;
+  pid: number;
+};
+
+export type ITerminalResizeParams = {
+  terminalId: string;
+  cols: number;
+  rows: number;
+};
+
+export type ITerminalDisposeParams = {
+  terminalId: string;
+};
+
+export type ITerminalListParams = {
+  conversationId: string;
+};
+
+export type ITerminalDisposeByConversationParams = {
+  conversationId: string;
+};
+
+export type ITerminalInfo = {
+  terminalId: string;
+  conversationId: string;
+  cwd: string;
+  pid: number;
+  status: ITerminalStatus;
+  cols: number;
+  rows: number;
+};
+
+export type ITerminalExitEvent = {
+  terminalId: string;
+  exitCode: number;
+  signal?: number;
+};
+
+// WebUI (browser, no Electron preload) → stub. Main process (no `window`) and the
+// Electron renderer (`window.electronAPI` present) → real typed providers.
+const terminalIsWebUI = typeof window !== 'undefined' && !(window as { electronAPI?: unknown }).electronAPI;
+
+export const terminal = terminalIsWebUI
+  ? {
+      create: stubProvider<ITerminalCreateResult, ITerminalCreateParams>('terminal:create', { terminalId: '', pid: -1 }),
+      resize: stubProvider<void, ITerminalResizeParams>('terminal:resize', undefined),
+      dispose: stubProvider<void, ITerminalDisposeParams>('terminal:dispose', undefined),
+      disposeByConversation: stubProvider<void, ITerminalDisposeByConversationParams>('terminal:dispose-by-conversation', undefined),
+      list: stubProvider<ITerminalInfo[], ITerminalListParams>('terminal:list', []),
+      exit: bridge.buildEmitter<ITerminalExitEvent>(TERMINAL_EXIT_EVENT),
+    }
+  : {
+      create: bridge.buildProvider<ITerminalCreateResult, ITerminalCreateParams>('terminal:create'),
+      resize: bridge.buildProvider<void, ITerminalResizeParams>('terminal:resize'),
+      dispose: bridge.buildProvider<void, ITerminalDisposeParams>('terminal:dispose'),
+      disposeByConversation: bridge.buildProvider<void, ITerminalDisposeByConversationParams>('terminal:dispose-by-conversation'),
+      list: bridge.buildProvider<ITerminalInfo[], ITerminalListParams>('terminal:list'),
+      exit: bridge.buildEmitter<ITerminalExitEvent>(TERMINAL_EXIT_EVENT),
+    };
 
 // ---------------------------------------------------------------------------
 // Theme — stays IPC (main process owns the resolved-theme cache)

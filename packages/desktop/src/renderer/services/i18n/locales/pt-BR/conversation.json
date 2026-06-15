@@ -364,6 +364,14 @@
       "vscode": "VS Code",
       "terminal": "Terminal",
       "explorer": "Explorador de Arquivos"
+    },
+    "terminal": {
+      "tab": "Terminal",
+      "tabLabel": "Terminal {{index}}",
+      "exited": "Processo encerrado (código {{code}})",
+      "restart": "Reiniciar",
+      "capReached": "Máximo de {{max}} terminais atingido",
+      "createFailed": "Falha ao abrir o terminal"
     }
   },
   "minimap": {

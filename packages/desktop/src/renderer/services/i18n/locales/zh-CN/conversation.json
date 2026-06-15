@@ -358,6 +358,14 @@
       "vscode": "VS Code",
       "terminal": "终端",
       "explorer": "文件资源管理器"
+    },
+    "terminal": {
+      "tab": "终端",
+      "tabLabel": "终端 {{index}}",
+      "exited": "进程已退出（代码 {{code}}）",
+      "restart": "重启",
+      "capReached": "最多只能打开 {{max}} 个终端",
+      "createFailed": "打开终端失败"
     }
   },
   "minimap": {

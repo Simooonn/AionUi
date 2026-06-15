@@ -348,6 +348,14 @@
       "vscode": "VS Code",
       "terminal": "Terminal",
       "explorer": "Dosya Gezgini"
+    },
+    "terminal": {
+      "tab": "Terminal",
+      "tabLabel": "Terminal {{index}}",
+      "exited": "İşlem sonlandı (kod {{code}})",
+      "restart": "Yeniden başlat",
+      "capReached": "En fazla {{max}} terminal açılabilir",
+      "createFailed": "Terminal açılamadı"
     }
   },
   "minimap": {

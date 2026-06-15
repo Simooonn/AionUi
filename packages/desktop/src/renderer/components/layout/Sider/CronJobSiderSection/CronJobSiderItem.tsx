@@ -102,6 +102,11 @@ const CronJobSiderItem: React.FC<CronJobSiderItemProps> = ({
             const success = await ipcBridge.conversation.remove.invoke({ id: convId });
             if (success) {
               emitter.emit('conversation.deleted', convId);
+              // Backend-HTTP delete never reaches the main process; kill this
+              // conversation's embedded terminals (PTYs) from the renderer.
+              void ipcBridge.terminal.disposeByConversation
+                .invoke({ conversationId: convId })
+                .catch((): void => undefined);
               emitter.emit('chat.history.refresh');
               Message.success(t('conversation.history.deleteSuccess'));
               if (currentConversationId === convId) {

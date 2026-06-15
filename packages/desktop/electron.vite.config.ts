@@ -36,13 +36,20 @@ function iconParkPlugin() {
         /import\s+\{\s+([a-zA-Z, ]*)\s+\}\s+from\s+['"]@icon-park\/react['"](;?)/g,
         function (str, match) {
           if (!match) return str;
-          const components = match.split(',');
+          // Parse each named import, supporting `Original as Alias`. For a plain import
+          // `orig === local`, so behavior is identical to the non-aliased case. The HOC
+          // is keyed on the LOCAL (alias) name; the underlying icon-park export keeps its
+          // original name in the rewritten import.
+          const parsed: Array<{ orig: string; local: string }> = match.split(',').map((raw: string) => {
+            const [orig, alias] = raw.trim().split(/\s+as\s+/);
+            return { orig: orig.trim(), local: (alias ?? orig).trim() };
+          });
           const importComponent = str.replace(
             match,
-            components.map((key: string) => `${key} as _${key.trim()}`).join(', ')
+            parsed.map(({ orig, local }) => `${orig} as _${local}`).join(', ')
           );
           const hoc = `import IconParkHOC from '@renderer/components/IconParkHOC';
-          ${components.map((key: string) => `const ${key.trim()} = IconParkHOC(_${key.trim()})`).join(';\n')}`;
+          ${parsed.map(({ local }) => `const ${local} = IconParkHOC(_${local})`).join(';\n')}`;
           return importComponent + ';' + hoc;
         }
       );
@@ -305,6 +312,10 @@ export default defineConfig(({ mode }) => {
           'i18next',
           '@arco-design/web-react',
           '@icon-park/react',
+          // xterm renderer deps — pre-bundle so the embedded terminal loads cleanly in dev.
+          // The '@xterm/headless' alias above is an exact prefix match and does NOT capture these.
+          '@xterm/xterm',
+          '@xterm/addon-fit',
           'react-markdown',
           'react-syntax-highlighter',
           'react-virtuoso',

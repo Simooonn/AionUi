@@ -358,6 +358,14 @@
       "vscode": "VS Code",
       "terminal": "Термінал",
       "explorer": "Провідник"
+    },
+    "terminal": {
+      "tab": "Термінал",
+      "tabLabel": "Термінал {{index}}",
+      "exited": "Процес завершено (код {{code}})",
+      "restart": "Перезапустити",
+      "capReached": "Досягнуто межі у {{max}} терміналів",
+      "createFailed": "Не вдалося відкрити термінал"
     }
   },
   "minimap": {

@@ -12,6 +12,7 @@ import { initWindowControlsBridge } from './windowControlsBridge';
 import { initNotificationBridge } from './notificationBridge';
 import { initWebuiBridge } from './webuiBridge';
 import { initThemeBridge } from './themeBridge';
+import { initTerminalBridge, getTerminalManager } from './terminalBridge';
 // ace:start register CLI-session import IPC handler (self-registers on import)
 import '../ace/aceBridge';
 // ace:end
@@ -27,6 +28,7 @@ export function initAllBridges(_deps: BridgeDependencies = {}): void {
   initNotificationBridge();
   initWebuiBridge();
   initThemeBridge();
+  initTerminalBridge();
 }
 
 export {
@@ -38,6 +40,8 @@ export {
   initUpdateBridge,
   initWindowControlsBridge,
   initWebuiBridge,
+  initTerminalBridge,
+  getTerminalManager,
 };
 export { registerWindowMaximizeListeners } from './windowControlsBridge';
 export const disposeAllTeamSessions = (): Promise<void> => Promise.resolve();

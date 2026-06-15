@@ -26,7 +26,7 @@ import { classifyBackendStartupFailure } from './process/startup/backendStartupF
 import { installQuitCleanup } from './process/startup/quitCleanup';
 import { ProcessConfig } from './process/utils/initStorage';
 import type { BackendStartupFailureInfo } from './common/types/platform/electron';
-import { registerWindowMaximizeListeners } from '@process/bridge';
+import { registerWindowMaximizeListeners, getTerminalManager } from '@process/bridge';
 import { BackendLifecycleManager } from '@aionui/web-host';
 import { resolveBinaryPath } from '@process/backend';
 import './process/bridge/feedbackBridge';
@@ -885,6 +885,8 @@ installQuitCleanup({
     disposeCronResumeListener?.();
     disposeCronResumeListener = null;
   },
+  // Kill all embedded-terminal PTYs so no shell process is orphaned on quit.
+  disposeTerminals: () => getTerminalManager()?.disposeAll(),
   // Stop aioncore subprocess — backend shutdown kills all agent children
   // transitively (no separate frontend workerTaskManager remains).
   stopBackend: () => backendManager.stop(),

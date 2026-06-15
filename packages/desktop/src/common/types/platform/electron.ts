@@ -21,6 +21,38 @@ export interface ElectronBridgeAPI {
   captureFeedbackScreenshot?: () => Promise<{ filename: string; data: number[] } | null>;
 }
 
+// Embedded terminal (node-pty + xterm) — renderer-facing data plane.
+// `terminalId` is the canonical id field on every payload here and on the
+// main-process native wire (no remap). Control calls (create/resize/dispose/list)
+// + the exit event go through the typed ipcBridge `terminal` namespace; the
+// high-rate output stream + input + reattach ride dedicated native channels that
+// this surface wraps.
+
+/** One coalesced output frame from a PTY. */
+export interface TerminalOutputPayload {
+  terminalId: string;
+  data: string;
+}
+
+/** Emitted once when a PTY exits; the renderer shows a banner + Restart. */
+export interface TerminalExitPayload {
+  terminalId: string;
+  exitCode: number;
+  signal?: number;
+}
+
+export interface TerminalBridgeAPI {
+  /** Renderer → main keystroke/paste input for a terminal. */
+  input: (terminalId: string, data: string) => void;
+  /** Re-bind this webContents as the terminal's output target and replay its
+   *  scrollback buffer (the reattach primitive, used on mount / reload). */
+  attach: (terminalId: string) => void;
+  /** Subscribe to PTY output frames; returns an unsubscribe fn. */
+  onOutput: (callback: (payload: TerminalOutputPayload) => void) => () => void;
+  /** Subscribe to PTY exit events; returns an unsubscribe fn. */
+  onExit: (callback: (payload: TerminalExitPayload) => void) => () => void;
+}
+
 export type BackendStartupFailureReason =
   | 'backend_incompatible_runtime'
   | 'backend_incomplete_installation'
@@ -52,6 +84,7 @@ export interface BackendStartupFailureInfo {
 declare global {
   interface Window {
     electronAPI?: ElectronBridgeAPI;
+    terminalAPI?: TerminalBridgeAPI;
     __initialLanguage?: string | null;
     __backendStartupFailed?: boolean;
     __backendStartupFailure?: BackendStartupFailureInfo | null;

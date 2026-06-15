@@ -5,7 +5,7 @@
  */
 
 import { Dropdown, Tabs } from '@arco-design/web-react';
-import { BranchOne } from '@icon-park/react';
+import { BranchOne, Terminal as TerminalIcon } from '@icon-park/react';
 import type { TFunction } from 'i18next';
 import React from 'react';
 import type { WorkspaceTab } from '../types';
@@ -23,6 +23,13 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ t, activeTab, onTabCh
     <span className='flex items-center'>
       {t('conversation.workspace.changes.tab')}
       {changeCount > 0 && <span className='ml-2px text-t-tertiary'>({changeCount > 99 ? '99+' : changeCount})</span>}
+    </span>
+  );
+
+  const terminalTitle = (
+    <span className='flex items-center gap-4px'>
+      <TerminalIcon size={14} className='shrink-0' />
+      {t('conversation.workspace.terminal.tab')}
     </span>
   );
 
@@ -67,6 +74,7 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ t, activeTab, onTabCh
     >
       <Tabs.TabPane key='files' title={t('conversation.workspace.changes.filesTab')} />
       <Tabs.TabPane key='changes' title={changesTitle} />
+      <Tabs.TabPane key='terminal' title={terminalTitle} />
     </Tabs>
   );
 };

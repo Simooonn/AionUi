@@ -358,6 +358,14 @@
       "vscode": "VS Code",
       "terminal": "ターミナル",
       "explorer": "エクスプローラー"
+    },
+    "terminal": {
+      "tab": "ターミナル",
+      "tabLabel": "ターミナル {{index}}",
+      "exited": "プロセスが終了しました（コード {{code}}）",
+      "restart": "再起動",
+      "capReached": "ターミナルは最大 {{max}} 個までです",
+      "createFailed": "ターミナルを開けませんでした"
     }
   },
   "minimap": {

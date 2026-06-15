@@ -21,6 +21,7 @@ import WorkspaceDialogs from './components/WorkspaceDialogs';
 import WorkspaceTabBar from './components/WorkspaceTabBar';
 import WorkspaceToolbar from './components/WorkspaceToolbar';
 import FileTypeIcon from './components/FileTypeIcon';
+import TerminalTabs from './terminal/TerminalTabs';
 import { useFileChanges } from './hooks/useFileChanges';
 import { useWorkspaceCollapse } from './hooks/useWorkspaceCollapse';
 import { useWorkspaceDragImport } from './hooks/useWorkspaceDragImport';
@@ -60,6 +61,9 @@ const ChatWorkspace: React.FC<WorkspaceProps> = ({
 
   // Tab state and file changes
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('files');
+  // Mount the terminal panel lazily on first open, then keep it alive across
+  // files/changes switches so PTYs and scrollback survive tab toggles.
+  const [terminalOpened, setTerminalOpened] = useState(false);
   const fileChangesHook = useFileChanges({ workspace });
 
   // Bind workspace uploads to the conversation lifecycle: switching the
@@ -192,6 +196,13 @@ const ChatWorkspace: React.FC<WorkspaceProps> = ({
       fileChangesHook.refreshChanges();
     }
   }, [activeTab, fileChangesHook.refreshChanges]);
+
+  // Mark the terminal panel as opened the first time its tab is selected.
+  useEffect(() => {
+    if (activeTab === 'terminal') {
+      setTerminalOpened(true);
+    }
+  }, [activeTab]);
 
   // Get target folder path for paste confirm modal
   const targetFolderPathForModal = getTargetFolderPath(
@@ -506,6 +517,14 @@ const ChatWorkspace: React.FC<WorkspaceProps> = ({
               onResetFile={fileChangesHook.resetFile}
             />
           </FlexFullContainer>
+        )}
+
+        {/* Terminal tab content — kept mounted once opened so PTYs/scrollback
+            survive switching back to files/changes. */}
+        {terminalOpened && (
+          <div className='flex-1 min-h-0' style={{ display: activeTab === 'terminal' ? 'flex' : 'none' }}>
+            <TerminalTabs conversationId={conversation_id} workspace={workspace} visible={activeTab === 'terminal'} />
+          </div>
         )}
       </div>
     </>

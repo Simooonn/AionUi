@@ -28,6 +28,12 @@ files:
   - node_modules/better-sqlite3/**/*
   - node_modules/bcrypt/**/*
   - node_modules/node-pty/**/*
+  # Embedded terminal: prebuilt @lydell/node-pty + its platform binary sub-packages.
+  # The .node binary lives in the platform sub-package (not the main package), so all
+  # three must ship. darwin-x64 is only present on x64 build machines (cpu-gated).
+  - node_modules/@lydell/node-pty/**/*
+  - node_modules/@lydell/node-pty-darwin-arm64/**/*
+  - node_modules/@lydell/node-pty-darwin-x64/**/*
   - node_modules/@mapbox/**/*
   - node_modules/detect-libc/**/*
   - node_modules/prebuild-install/**/*
@@ -192,6 +198,11 @@ asarUnpack:
   - '**/node_modules/better-sqlite3/**/*'
   - '**/node_modules/bcrypt/**/*'
   - '**/node_modules/node-pty/**/*'
+  # Embedded terminal: unpack the prebuilt @lydell/node-pty native binary (pty.node) +
+  # spawn-helper so they are loadable at runtime and signable under hardened runtime.
+  - '**/node_modules/@lydell/node-pty/**/*'
+  - '**/node_modules/@lydell/node-pty-darwin-arm64/**/*'
+  - '**/node_modules/@lydell/node-pty-darwin-x64/**/*'
   - '**/node_modules/@mapbox/**/*'
   - '**/node_modules/detect-libc/**/*'
   - '**/node_modules/prebuild-install/**/*'

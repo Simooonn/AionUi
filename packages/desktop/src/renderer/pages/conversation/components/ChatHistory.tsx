@@ -130,6 +130,9 @@ const ChatHistory: React.FC<{ onSessionClick?: () => void; collapsed?: boolean }
       .invoke({ id })
       .then((success) => {
         if (success) {
+          // Backend-HTTP delete never reaches the main process; kill this
+          // conversation's embedded terminals (PTYs) from the renderer.
+          void ipcBridge.terminal.disposeByConversation.invoke({ conversationId: id }).catch((): void => undefined);
           // Trigger refresh to reload from database
           emitter.emit('chat.history.refresh');
           void Promise.resolve(navigate('/')).catch((error) => {

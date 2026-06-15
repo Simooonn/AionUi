@@ -82,6 +82,12 @@ export const useConversationActions = ({
       }
 
       emitter.emit('conversation.deleted', conversation_id);
+      // Conversation deletion runs through the backend HTTP path and never reaches
+      // the Electron main process, so the renderer must explicitly kill any embedded
+      // terminals (PTYs) bound to this conversation to avoid zombie shells.
+      void ipcBridge.terminal.disposeByConversation
+        .invoke({ conversationId: conversation_id })
+        .catch((): void => undefined);
       if (id === conversation_id) {
         void navigate('/');
       }

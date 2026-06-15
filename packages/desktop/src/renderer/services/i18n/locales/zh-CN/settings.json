@@ -1013,6 +1013,7 @@
     "chatId": "群 Chat ID",
     "summaryModel": "摘要模型",
     "summaryModelPlaceholder": "选择用于生成摘要的模型（可选）",
+    "summaryModelEmpty": "暂无可用模型，请先在「模型」设置中配置 API 模型",
     "save": "保存",
     "saveSuccess": "Lark 通知配置已保存",
     "saveFailed": "保存失败",

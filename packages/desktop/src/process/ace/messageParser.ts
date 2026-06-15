@@ -109,7 +109,7 @@ export function findGeminiFiles(sessionId: string, root: string = GEMINI_TMP): s
       matches.push({ p, m });
     }
   }
-  return matches.sort((a, b) => b.m - a.m).map((x) => x.p);
+  return matches.toSorted((a, b) => b.m - a.m).map((x) => x.p);
 }
 
 function nonEmptyText(v: unknown): string | null {
@@ -474,7 +474,7 @@ function parseGeminiFiles(filePaths: string[], sessionId: string): ParsedCliMess
   const order: GeminiRecord[] = [];
   // Oldest file first so insertion order approximates conversation order;
   // the timestamp sort below is the authority.
-  for (const f of [...filePaths].reverse()) collectGeminiRecords(f, seen, order);
+  for (const f of [...filePaths].toReversed()) collectGeminiRecords(f, seen, order);
 
   const out: ParsedCliMessage[] = [];
   for (const rec of order) {
@@ -499,7 +499,7 @@ function parseGeminiFiles(filePaths: string[], sessionId: string): ParsedCliMess
   // insertion order as the tiebreaker (and for records without timestamps).
   return out
     .map((m, i) => ({ m, i }))
-    .sort((a, b) =>
+    .toSorted((a, b) =>
       a.m.createdAt !== undefined && b.m.createdAt !== undefined && a.m.createdAt !== b.m.createdAt
         ? a.m.createdAt - b.m.createdAt
         : a.i - b.i

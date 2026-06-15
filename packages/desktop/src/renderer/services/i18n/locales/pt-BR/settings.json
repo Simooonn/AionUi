@@ -1015,6 +1015,7 @@
     "chatId": "Chat ID do grupo",
     "summaryModel": "Modelo de resumo",
     "summaryModelPlaceholder": "Escolha um modelo para resumos (opcional)",
+    "summaryModelEmpty": "Nenhum modelo disponível. Configure um modelo de API nas configurações de Modelo primeiro",
     "save": "Salvar",
     "saveSuccess": "Configuração de notificação Lark salva",
     "saveFailed": "Falha ao salvar",

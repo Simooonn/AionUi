@@ -1012,6 +1012,7 @@
     "chatId": "Grup Chat ID",
     "summaryModel": "Özet modeli",
     "summaryModelPlaceholder": "Özetler için bir model seçin (isteğe bağlı)",
+    "summaryModelEmpty": "Kullanılabilir model yok. Önce Model ayarlarından bir API modeli yapılandırın",
     "save": "Kaydet",
     "saveSuccess": "Lark bildirim ayarları kaydedildi",
     "saveFailed": "Kaydetme başarısız",

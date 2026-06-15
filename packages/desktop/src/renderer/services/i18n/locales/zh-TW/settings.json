@@ -1014,6 +1014,7 @@
     "chatId": "群組 Chat ID",
     "summaryModel": "摘要模型",
     "summaryModelPlaceholder": "選擇用於產生摘要的模型（可選）",
+    "summaryModelEmpty": "暫無可用模型，請先在「模型」設定中配置 API 模型",
     "save": "儲存",
     "saveSuccess": "Lark 通知設定已儲存",
     "saveFailed": "儲存失敗",

@@ -1534,6 +1534,7 @@ export type I18nKey =
   | 'settings.larkNotify.saveFailed'
   | 'settings.larkNotify.saveSuccess'
   | 'settings.larkNotify.summaryModel'
+  | 'settings.larkNotify.summaryModelEmpty'
   | 'settings.larkNotify.summaryModelPlaceholder'
   | 'settings.larkNotify.test'
   | 'settings.larkNotify.testFailed'

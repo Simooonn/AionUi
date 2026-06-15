@@ -16,11 +16,12 @@
 import { ClientFactory } from '@/common/api/ClientFactory';
 import { ipcBridge } from '@/common';
 import type { AceLarkNotifyConfig, LarkNotifyRow } from '@/common/ace/types';
+import type { LarkCard } from '@/common/ace/larkNotify';
 import {
   LARK_NOTIFY_MAX_ROWS,
   LARK_NOTIFY_SUMMARY_FALLBACK_CHARS,
   LARK_NOTIFY_SUMMARY_INPUT_CAP,
-  formatLarkMessage,
+  buildLarkCard,
   mapWithConcurrency,
   sortNotifyRows,
 } from '@/common/ace/larkNotify';
@@ -100,10 +101,11 @@ export const getTenantToken = async (
   return tokenInflight;
 };
 
-/** Send a plain-text message to the configured group chat. Retries once on auth errors. */
-export const sendLarkText = async (
+/** Send one message to the configured group chat. Retries once on auth errors. */
+const sendLarkMessage = async (
   config: AceLarkNotifyConfig,
-  content: string,
+  msgType: 'text' | 'interactive',
+  content: object,
   fetchImpl?: FetchLike
 ): Promise<{ ok: boolean; reason?: string }> => {
   const f = fetchImpl ?? fetch;
@@ -113,8 +115,8 @@ export const sendLarkText = async (
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({
         receive_id: config.chat_id,
-        msg_type: 'text',
-        content: JSON.stringify({ text: content }),
+        msg_type: msgType,
+        content: JSON.stringify(content),
       }),
     });
     const body = (await resp.json().catch(() => ({}))) as { code?: number; msg?: string };
@@ -134,6 +136,24 @@ export const sendLarkText = async (
     return { ok: false, reason: `lark-${result.code}` };
   }
   return { ok: true };
+};
+
+/** Send a plain-text message (used by the settings "test" button). */
+export const sendLarkText = (
+  config: AceLarkNotifyConfig,
+  content: string,
+  fetchImpl?: FetchLike
+): Promise<{ ok: boolean; reason?: string }> => {
+  return sendLarkMessage(config, 'text', { text: content }, fetchImpl);
+};
+
+/** Send the session-list notification as one interactive card message. */
+export const sendLarkCard = (
+  config: AceLarkNotifyConfig,
+  card: LarkCard,
+  fetchImpl?: FetchLike
+): Promise<{ ok: boolean; reason?: string }> => {
+  return sendLarkMessage(config, 'interactive', card, fetchImpl);
 };
 
 const truncateSummary = (text: string): string => text.slice(0, LARK_NOTIFY_SUMMARY_FALLBACK_CHARS);
@@ -195,6 +215,7 @@ export const summarizeRows = async (
     // Re-apply the input cap at this trust boundary (renderer cap is advisory)
     const safeText = msg.text.slice(0, LARK_NOTIFY_SUMMARY_INPUT_CAP);
     let summary = truncateSummary(safeText);
+    let fromModel = false;
     if (provider) {
       try {
         const client = await ClientFactory.createRotatingClient(provider);
@@ -213,18 +234,23 @@ export const summarizeRows = async (
         const text = completion.choices?.[0]?.message?.content?.trim();
         if (text) {
           summary = text.slice(0, 30);
+          fromModel = true;
         }
       } catch (e) {
         console.warn('[larkNotify] summary failed, falling back to truncation:', e instanceof Error ? e.message : e);
       }
     }
-    rememberSummary(summaryCacheKey(row), summary);
+    // Only model output is cached: a cached truncation fallback would pin the
+    // degraded text forever, even after the user configures a working model
+    if (fromModel) {
+      rememberSummary(summaryCacheKey(row), summary);
+    }
     summaries.set(row.conversation_id, summary);
   });
   return summaries;
 };
 
-/** Full pipeline used by the IPC handler: summarize (visible rows only) → format → send. */
+/** Full pipeline used by the IPC handler: summarize (visible rows only) → build card → send. */
 export const sendLarkNotification = async (
   config: AceLarkNotifyConfig,
   rows: LarkNotifyRow[]
@@ -233,6 +259,6 @@ export const sendLarkNotification = async (
   const sorted = sortNotifyRows(rows);
   // Only the rows that will actually render (30-row cap) get a model call
   const summaries = await summarizeRows(config, sorted.slice(0, LARK_NOTIFY_MAX_ROWS));
-  const content = formatLarkMessage(sorted, summaries, Date.now());
-  return sendLarkText(config, content);
+  const card = buildLarkCard(sorted, summaries, Date.now());
+  return sendLarkCard(config, card);
 };

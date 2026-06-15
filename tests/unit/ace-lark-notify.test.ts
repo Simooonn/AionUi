@@ -9,8 +9,11 @@ import type { LarkNotifyRow } from '../../packages/desktop/src/common/ace/types'
 import {
   LARK_NOTIFY_SUMMARY_INPUT_CAP,
   LARK_NOTIFY_TRIGGER_STATES,
-  formatLarkMessage,
+  LARK_NOTIFY_STATUS_DOT_WINDOW_MS,
+  buildLarkCard,
   formatNotifyTime,
+  truncateNotifyName,
+  workspaceTail,
   isWithinActiveWindow,
   normalizeTerminalState,
   resolveNotifyStatus,
@@ -21,11 +24,36 @@ import { extractLastUserMessage } from '../../packages/desktop/src/renderer/ace/
 import {
   _resetLarkNotifyStateForTests,
   getTenantToken,
+  sendLarkCard,
   sendLarkText,
   summarizeRows,
 } from '../../packages/desktop/src/process/ace/larkNotifySender';
 import type { AceLarkNotifyConfig } from '../../packages/desktop/src/common/ace/types';
 import type { TMessage } from '../../packages/desktop/src/common/chat/chatLib';
+
+const { listProvidersMock, createChatCompletionMock } = vi.hoisted(() => ({
+  listProvidersMock: vi.fn(),
+  createChatCompletionMock: vi.fn(),
+}));
+
+vi.mock('@/common', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../packages/desktop/src/common')>();
+  return {
+    ...actual,
+    ipcBridge: {
+      ...actual.ipcBridge,
+      mode: { ...actual.ipcBridge.mode, listProviders: { invoke: () => listProvidersMock() } },
+    },
+  };
+});
+
+vi.mock('@/common/api/ClientFactory', () => ({
+  ClientFactory: {
+    createRotatingClient: async () => ({
+      createChatCompletion: (...args: unknown[]) => createChatCompletionMock(...args),
+    }),
+  },
+}));
 
 const NOW = 1_780_000_000_000; // fixed epoch, keeps tests deterministic
 
@@ -103,27 +131,88 @@ describe('resolveNotifyStatus + sortNotifyRows', () => {
   });
 });
 
-describe('formatLarkMessage', () => {
-  it('renders index, all 8 fields, and falls back summary to the name', () => {
-    const text = formatLarkMessage(
-      [row({ conversation_id: 'c1', name: '修复登录', backend: 'codex', total: 42, status: 'waiting_decision' })],
+describe('buildLarkCard', () => {
+  it('renders an iconized meta line and a "name：summary" second line', () => {
+    const card = buildLarkCard(
+      [
+        row({
+          conversation_id: 'c1',
+          name: '修复登录',
+          backend: 'codex',
+          total: 42,
+          status: 'waiting_decision',
+          workspace: '/Users/x/wmm-code/pelago/Pelago-Card',
+        }),
+      ],
       new Map([['c1', '排查登录超时问题']]),
       NOW
     );
-    expect(text).toContain('1. 🟡 待决策 修复登录 · codex · 1 分钟前');
-    expect(text).toContain('排查登录超时问题 ｜ 42 条 ｜ /tmp/project');
+    expect(card.header.title.content).toBe('AionUi 会话动态（近 24 小时，共 1 个）');
+    const body = card.elements[0].text.content;
+    expect(body).toContain(
+      '**1. 🤖 codex · 🕒 1 分钟前 · 💬 42 条 · 🟡 待决策 · 📁 Pelago-Card**\n修复登录：排查登录超时问题'
+    );
+    // Only the last path segment is rendered
+    expect(body).not.toContain('/Users/x');
   });
-  it('renders only the header for empty rows', () => {
-    expect(formatLarkMessage([], new Map(), NOW)).toBe('AionUi 会话动态（近 24 小时，共 0 个）');
+  it('truncates the session name at 15 chars with an ellipsis', () => {
+    const name15 = '一二三四五六七八九十一二三四五';
+    expect(truncateNotifyName(name15)).toBe(name15);
+    const card = buildLarkCard([row({ conversation_id: 'c1', name: `${name15}尾` })], new Map(), NOW);
+    expect(card.elements[0].text.content).toContain(`\n${name15}…`);
+    expect(card.elements[0].text.content).not.toContain('尾');
+  });
+  it('falls back the second line to the bare name when there is no summary', () => {
+    const card = buildLarkCard([row({ conversation_id: 'c1', name: '修复登录' })], new Map(), NOW);
+    expect(card.elements[0].text.content).toContain('\n修复登录');
+    expect(card.elements[0].text.content).not.toContain('修复登录：');
+  });
+  it('omits absent fields together with their separator', () => {
+    const card = buildLarkCard([row({ conversation_id: 'c1', backend: '', workspace: '' })], new Map(), NOW);
+    const body = card.elements[0].text.content;
+    expect(body).not.toContain('🤖');
+    expect(body).not.toContain('📁');
+    expect(body).toContain('**1. 🕒 1 分钟前 · 💬 10 条 · 🟢 已完成**');
+  });
+  it('drops the status dot for rows older than 6 hours, keeping field icons', () => {
+    const recent = buildLarkCard(
+      [row({ conversation_id: 'r', activity_time: NOW - LARK_NOTIFY_STATUS_DOT_WINDOW_MS })],
+      new Map(),
+      NOW
+    );
+    expect(recent.elements[0].text.content).toContain('🟢 已完成');
+    const stale = buildLarkCard(
+      [row({ conversation_id: 's', activity_time: NOW - LARK_NOTIFY_STATUS_DOT_WINDOW_MS - 1_000 })],
+      new Map(),
+      NOW
+    );
+    expect(stale.elements[0].text.content).not.toContain('🟢');
+    expect(stale.elements[0].text.content).toContain('· 已完成');
+    expect(stale.elements[0].text.content).toContain('📁');
+  });
+  it('renders a header-only card for empty rows', () => {
+    const card = buildLarkCard([], new Map(), NOW);
+    expect(card.header.title.content).toBe('AionUi 会话动态（近 24 小时，共 0 个）');
+    expect(card.elements[0].text.content).toBe('');
   });
   it('shows ? for failed totals and caps at 30 rows with a trailing line', () => {
     const rows = Array.from({ length: 33 }, (_, i) =>
       row({ conversation_id: `c${i}`, total: i === 0 ? null : i, activity_time: NOW - i * 1000 })
     );
-    const text = formatLarkMessage(rows, new Map(), NOW);
-    expect(text).toContain('? 条');
-    expect(text).toContain('…还有 3 条');
-    expect(text).not.toContain('31.');
+    const card = buildLarkCard(rows, new Map(), NOW);
+    const body = card.elements[0].text.content;
+    expect(body).toContain('💬 ? 条');
+    expect(body).toContain('…还有 3 条');
+    expect(body).not.toContain('**31.');
+  });
+});
+
+describe('workspaceTail', () => {
+  it('extracts the last path segment across separators and trailing slashes', () => {
+    expect(workspaceTail('/Users/wmm/wmm-code/pelago/Pelago-Card')).toBe('Pelago-Card');
+    expect(workspaceTail('/tmp/project/')).toBe('project');
+    expect(workspaceTail('C:\\work\\repo')).toBe('repo');
+    expect(workspaceTail('')).toBe('');
   });
 });
 
@@ -251,7 +340,21 @@ describe('larkNotifySender (injected fetch)', () => {
     expect(tokenCalls).toBe(2);
   });
 
-  it('summarizes with truncation fallback (no provider) and caches by message id', async () => {
+  it('sends the session list as one interactive card message', async () => {
+    const fetchImpl = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      if (String(url).includes('tenant_access_token')) return tokenResponse('t1');
+      const body = JSON.parse(String(init?.body)) as { msg_type: string; content: string };
+      expect(body.msg_type).toBe('interactive');
+      const card = JSON.parse(body.content) as { header: { title: { content: string } } };
+      expect(card.header.title.content).toContain('AionUi 会话动态');
+      return sendResponse(0);
+    });
+    const card = buildLarkCard([row({})], new Map(), NOW);
+    const result = await sendLarkCard(config, card, fetchImpl as unknown as typeof fetch);
+    expect(result.ok).toBe(true);
+  });
+
+  it('summarizes with truncation fallback when no provider is configured', async () => {
     const rows = [
       row({
         conversation_id: 'c1',
@@ -263,8 +366,25 @@ describe('larkNotifySender (injected fetch)', () => {
     ];
     const first = await summarizeRows(config, rows);
     expect(first.get('c1')).toHaveLength(30);
-    // Second call resolves purely from the message-id cache
     const second = await summarizeRows(config, rows);
     expect(second.get('c1')).toBe(first.get('c1'));
+  });
+
+  it('does not cache the truncation fallback, so a recovered model self-heals; model output is cached', async () => {
+    const cfgWithModel: AceLarkNotifyConfig = { ...config, summary_provider: { id: 'p1', use_model: 'm1' } };
+    listProvidersMock.mockResolvedValue([{ id: 'p1', name: 'P', models: ['m1'] }]);
+    const rows = [row({ conversation_id: 'c1', last_user_message: { id: 'msg1', text: '帮我修复登录超时的问题' } })];
+    // Window 1: model call fails → truncation fallback (must NOT be cached)
+    createChatCompletionMock.mockRejectedValueOnce(new Error('boom'));
+    const first = await summarizeRows(cfgWithModel, rows);
+    expect(first.get('c1')).toBe('帮我修复登录超时的问题');
+    // Window 2: model recovered → same message gets a real summary again
+    createChatCompletionMock.mockResolvedValueOnce({ choices: [{ message: { content: '排查登录超时' } }] });
+    const second = await summarizeRows(cfgWithModel, rows);
+    expect(second.get('c1')).toBe('排查登录超时');
+    // Window 3: served from the message-id cache, no further model calls
+    const third = await summarizeRows(cfgWithModel, rows);
+    expect(third.get('c1')).toBe('排查登录超时');
+    expect(createChatCompletionMock).toHaveBeenCalledTimes(2);
   });
 });

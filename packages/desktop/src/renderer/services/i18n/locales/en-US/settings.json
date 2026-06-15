@@ -1012,6 +1012,7 @@
     "chatId": "Group Chat ID",
     "summaryModel": "Summary model",
     "summaryModelPlaceholder": "Pick a model for summaries (optional)",
+    "summaryModelEmpty": "No models available. Configure an API model in Model settings first",
     "save": "Save",
     "saveSuccess": "Lark notification config saved",
     "saveFailed": "Save failed",

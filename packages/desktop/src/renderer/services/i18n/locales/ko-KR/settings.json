@@ -1014,6 +1014,7 @@
     "chatId": "그룹 Chat ID",
     "summaryModel": "요약 모델",
     "summaryModelPlaceholder": "요약에 사용할 모델 선택 (선택)",
+    "summaryModelEmpty": "사용 가능한 모델이 없습니다. 먼저 모델 설정에서 API 모델을 구성하세요",
     "save": "저장",
     "saveSuccess": "Lark 알림 설정이 저장되었습니다",
     "saveFailed": "저장 실패",

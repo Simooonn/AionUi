@@ -270,22 +270,22 @@ opencode 没有每会话文件——全部数据在 `<XDG_DATA_HOME|~/.local/sha
 
 - **触发**：`turnCompleted` 状态 ∈ {`ai_waiting_input`, `ai_waiting_confirmation`, `error`}（`runtime.pending_confirmations > 0` 强制视为待决策）；`stopped` 不触发。
 - **频控**：60s 固定窗口防抖——首触发开窗、窗口内吸收不顺延、期满发一条最新快照；**期满空列表（会话删除/滑出 24h/列表级获取失败）零发送**。
-- **列表**：最后活跃（`getActivityTime`，与侧栏排序同源）距今 ≤24h 的会话；排序 🟡待决策 > 🔴出错 > 🔵进行中 > 🟢已完成、同档最新在前；每行 8 字段（序号/名称/秒档友好时间/类型/AI 摘要/项目目录/消息总数=API total/状态）；30 行封顶尾行"…还有 N 条"；正文固定中文（不走 i18n，设置 UI 文案走 i18n×9）。
-- **摘要**：最后一条用户消息（渲染端只取 string content——多模态/结构化跳过，不会把 JSON 串进摘要；预截 2000 字符，主进程侧再截一次）→ 任意协议 provider（三家 RotatingClient 统一 `createChatCompletion`）→ 5-30 字短语；**只对将渲染的前 30 行调模型**（排序后裁剪再摘要，结构性杜绝无界 LLM 调用），并发 5；按 `conversation:message` id 缓存（上限 500，**逐条淘汰最旧**而非整清）；失败/超时(8s)/未配模型 → 截原文 30 字兜底，消息照发。
+- **列表**：最后活跃（`getActivityTime`，与侧栏排序同源）距今 ≤24h 的会话；排序 🟡待决策 > 🔴出错 > 🔵进行中 > 🟢已完成、同档最新在前；**单条 interactive 卡片消息**（蓝色 header 带总数；按用户反馈由纯文本改卡片），每会话两行——加粗图标化元信息行（序号/🤖类型/🕒秒档友好时间/💬消息总数=API total/状态/📁项目目录尾段，>6h 的会话状态去彩色圆点只留文字）+「会话名（15 字符超出…截断）：AI 摘要」行（二轮用户反馈定稿，规格：`.omc/specs/deep-interview-lark-card-layout-fix.md`）；30 行封顶尾行"…还有 N 条"；正文固定中文（不走 i18n，设置 UI 文案走 i18n×9）。
+- **摘要**：最后一条用户消息（渲染端只取 string content——多模态/结构化跳过，不会把 JSON 串进摘要；预截 2000 字符，主进程侧再截一次）→ 任意协议 provider（三家 RotatingClient 统一 `createChatCompletion`）→ 5-30 字短语；**只对将渲染的前 30 行调模型**（排序后裁剪再摘要，结构性杜绝无界 LLM 调用），并发 5；按 `conversation:message` id 缓存（上限 500，**逐条淘汰最旧**而非整清；**只缓存模型产出**——截断兜底不入缓存，模型恢复后同消息自愈）；失败/超时(8s)/未配模型 → 截原文 30 字兜底，消息照发。
 - **🔴 凭证红线**：app_id/app_secret/chat_id 走专用 IPC 直写主进程 ProcessConfig 本地文件——**绝不经渲染端 configService/ConfigStorage**（其写路径 `PUT /api/settings/client` 过 aioncore HTTP）；get-config 只回掩码（`has_secret` 布尔），secret 永不回读。
 - **降级**：任何失败（凭证错/限流/网络/摘要超时）console 静默，本窗口放弃、下窗口自愈；token 401/auth code 强制刷新重试一次。
 
 ### 新增文件（纯新增）
 
-| 文件                                              | 作用                                                                                                                                                                                                        |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `common/ace/larkNotify.ts`                        | 共享纯函数：秒档友好时间、24h 窗口判定、四档状态解析/权重排序、消息排版（30 行封顶）、终态归一化；主/渲染两侧 + 单测共用                                                                                    |
-| `process/ace/larkNotifySender.ts`                 | 主进程发送器：tenant_access_token 缓存（提前 5min 刷新 + in-flight 并发去重 + 401 重试一次）、群文本消息、摘要（ClientFactory 多协议 + 消息 id 缓存 + 截断兜底）；fetch 可注入、零 electron 依赖（可单测）  |
-| `renderer/ace/larkNotify/windowController.ts`     | 60s 固定窗口控制器（fake-timers 可测）                                                                                                                                                                      |
-| `renderer/ace/larkNotify/assembleSnapshot.ts`     | 快照组装：`getUserConversations({limit:10000})`（沿用侧栏单次调用形态，替代计划中的 cursor 循环）→ 24h 过滤 → 并发 5 取 total/最后用户消息（`order:'DESC'`）→ 行级降级 → 排序                               |
-| `renderer/ace/larkNotify/useLarkNotifyTrigger.ts` | 触发 hook：自维护终态登记表（sync hook 的 Set 表达不了四档）；**配置在窗口期满时重读**（比计划的"窗口启动时"更新鲜且无竞态，微偏差）                                                                        |
-| `renderer/ace/larkNotify/LarkNotifySettings.tsx`  | 设置区块：开关/app_id/app_secret(password+占位)/chat_id/摘要模型选择/测试按钮                                                                                                                               |
-| `tests/unit/ace-lark-notify.test.ts`              | 19 测：时间档位、24h 边界、触发集（stopped 排除/pending 兜底）、状态优先级、四档排序、排版（?总数/30 行封顶）、固定窗口防抖、用户消息抽取（2000 截断/多模态空文本）、token 并发去重/缓存/401 重试、摘要缓存 |
+| 文件                                              | 作用                                                                                                                                                                                                                                              |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `common/ace/larkNotify.ts`                        | 共享纯函数：秒档友好时间、24h 窗口判定、四档状态解析/权重排序、interactive 卡片构建（30 行封顶）、终态归一化；主/渲染两侧 + 单测共用                                                                                                              |
+| `process/ace/larkNotifySender.ts`                 | 主进程发送器：tenant_access_token 缓存（提前 5min 刷新 + in-flight 并发去重 + 401 重试一次）、群消息（通知走 interactive 卡片，测试按钮走文本）、摘要（ClientFactory 多协议 + 消息 id 缓存 + 截断兜底）；fetch 可注入、零 electron 依赖（可单测） |
+| `renderer/ace/larkNotify/windowController.ts`     | 60s 固定窗口控制器（fake-timers 可测）                                                                                                                                                                                                            |
+| `renderer/ace/larkNotify/assembleSnapshot.ts`     | 快照组装：`getUserConversations({limit:10000})`（沿用侧栏单次调用形态，替代计划中的 cursor 循环）→ 24h 过滤 → 并发 5 取 total/最后用户消息（`order:'DESC'`）→ 行级降级 → 排序                                                                     |
+| `renderer/ace/larkNotify/useLarkNotifyTrigger.ts` | 触发 hook：自维护终态登记表（sync hook 的 Set 表达不了四档）；**配置在窗口期满时重读**（比计划的"窗口启动时"更新鲜且无竞态，微偏差）                                                                                                              |
+| `renderer/ace/larkNotify/LarkNotifySettings.tsx`  | 设置区块：开关/app_id/app_secret(password+占位)/chat_id/摘要模型选择（走 `useModelProviderList` 统一枚举——曾误读静态 `provider.models` 致下拉为空；空列表显示配置指引）/测试按钮                                                                  |
+| `tests/unit/ace-lark-notify.test.ts`              | 30 测：时间档位、24h 边界、触发集（stopped 排除/pending 兜底）、状态优先级、四档排序、卡片排版（?总数/30 行封顶/interactive 发送）、固定窗口防抖、用户消息抽取（2000 截断/多模态空文本）、token 并发去重/缓存/401 重试、摘要缓存                  |
 
 ### marker 挂点
 
@@ -339,4 +339,4 @@ opencode 没有每会话文件——全部数据在 `<XDG_DATA_HOME|~/.local/sha
 - `process/ace/larkNotifySender.ts`：REST base 按 domain 解析；token 缓存 key 含 domain（同 app_id 跨平台不串用）。
 - `process/ace/aceBridge.ts`：save/get 透传 domain（枚举闸门）；domain 变更同样重置 token 缓存。
 - `renderer/ace/larkNotify/LarkNotifySettings.tsx`：新增"平台"下拉（飞书 / Lark 国际版）；i18n `larkNotify.domain*` ×9。
-- 测试：`tests/unit/ace-lark-notify.test.ts` 新增 larksuite 路由 + 缓存隔离用例（23 用例全绿）。
+- 测试：`tests/unit/ace-lark-notify.test.ts` 新增 larksuite 路由 + 缓存隔离用例（30 用例全绿）。

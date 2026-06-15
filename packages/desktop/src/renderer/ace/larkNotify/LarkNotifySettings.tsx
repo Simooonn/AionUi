@@ -10,12 +10,11 @@
  * renderer's regular config channel, which round-trips through aioncore.
  */
 
-import { ipcBridge } from '@/common';
 import type { AceLarkNotifyDomain, AceLarkNotifyMaskedConfig, AceLarkNotifySaveConfig } from '@/common/ace/types';
+import { useModelProviderList } from '@/renderer/hooks/agent/useModelProviderList';
 import { Button, Input, Message, Select, Switch } from '@arco-design/web-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import useSWR from 'swr';
 
 type LarkNotifySettingsApi = {
   larkNotifyGetConfig?: () => Promise<AceLarkNotifyMaskedConfig>;
@@ -46,7 +45,10 @@ const LarkNotifySettings: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
 
-  const { data: providers } = useSWR('ace-lark-notify-providers', () => ipcBridge.mode.listProviders.invoke());
+  // Same provider/model enumeration the channel settings use (enabled +
+  // capability filtering, Google Auth injection) — NOT the raw static
+  // provider.models field, which is frequently empty.
+  const { providers, getAvailableModels } = useModelProviderList();
 
   useEffect(() => {
     void getApi()
@@ -72,13 +74,13 @@ const LarkNotifySettings: React.FC = () => {
   }, []);
 
   const summaryOptions = useMemo(() => {
-    return (providers ?? []).flatMap((provider) =>
-      (provider.models ?? []).map((model) => ({
+    return providers.flatMap((provider) =>
+      getAvailableModels(provider).map((model) => ({
         label: `${provider.name} / ${model}`,
         value: `${provider.id}${SUMMARY_VALUE_SEPARATOR}${model}`,
       }))
     );
-  }, [providers]);
+  }, [providers, getAvailableModels]);
 
   const buildPayload = (): AceLarkNotifySaveConfig => {
     const [id, use_model] = summaryValue?.split(SUMMARY_VALUE_SEPARATOR) ?? [];
@@ -167,6 +169,11 @@ const LarkNotifySettings: React.FC = () => {
             onChange={(value: string) => setSummaryValue(value)}
             options={summaryOptions}
             placeholder={t('settings.larkNotify.summaryModelPlaceholder')}
+            notFoundContent={
+              <div className='px-12px py-8px text-12px text-t-tertiary'>
+                {t('settings.larkNotify.summaryModelEmpty')}
+              </div>
+            }
             allowClear
             showSearch
             onClear={() => setSummaryValue(undefined)}

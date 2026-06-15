@@ -73,7 +73,10 @@
     "removeProjectConfirm": "確定要移除專案「{{name}}」嗎？專案下的 {{count}} 個對話也會被一起移除。",
     "newConversationInProject": "在此專案中新建對話",
     "localFileDeleteFailed": "部分本地會話檔案未能刪除",
-    "refreshProjects": "重新整理專案狀態"
+    "refreshProjects": "重新整理專案狀態",
+    "pinnedProjectsSection": "置頂專案",
+    "pinProject": "置頂專案",
+    "unpinProject": "取消置頂"
   },
   "historySearch": {
     "tooltip": "搜尋訊息",

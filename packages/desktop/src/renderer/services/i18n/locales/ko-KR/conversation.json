@@ -73,7 +73,10 @@
     "removeProjectConfirm": "\"{{name}}\" 프로젝트를 제거하시겠습니까? 프로젝트의 {{count}}개 대화도 함께 제거됩니다.",
     "newConversationInProject": "이 프로젝트에서 새 대화",
     "localFileDeleteFailed": "일부 로컬 세션 파일을 삭제하지 못했습니다",
-    "refreshProjects": "프로젝트 상태 새로고침"
+    "refreshProjects": "프로젝트 상태 새로고침",
+    "pinnedProjectsSection": "고정된 프로젝트",
+    "pinProject": "프로젝트 고정",
+    "unpinProject": "고정 해제"
   },
   "historySearch": {
     "tooltip": "메시지 검색",

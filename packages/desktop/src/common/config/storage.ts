@@ -90,6 +90,8 @@ export interface IConfigStorageRefer {
   'upload.saveToWorkspace'?: boolean;
   // guid 页面上次选择的 agent 类型 / Last selected agent type on guid page
   'guid.lastSelectedAgent'?: string;
+  // 左侧栏置顶的项目 workspace 路径，顺序即数组下标 / Pinned project workspaces in sidebar, order = array index
+  'sidebar.pinnedProjects'?: string[];
   // 关闭窗口时最小化到系统托盘 / Minimize to system tray when closing window
   'system.closeToTray'?: boolean;
   // 任务完成时显示系统通知 / Show system notification when task completes

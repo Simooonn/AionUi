@@ -73,7 +73,10 @@
     "removeProjectConfirm": "Remover o projeto \"{{name}}\"? Suas {{count}} conversa(s) também serão removidas.",
     "newConversationInProject": "Novo chat neste projeto",
     "localFileDeleteFailed": "Não foi possível excluir alguns arquivos de sessão locais",
-    "refreshProjects": "Atualizar status do projeto"
+    "refreshProjects": "Atualizar status do projeto",
+    "pinnedProjectsSection": "Projetos fixados",
+    "pinProject": "Fixar projeto",
+    "unpinProject": "Desafixar projeto"
   },
   "historySearch": {
     "tooltip": "Pesquisar mensagens",

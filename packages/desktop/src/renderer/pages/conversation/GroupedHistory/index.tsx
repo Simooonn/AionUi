@@ -14,8 +14,8 @@ import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useCronJobsMap } from '@/renderer/pages/cron';
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Button, Dropdown, Empty, Input, Menu, Modal, Tooltip } from '@arco-design/web-react';
-import { Delete, FolderOpen, MoreOne, Plus, Refresh, Right } from '@icon-park/react';
+import { Button, Dropdown, Empty, Input, Menu, Message, Modal, Tooltip } from '@arco-design/web-react';
+import { Delete, FolderOpen, MoreOne, Pin, Plus, Refresh, Right } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,11 +25,13 @@ import WorkspaceCollapse from '../components/WorkspaceCollapse';
 import ConversationRow from './ConversationRow';
 import DragOverlayContent from './DragOverlayContent';
 import SortableConversationRow from './SortableConversationRow';
+import SortablePinnedProject from './SortablePinnedProject';
 import { useBatchSelection } from './hooks/useBatchSelection';
 import { useConversationActions } from './hooks/useConversationActions';
 import { useConversations } from './hooks/useConversations';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { useExport } from './hooks/useExport';
+import { usePinnedProjects, usePinnedProjectDragAndDrop } from './hooks/usePinnedProjects';
 import type { ConversationRowProps, WorkspaceGroupedHistoryProps } from './types';
 
 const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
@@ -118,7 +120,29 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     pinnedConversations,
     timelineSections,
     handleToggleWorkspace,
+    hasLoadedOnce,
   } = useConversations();
+
+  const {
+    pinnedSet,
+    pinnedList,
+    isPinned,
+    togglePin,
+    reorder: reorderPinnedProjects,
+    pruneOrphans,
+  } = usePinnedProjects();
+
+  const handleToggleProjectPin = useCallback(
+    async (workspace: string) => {
+      try {
+        await togglePin(workspace);
+      } catch (error) {
+        console.error('Failed to toggle project pin:', error);
+        Message.error(t('conversation.history.pinFailed'));
+      }
+    },
+    [togglePin, t]
+  );
 
   const {
     selectedConversationIds,
@@ -269,6 +293,43 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
   } = useStaleWorkspaces(projectGroups.map((g) => g.workspace));
   // ace:end
 
+  // Split projects into pinned (config-driven, ordered by the pin array index) and the rest.
+  const pinnedProjectGroups = useMemo(() => {
+    const byWorkspace = new Map(projectGroups.map((g) => [g.workspace, g]));
+    return pinnedList
+      .map((ws) => byWorkspace.get(ws))
+      .filter((g): g is (typeof projectGroups)[number] => g !== undefined);
+  }, [projectGroups, pinnedList]);
+
+  const unpinnedProjectGroups = useMemo(
+    () => projectGroups.filter((g) => !pinnedSet.has(g.workspace)),
+    [projectGroups, pinnedSet]
+  );
+
+  const pinnedProjectIds = useMemo(() => pinnedProjectGroups.map((g) => g.workspace), [pinnedProjectGroups]);
+
+  // Prune pinned entries whose workspace has no conversations left (orphan). Gated
+  // on hasLoadedOnce so the empty pre-load state never wipes existing pins.
+  useEffect(() => {
+    const existing = new Set(projectGroups.map((g) => g.workspace));
+    void pruneOrphans(existing, hasLoadedOnce);
+  }, [projectGroups, hasLoadedOnce, pruneOrphans]);
+
+  const {
+    sensors: pinnedProjectSensors,
+    activeId: activePinnedProjectId,
+    activeGroup: activePinnedProjectGroup,
+    handleDragStart: handlePinnedProjectDragStart,
+    handleDragEnd: handlePinnedProjectDragEnd,
+    handleDragCancel: handlePinnedProjectDragCancel,
+    isDragEnabled: isPinnedProjectDragEnabled,
+  } = usePinnedProjectDragAndDrop({
+    pinnedProjectGroups,
+    reorder: reorderPinnedProjects,
+    collapsed,
+    batchMode,
+  });
+
   // Conversations section: keep timeline grouping (today/yesterday/...) but only show non-workspace conversations.
   const conversationOnlySections = useMemo(
     () =>
@@ -280,6 +341,126 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         .filter((section) => section.items.length > 0),
     [timelineSections]
   );
+
+  // Render a single project folder. Shared by the pinned-projects section and the
+  // regular projects section so both look and behave identically.
+  const renderProjectGroup = (group: {
+    workspace: string;
+    displayName: string;
+    conversations: TChatConversation[];
+  }) => {
+    // ace:start a project whose workspace dir is gone grays its whole subtree
+    const isStale = staleWorkspaces.has(group.workspace);
+    // ace:end
+    const pinned = isPinned(group.workspace);
+    const projectMenu = (
+      <Menu
+        onClickMenuItem={(key) => {
+          if (key === 'pin') {
+            void handleToggleProjectPin(group.workspace);
+          } else if (key === 'remove') {
+            handleRemoveProject(group.displayName, group.conversations);
+          }
+        }}
+      >
+        <Menu.Item key='pin'>
+          <span className='flex items-center gap-8px'>
+            <Pin theme='outline' size='14' />
+            {pinned ? t('conversation.history.unpinProject') : t('conversation.history.pinProject')}
+          </span>
+        </Menu.Item>
+        <Menu.Item key='remove' className='!text-[rgb(var(--danger-6))]'>
+          <span className='flex items-center gap-8px'>
+            <Delete theme='outline' size='14' />
+            {t('conversation.history.removeProject')}
+          </span>
+        </Menu.Item>
+      </Menu>
+    );
+    return (
+      <WorkspaceCollapse
+        expanded={expandedWorkspaces.includes(group.workspace)}
+        onToggle={() => handleToggleWorkspace(group.workspace)}
+        siderCollapsed={collapsed}
+        // ace:start gray the folder icon for a stale project
+        dimmed={isStale}
+        // ace:end
+        header={
+          // ace:start gray displayName when workspace dir is missing
+          <span
+            className={classNames(
+              'text-14px font-[500] truncate flex-1 min-w-0',
+              isStale ? 'text-t-disabled' : 'text-t-primary'
+            )}
+            title={isStale ? group.workspace : undefined}
+          >
+            {group.displayName}
+          </span>
+          // ace:end
+        }
+        trailing={
+          <span className='flex items-center gap-6px'>
+            <Tooltip content={t('conversation.history.newConversationInProject')} position='top'>
+              <span
+                role='button'
+                tabIndex={isStale ? -1 : 0}
+                aria-label={t('conversation.history.newConversationInProject')}
+                // ace:start disable "new conversation" on a stale project (its dir is gone)
+                aria-disabled={isStale}
+                className={classNames(
+                  'flex-center transition-colors size-20px rd-4px sider-action-btn',
+                  isMobile ? 'flex' : 'hidden group-hover:flex',
+                  isStale
+                    ? 'opacity-40 cursor-not-allowed text-t-disabled'
+                    : 'cursor-pointer text-t-secondary hover:text-t-primary'
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isStale) return;
+                  void navigate('/guid', { state: { workspace: group.workspace } });
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (isStale) return;
+                    void navigate('/guid', { state: { workspace: group.workspace } });
+                  }
+                }}
+                // ace:end
+              >
+                <Plus theme='outline' size='14' fill='currentColor' className='block leading-none' />
+              </span>
+            </Tooltip>
+            <Dropdown
+              droplist={projectMenu}
+              trigger='click'
+              position='br'
+              getPopupContainer={() => document.body}
+              unmountOnExit={false}
+            >
+              <span
+                aria-label='Project actions'
+                className={classNames(
+                  'flex-center cursor-pointer transition-colors text-t-secondary hover:text-t-primary size-20px rd-4px sider-action-btn',
+                  isMobile ? 'flex' : 'hidden group-hover:flex'
+                )}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreOne theme='outline' size='14' fill='currentColor' className='block leading-none' />
+              </span>
+            </Dropdown>
+          </span>
+        }
+      >
+        <div className={classNames('flex flex-col min-w-0', { 'mt-1px': !collapsed })}>
+          {/* ace:start gray child rows of a stale project */}
+          {group.conversations.map((conversation) => renderConversation(conversation, true, isStale))}
+          {/* ace:end */}
+        </div>
+      </WorkspaceCollapse>
+    );
+  };
 
   if (timelineSections.length === 0 && pinnedConversations.length === 0) {
     return (
@@ -548,11 +729,52 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
           </DragOverlay>
         </DndContext>
 
+        {/* L1: Pinned projects section — between pinned conversations and the Team/Cron slot */}
+        {pinnedProjectGroups.length > 0 && (
+          <div className='min-w-0'>
+            {!collapsed && (
+              <SectionLabel sectionKey='pinned-projects' label={t('conversation.history.pinnedProjectsSection')} />
+            )}
+            {!collapsedSections.has('pinned-projects') && (
+              <DndContext
+                sensors={pinnedProjectSensors}
+                collisionDetection={closestCenter}
+                onDragStart={handlePinnedProjectDragStart}
+                onDragEnd={handlePinnedProjectDragEnd}
+                onDragCancel={handlePinnedProjectDragCancel}
+              >
+                <SortableContext items={pinnedProjectIds} strategy={verticalListSortingStrategy}>
+                  <div className='min-w-0'>
+                    {pinnedProjectGroups.map((group) =>
+                      isPinnedProjectDragEnabled ? (
+                        <SortablePinnedProject key={group.workspace} workspace={group.workspace}>
+                          {renderProjectGroup(group)}
+                        </SortablePinnedProject>
+                      ) : (
+                        <div key={group.workspace} className='min-w-0'>
+                          {renderProjectGroup(group)}
+                        </div>
+                      )
+                    )}
+                  </div>
+                </SortableContext>
+                <DragOverlay dropAnimation={null}>
+                  {activePinnedProjectId && activePinnedProjectGroup ? (
+                    <div className='px-10px py-6px rd-8px bg-fill-2 text-14px font-[500] text-t-primary truncate max-w-240px'>
+                      {activePinnedProjectGroup.displayName}
+                    </div>
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
+            )}
+          </div>
+        )}
+
         {/* Slot 由父级（Sider）填入：例如 Team / CronJob sections，位于「置顶」之后、「项目」之前 */}
         {afterPinnedContent}
 
-        {/* L1: Projects section — workspace folders, peer to conversations */}
-        {projectGroups.length > 0 && (
+        {/* L1: Projects section — workspace folders, peer to conversations (pinned ones excluded) */}
+        {unpinnedProjectGroups.length > 0 && (
           <div className='min-w-0'>
             {!collapsed && (
               <SectionLabel
@@ -600,112 +822,11 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
               />
             )}
             {!collapsedSections.has('projects') &&
-              projectGroups.map((group) => {
-                // ace:start a project whose workspace dir is gone grays its whole subtree
-                const isStale = staleWorkspaces.has(group.workspace);
-                // ace:end
-                const projectMenu = (
-                  <Menu
-                    onClickMenuItem={(key) => {
-                      if (key === 'remove') {
-                        handleRemoveProject(group.displayName, group.conversations);
-                      }
-                    }}
-                  >
-                    <Menu.Item key='remove' className='!text-[rgb(var(--danger-6))]'>
-                      <span className='flex items-center gap-8px'>
-                        <Delete theme='outline' size='14' />
-                        {t('conversation.history.removeProject')}
-                      </span>
-                    </Menu.Item>
-                  </Menu>
-                );
-                return (
-                  <div key={group.workspace} className='min-w-0'>
-                    <WorkspaceCollapse
-                      expanded={expandedWorkspaces.includes(group.workspace)}
-                      onToggle={() => handleToggleWorkspace(group.workspace)}
-                      siderCollapsed={collapsed}
-                      // ace:start gray the folder icon for a stale project
-                      dimmed={isStale}
-                      // ace:end
-                      header={
-                        // ace:start gray displayName when workspace dir is missing
-                        <span
-                          className={classNames(
-                            'text-14px font-[500] truncate flex-1 min-w-0',
-                            isStale ? 'text-t-disabled' : 'text-t-primary'
-                          )}
-                          title={isStale ? group.workspace : undefined}
-                        >
-                          {group.displayName}
-                        </span>
-                        // ace:end
-                      }
-                      trailing={
-                        <span className='flex items-center gap-6px'>
-                          <Tooltip content={t('conversation.history.newConversationInProject')} position='top'>
-                            <span
-                              role='button'
-                              tabIndex={isStale ? -1 : 0}
-                              aria-label={t('conversation.history.newConversationInProject')}
-                              // ace:start disable "new conversation" on a stale project (its dir is gone)
-                              aria-disabled={isStale}
-                              className={classNames(
-                                'flex-center transition-colors size-20px rd-4px sider-action-btn',
-                                isMobile ? 'flex' : 'hidden group-hover:flex',
-                                isStale
-                                  ? 'opacity-40 cursor-not-allowed text-t-disabled'
-                                  : 'cursor-pointer text-t-secondary hover:text-t-primary'
-                              )}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (isStale) return;
-                                void navigate('/guid', { state: { workspace: group.workspace } });
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  if (isStale) return;
-                                  void navigate('/guid', { state: { workspace: group.workspace } });
-                                }
-                              }}
-                              // ace:end
-                            >
-                              <Plus theme='outline' size='14' fill='currentColor' className='block leading-none' />
-                            </span>
-                          </Tooltip>
-                          <Dropdown
-                            droplist={projectMenu}
-                            trigger='click'
-                            position='br'
-                            getPopupContainer={() => document.body}
-                            unmountOnExit={false}
-                          >
-                            <span
-                              aria-label='Project actions'
-                              className={classNames(
-                                'flex-center cursor-pointer transition-colors text-t-secondary hover:text-t-primary size-20px rd-4px sider-action-btn',
-                                isMobile ? 'flex' : 'hidden group-hover:flex'
-                              )}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <MoreOne theme='outline' size='14' fill='currentColor' className='block leading-none' />
-                            </span>
-                          </Dropdown>
-                        </span>
-                      }
-                    >
-                      <div className={classNames('flex flex-col min-w-0', { 'mt-1px': !collapsed })}>
-                        {/* ace:start gray child rows of a stale project */}
-                        {group.conversations.map((conversation) => renderConversation(conversation, true, isStale))}
-                        {/* ace:end */}
-                      </div>
-                    </WorkspaceCollapse>
-                  </div>
-                );
-              })}
+              unpinnedProjectGroups.map((group) => (
+                <div key={group.workspace} className='min-w-0'>
+                  {renderProjectGroup(group)}
+                </div>
+              ))}
           </div>
         )}
 

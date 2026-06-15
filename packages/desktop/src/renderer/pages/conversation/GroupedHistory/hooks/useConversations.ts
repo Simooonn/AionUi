@@ -23,6 +23,7 @@ export const useConversations = () => {
     clearCompletionUnread,
     setActiveConversation,
     groupedHistory,
+    hasLoadedOnce,
   } = useConversationHistoryContext();
 
   // Track whether auto-expand has already been performed to avoid
@@ -127,5 +128,6 @@ export const useConversations = () => {
     pinnedConversations,
     timelineSections,
     handleToggleWorkspace,
+    hasLoadedOnce,
   };
 };

@@ -73,7 +73,10 @@
     "removeProjectConfirm": "Удалить проект «{{name}}»? Будет также удалено {{count}} бесед(ы) в нём.",
     "newConversationInProject": "Новая беседа в этом проекте",
     "localFileDeleteFailed": "Некоторые локальные файлы сессий не удалось удалить",
-    "refreshProjects": "Обновить статус проектов"
+    "refreshProjects": "Обновить статус проектов",
+    "pinnedProjectsSection": "Закреплённые проекты",
+    "pinProject": "Закрепить проект",
+    "unpinProject": "Открепить проект"
   },
   "historySearch": {
     "tooltip": "Поиск сообщений",

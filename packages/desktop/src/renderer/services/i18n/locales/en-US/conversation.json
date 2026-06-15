@@ -73,7 +73,10 @@
     "removeProjectConfirm": "Remove project \"{{name}}\"? Its {{count}} conversation(s) will be removed too.",
     "newConversationInProject": "New chat in this project",
     "localFileDeleteFailed": "Some local session files could not be deleted",
-    "refreshProjects": "Refresh project status"
+    "refreshProjects": "Refresh project status",
+    "pinnedProjectsSection": "Pinned Projects",
+    "pinProject": "Pin project",
+    "unpinProject": "Unpin project"
   },
   "historySearch": {
     "tooltip": "Search messages",

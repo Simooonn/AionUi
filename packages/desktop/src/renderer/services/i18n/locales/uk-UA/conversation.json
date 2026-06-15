@@ -73,7 +73,10 @@
     "removeProjectConfirm": "Видалити проєкт «{{name}}»? Також буде видалено {{count}} розмов у ньому.",
     "newConversationInProject": "Нова розмова в цьому проєкті",
     "localFileDeleteFailed": "Деякі локальні файли сесій не вдалося видалити",
-    "refreshProjects": "Оновити статус проєктів"
+    "refreshProjects": "Оновити статус проєктів",
+    "pinnedProjectsSection": "Закріплені проєкти",
+    "pinProject": "Закріпити проєкт",
+    "unpinProject": "Відкріпити проєкт"
   },
   "historySearch": {
     "tooltip": "Пошук повідомлень",

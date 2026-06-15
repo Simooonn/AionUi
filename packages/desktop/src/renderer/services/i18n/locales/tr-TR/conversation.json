@@ -73,7 +73,10 @@
     "removeProjectConfirm": "\"{{name}}\" projesi kaldırılsın mı? Projedeki {{count}} konuşma da kaldırılacak.",
     "newConversationInProject": "Bu projede yeni konuşma",
     "localFileDeleteFailed": "Bazı yerel oturum dosyaları silinemedi",
-    "refreshProjects": "Proje durumunu yenile"
+    "refreshProjects": "Proje durumunu yenile",
+    "pinnedProjectsSection": "Sabitlenen projeler",
+    "pinProject": "Projeyi sabitle",
+    "unpinProject": "Sabitlemeyi kaldır"
   },
   "historySearch": {
     "tooltip": "Mesajları ara",

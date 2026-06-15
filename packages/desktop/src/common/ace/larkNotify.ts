@@ -16,7 +16,7 @@ import { LARK_NOTIFY_STATUS_WEIGHT } from './types';
 /** Sessions whose last message is older than this are excluded from the list. */
 export const LARK_NOTIFY_ACTIVE_WINDOW_MS = 24 * 60 * 60 * 1000;
 /** Fixed debounce window: first trigger starts it, expiry sends one snapshot. */
-export const LARK_NOTIFY_DEBOUNCE_MS = 60_000;
+export const LARK_NOTIFY_DEBOUNCE_MS = 2_000;
 /** Model input cap for the per-row summary (chars, applied renderer-side). */
 export const LARK_NOTIFY_SUMMARY_INPUT_CAP = 2000;
 /** Summary output fallback: truncate the raw user message to this many chars. */

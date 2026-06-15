@@ -368,6 +368,11 @@
       "createFailed": "開啟終端機失敗"
     }
   },
+  "resumeCommand": {
+    "copy": "複製恢復指令",
+    "copied": "已複製恢復指令",
+    "copyFailed": "複製失敗"
+  },
   "minimap": {
     "searchAria": "搜尋對話",
     "searchHint": "點擊這裡搜尋關鍵詞",

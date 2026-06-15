@@ -368,6 +368,11 @@
       "createFailed": "ターミナルを開けませんでした"
     }
   },
+  "resumeCommand": {
+    "copy": "再開コマンドをコピー",
+    "copied": "再開コマンドをコピーしました",
+    "copyFailed": "コピーに失敗しました"
+  },
   "minimap": {
     "searchAria": "会話を検索",
     "searchHint": "ここをクリックしてキーワードを検索",

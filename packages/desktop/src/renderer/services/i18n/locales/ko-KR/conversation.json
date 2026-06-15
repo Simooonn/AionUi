@@ -368,6 +368,11 @@
       "createFailed": "터미널을 열지 못했습니다"
     }
   },
+  "resumeCommand": {
+    "copy": "재개 명령 복사",
+    "copied": "재개 명령을 복사했습니다",
+    "copyFailed": "복사하지 못했습니다"
+  },
   "minimap": {
     "searchAria": "대화 검색",
     "searchHint": "여기를 클릭해 키워드를 검색하세요",

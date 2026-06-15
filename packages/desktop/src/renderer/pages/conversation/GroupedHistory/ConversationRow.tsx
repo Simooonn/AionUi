@@ -10,8 +10,8 @@ import { usePresetAssistantInfo } from '@/renderer/hooks/agent/usePresetAssistan
 import { CronJobIndicator } from '@/renderer/pages/cron';
 import { cleanupSiderTooltips, getSiderTooltipProps } from '@/renderer/utils/ui/siderTooltip';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
-import { Checkbox, Dropdown, Menu, Spin, Tooltip } from '@arco-design/web-react';
-import { DeleteOne, EditOne, Export, MessageOne, MoreOne, Pushpin } from '@icon-park/react';
+import { Checkbox, Dropdown, Menu, Message, Spin, Tooltip } from '@arco-design/web-react';
+import { Copy, DeleteOne, EditOne, Export, MessageOne, MoreOne, Pushpin } from '@icon-park/react';
 import classNames from 'classnames';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +23,10 @@ import { isConversationPinned } from './utils/groupingHelpers';
 import { formatRelativeTime } from '@/renderer/ace/relativeTime';
 import { useRelativeTimeTick } from '@/renderer/ace/useRelativeTimeTick';
 import { getActivityTime } from '@/renderer/utils/chat/timeline';
+// ace:end
+// ace:start copyable CLI resume command (claude --resume <id>, etc.)
+import { buildCliResumeCommand } from '@/renderer/ace/readonly';
+import { copyText } from '@/renderer/utils/ui/clipboard';
 // ace:end
 
 const ConversationRow: React.FC<ConversationRowProps> = (props) => {
@@ -57,6 +61,8 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
   const { t } = useTranslation();
   const { info: assistantInfo } = usePresetAssistantInfo(conversation);
   const isPinned = isConversationPinned(conversation);
+  // Terminal resume command (e.g. `claude --resume <id>`) — only for CLI-imported sessions.
+  const resumeCommand = buildCliResumeCommand(conversation);
   const cronStatus = getJobStatus(conversation.id);
   const siderTooltipProps = getSiderTooltipProps(tooltipEnabled);
   const inlineNameTooltipEnabled = !collapsed && !isMobile && !!conversation.name;
@@ -265,6 +271,14 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
                       onExport?.(conversation);
                       return;
                     }
+                    if (key === 'copyResume') {
+                      if (resumeCommand) {
+                        copyText(resumeCommand)
+                          .then(() => Message.success(t('conversation.resumeCommand.copied')))
+                          .catch(() => Message.error(t('conversation.resumeCommand.copyFailed')));
+                      }
+                      return;
+                    }
                     if (key === 'delete') {
                       onDelete(conversation.id);
                     }
@@ -287,6 +301,14 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
                       <div className='flex items-center gap-8px'>
                         <Export theme='outline' size='14' />
                         <span>{t('conversation.history.export')}</span>
+                      </div>
+                    </Menu.Item>
+                  )}
+                  {resumeCommand && (
+                    <Menu.Item key='copyResume'>
+                      <div className='flex items-center gap-8px'>
+                        <Copy theme='outline' size='14' />
+                        <span>{t('conversation.resumeCommand.copy')}</span>
                       </div>
                     </Menu.Item>
                   )}

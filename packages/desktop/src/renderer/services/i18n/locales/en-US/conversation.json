@@ -368,6 +368,11 @@
       "createFailed": "Failed to open terminal"
     }
   },
+  "resumeCommand": {
+    "copy": "Copy resume command",
+    "copied": "Resume command copied",
+    "copyFailed": "Failed to copy"
+  },
   "minimap": {
     "searchAria": "Search conversation",
     "searchHint": "Click here to search keywords",

@@ -374,6 +374,11 @@
       "createFailed": "Falha ao abrir o terminal"
     }
   },
+  "resumeCommand": {
+    "copy": "Copiar comando de retomada",
+    "copied": "Comando de retomada copiado",
+    "copyFailed": "Falha ao copiar"
+  },
   "minimap": {
     "searchAria": "Pesquisar na conversa",
     "searchHint": "Clique aqui para pesquisar palavras-chave",

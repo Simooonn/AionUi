@@ -368,6 +368,11 @@
       "createFailed": "打开终端失败"
     }
   },
+  "resumeCommand": {
+    "copy": "复制恢复命令",
+    "copied": "已复制恢复命令",
+    "copyFailed": "复制失败"
+  },
   "minimap": {
     "searchAria": "搜索会话",
     "searchHint": "点击这里搜索关键词",

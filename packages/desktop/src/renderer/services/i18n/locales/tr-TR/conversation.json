@@ -358,6 +358,11 @@
       "createFailed": "Terminal açılamadı"
     }
   },
+  "resumeCommand": {
+    "copy": "Devam komutunu kopyala",
+    "copied": "Devam komutu kopyalandı",
+    "copyFailed": "Kopyalanamadı"
+  },
   "minimap": {
     "searchAria": "Sohbeti ara",
     "searchHint": "Anahtar kelime aramak için buraya tıkla",

@@ -159,6 +159,8 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
   sliderTitle,
 }) => {
   const runtimeView = useConversationRuntimeView(conversation.id);
+  const aionrsAssistantId = resolveAssistantConfigId(conversation) ?? undefined;
+  const persistGlobalPreference = !aionrsAssistantId;
   const onSelectModel = useCallback(
     async (_provider: IProvider, modelName: string) => {
       const selected = { ..._provider, use_model: modelName } as TProviderWithModel;
@@ -171,10 +173,10 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
         runtimeView.markStopAcknowledged(runtimeView.activeTurnId, result.runtime);
       }
       const ok = await ipcBridge.conversation.update.invoke({ id: conversation.id, updates: { model: selected } });
-      if (ok) void saveAionrsDefaultModel(_provider.id, modelName);
+      if (ok && persistGlobalPreference) void saveAionrsDefaultModel(_provider.id, modelName);
       return Boolean(ok);
     },
-    [conversation.id, runtimeView]
+    [conversation.id, persistGlobalPreference, runtimeView]
   );
 
   const modelSelection = useAionrsModelSelection({
@@ -183,7 +185,6 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
   });
   const workspaceEnabled = Boolean(conversation.extra?.workspace);
   const { info: presetAssistantInfo } = usePresetAssistantInfo(conversation);
-  const aionrsAssistantId = resolveAssistantConfigId(conversation) ?? undefined;
   const layout = useLayoutContext();
   // Mobile: model selection moved into the sendbox `+` action sheet to free up
   // header space; the dropdown stays available on desktop and tablets ≥768px.
@@ -228,6 +229,7 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
           (conversation.extra as { mcp_statuses?: IConversationMcpStatus[] } | undefined)?.mcp_statuses
         }
         agent_name={presetAssistantInfo?.name}
+        assistantId={aionrsAssistantId}
       />
     </ChatLayout>
   );
@@ -279,6 +281,7 @@ const ChatConversation: React.FC<{
             loadedMcpStatuses={
               (conversation.extra as { mcp_statuses?: IConversationMcpStatus[] } | undefined)?.mcp_statuses
             }
+            assistantId={acpAssistantId}
           ></AcpChat>
         );
       default:
@@ -310,6 +313,7 @@ const ChatConversation: React.FC<{
           backend={extra.backend}
           initialModelId={extra.current_model_id}
           waitForWarmup
+          persistGlobalPreference={!acpAssistantId}
         />
       );
     }

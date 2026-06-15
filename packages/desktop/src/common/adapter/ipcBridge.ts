@@ -27,6 +27,7 @@ import type {
 } from '../config/storage';
 import type {
   Assistant,
+  AssistantDetail,
   CreateAssistantRequest,
   ImportAssistantsRequest,
   ImportAssistantsResult,
@@ -34,7 +35,11 @@ import type {
   UpdateAssistantRequest,
 } from '../types/agent/assistantTypes';
 import type { PreviewHistoryTarget, PreviewSnapshotInfo } from '../types/office/preview';
-import type { AcpModelInfo } from '../types/platform/acpTypes';
+import type {
+  GetConfigOptionsResponse,
+  SetConfigOptionRequest,
+  SetConfigOptionResponse,
+} from '../types/platform/acpTypes';
 import type {
   CreateProviderRequest,
   FetchModelsAnonymousRequest,
@@ -48,8 +53,20 @@ import type {
   ITeamAgentRenamedEvent,
   ITeamAgentSpawnedEvent,
   ITeamAgentStatusEvent,
+  ITeamChildTurnEvent,
   ITeamCreatedEvent,
   ITeamListChangedEvent,
+  ITeamMcpStatusEvent,
+  ITeamRemovedEvent,
+  ITeamRenamedEvent,
+  ITeamRunAck,
+  ITeamRunEvent,
+  ITeamSessionChangedEvent,
+  ITeamTaskChangedEvent,
+  ICancelTeamChildTurnParams,
+  ICancelTeamRunParams,
+  ISendTeamAgentMessageParams,
+  ISendTeamMessageParams,
   ITeamTeammateMessageEvent,
   TTeam,
   TeamAgent,
@@ -114,6 +131,10 @@ export const shell = {
 
 export const assistants = {
   list: httpGet<Assistant[], void>('/api/assistants'),
+  get: httpGet<AssistantDetail, { id: string; locale?: string }>(
+    ({ id, locale }) =>
+      `/api/assistants/${encodeURIComponent(id)}${locale ? `?locale=${encodeURIComponent(locale)}` : ''}`
+  ),
   create: httpPost<Assistant, CreateAssistantRequest>('/api/assistants'),
   update: httpPut<Assistant, UpdateAssistantRequest>((p) => `/api/assistants/${p.id}`),
   delete: httpDelete<void, { id: string }>((p) => `/api/assistants/${p.id}`),
@@ -141,6 +162,7 @@ export const conversation = {
         type: p.type,
         id: p.id,
         name: p.name,
+        assistant: p.assistant,
         extra: p.extra,
       };
       if (isAionrs) {
@@ -553,13 +575,6 @@ export const fs = {
   deleteAssistantRule: httpDelete<boolean, { assistant_id: string }>(
     (p) => `/api/skills/assistant-rule/${p.assistant_id}`
   ),
-  readAssistantSkill: httpPost<string, { assistant_id: string; locale?: string }>('/api/skills/assistant-skill/read'),
-  writeAssistantSkill: httpPost<boolean, { assistant_id: string; content: string; locale?: string }>(
-    '/api/skills/assistant-skill/write'
-  ),
-  deleteAssistantSkill: httpDelete<boolean, { assistant_id: string }>(
-    (p) => `/api/skills/assistant-skill/${p.assistant_id}`
-  ),
   listAvailableSkills: httpGet<
     Array<{
       name: string;
@@ -751,6 +766,14 @@ export const acpConversation = {
   sendMessage: conversation.sendMessage,
   responseStream: conversation.responseStream,
   getAvailableAgents: httpGet<AgentMetadata[], void>('/api/agents'),
+  /**
+   * Management view of `/api/agents` (`?include_disabled=true`). Returns the
+   * picker-safe list plus agents hidden solely because the user disabled
+   * them (still installed). Used only by the Agent settings screen so a
+   * disabled custom agent stays listed with a working re-enable toggle.
+   * Pickers must keep using `getAvailableAgents` (default filtered view).
+   */
+  getManagedAgents: httpGet<AgentMetadata[], void>('/api/agents?include_disabled=true'),
   refreshCustomAgents: httpPost<void, void>('/api/agents/refresh'),
   testCustomAgent: httpPost<
     { step: 'success' } | { step: 'fail_cli'; error: string } | { step: 'fail_acp'; error: string },
@@ -806,26 +829,13 @@ export const acpConversation = {
   checkProviderHealth: httpPost<ProviderHealthCheckResponse, ProviderHealthCheckRequest>(
     '/api/agents/provider-health-check'
   ),
-  setMode: httpPut<{ mode: string; initialized: boolean }, { conversation_id: string; mode: string }>(
-    (p) => `/api/conversations/${p.conversation_id}/mode`,
-    (p) => ({ mode: p.mode })
-  ),
-  // 404 is the expected pre-warmup response from `/api/conversations/:id/mode`
-  // and `/api/conversations/:id/model` — the agent has not attached yet, so
-  // we have nothing to read. AcpModeSelector / AcpModelSelector both fall back
-  // to handshake metadata in that case. Silence the bridge log so this
-  // ordinary state doesn't pollute Sentry breadcrumbs (ELECTRON-1BT).
-  getMode: httpGet<{ mode: string; initialized: boolean }, { conversation_id: string }>(
-    (p) => `/api/conversations/${p.conversation_id}/mode`,
+  getConfigOptions: httpGet<GetConfigOptionsResponse, { conversation_id: string }>(
+    (p) => `/api/conversations/${p.conversation_id}/config-options`,
     { silentStatuses: [404] }
   ),
-  getModel: httpGet<{ model_info: AcpModelInfo | null }, { conversation_id: string }>(
-    (p) => `/api/conversations/${p.conversation_id}/model`,
-    { silentStatuses: [404] }
-  ),
-  setModel: httpPut<{ model_info: AcpModelInfo | null }, { conversation_id: string; model_id: string }>(
-    (p) => `/api/conversations/${p.conversation_id}/model`,
-    (p) => ({ model_id: p.model_id })
+  setConfigOption: httpPut<SetConfigOptionResponse, { conversation_id: string; option_id: string; value: string }>(
+    (p) => `/api/conversations/${p.conversation_id}/config-options/${encodeURIComponent(p.option_id)}`,
+    (p): SetConfigOptionRequest => ({ value: p.value })
   ),
 };
 
@@ -1373,6 +1383,17 @@ export interface ICreateConversationParams {
   id?: string;
   name?: string;
   model: TProviderWithModel;
+  assistant?: {
+    id: string;
+    locale?: string;
+    conversation_overrides?: {
+      model?: string;
+      permission?: string;
+      skill_ids?: string[];
+      disabled_builtin_skill_ids?: string[];
+      mcp_ids?: string[];
+    };
+  };
   extra: {
     workspace?: string;
     custom_workspace?: boolean;
@@ -1400,17 +1421,14 @@ export interface ICreateConversationParams {
     /** Transient: auto-inject skills the user opted out of on the Guid page.
      *  Consumed by backend create handler and stripped before persistence. */
     exclude_auto_inject_skills?: string[];
-    /** Transient: MCP server ids selected on the Guid page. Consumed by the
-     *  backend create handler and snapshotted into conversation.extra. */
-    selected_mcp_server_ids?: string[];
-    /** Transient: session-scoped MCP server configs that are not stored in the
-     *  backend catalog (currently built-in MCP servers). */
-    selected_session_mcp_servers?: ISessionMcpServer[];
     preset_context?: string;
     preset_assistant_id?: string;
+    selected_mcp_server_ids?: string[];
+    selected_session_mcp_servers?: ISessionMcpServer[];
     session_mode?: string;
     codex_model?: string;
     current_model_id?: string;
+    thought_level?: string;
     cached_config_options?: import('../types/platform/acpTypes').AcpSessionConfigOption[];
     pending_config_options?: Record<string, string>;
     runtime_validation?: {
@@ -1462,10 +1480,12 @@ export interface IResponseMessage {
   type: string;
   data: unknown;
   msg_id: string;
-  turn_id: string;
+  turn_id?: string;
   conversation_id: string;
   created_at?: number;
   hidden?: boolean;
+  position?: 'left' | 'right' | 'center' | 'pop';
+  status?: 'finish' | 'pending' | 'error' | 'work';
   /** Replace accumulated text for the same msg_id instead of appending. */
   replace?: boolean;
 }
@@ -1524,7 +1544,7 @@ export interface IConversationTurnCompletedEvent {
   detail: string;
   can_send_message: boolean;
   runtime: {
-    state: 'idle' | 'starting' | 'running' | 'waiting_confirmation';
+    state: 'idle' | 'starting' | 'running' | 'cancelling' | 'waiting_confirmation';
     can_send_message: boolean;
     has_task: boolean;
     task_status?: 'pending' | 'running' | 'finished';
@@ -1820,13 +1840,54 @@ export const team = {
   ),
   setSessionMode: httpPost<void, { team_id: string; session_mode: string }>(
     (p) => `/api/teams/${p.team_id}/session-mode`,
-    (p) => ({ session_mode: p.session_mode })
+    (p) => ({ mode: p.session_mode })
   ),
-  agentStatusChanged: wsEmitter<ITeamAgentStatusEvent>('team.agent.status'),
-  agentSpawned: wsEmitter<ITeamAgentSpawnedEvent>('team.agent.spawned'),
-  agentRemoved: wsEmitter<ITeamAgentRemovedEvent>('team.agent.removed'),
-  agentRenamed: wsEmitter<ITeamAgentRenamedEvent>('team.agent.renamed'),
-  listChanged: wsEmitter<ITeamListChangedEvent>('team.list-changed'),
+  sendMessage: httpPost<ITeamRunAck, ISendTeamMessageParams>(
+    (p) => `/api/teams/${p.team_id}/messages`,
+    (p) => ({
+      content: p.input,
+      files: p.files,
+    })
+  ),
+  sendMessageToAgent: httpPost<ITeamRunAck, ISendTeamAgentMessageParams>(
+    (p) => `/api/teams/${p.team_id}/agents/${p.slot_id}/messages`,
+    (p) => ({
+      content: p.input,
+      files: p.files,
+    })
+  ),
+  cancelRun: httpPost<void, ICancelTeamRunParams>(
+    (p) => `/api/teams/${p.team_id}/runs/${p.team_run_id}/cancel`,
+    (p) => ({
+      target_slot_id: p.target_slot_id,
+      reason: p.reason,
+    })
+  ),
+  cancelChildTurn: httpPost<void, ICancelTeamChildTurnParams>(
+    (p) => `/api/teams/${p.team_id}/runs/${p.team_run_id}/agents/${p.slot_id}/cancel`,
+    (p) => ({
+      reason: p.reason,
+    })
+  ),
+  agentStatusChanged: wsEmitter<ITeamAgentStatusEvent>('team.agentStatusChanged'),
+  agentSpawned: wsEmitter<ITeamAgentSpawnedEvent>('team.agentSpawned'),
+  agentRemoved: wsEmitter<ITeamAgentRemovedEvent>('team.agentRemoved'),
+  agentRenamed: wsEmitter<ITeamAgentRenamedEvent>('team.agentRenamed'),
+  listChanged: wsEmitter<ITeamListChangedEvent>('team.listChanged'),
   created: wsEmitter<ITeamCreatedEvent>('team.created'),
-  teammateMessage: wsEmitter<ITeamTeammateMessageEvent>('team.teammate.message'),
+  removed: wsEmitter<ITeamRemovedEvent>('team.removed'),
+  renamed: wsEmitter<ITeamRenamedEvent>('team.renamed'),
+  teammateMessage: wsEmitter<ITeamTeammateMessageEvent>('team.teammateMessage'),
+  mcpStatus: wsEmitter<ITeamMcpStatusEvent>('team.mcpStatus'),
+  taskChanged: wsEmitter<ITeamTaskChangedEvent>('team.taskChanged'),
+  sessionChanged: wsEmitter<ITeamSessionChangedEvent>('team.sessionChanged'),
+  runAccepted: wsEmitter<ITeamRunEvent>('team.runAccepted'),
+  runStarted: wsEmitter<ITeamRunEvent>('team.runStarted'),
+  runUpdated: wsEmitter<ITeamRunEvent>('team.runUpdated'),
+  runCompleted: wsEmitter<ITeamRunEvent>('team.runCompleted'),
+  runCancelled: wsEmitter<ITeamRunEvent>('team.runCancelled'),
+  runFailed: wsEmitter<ITeamRunEvent>('team.runFailed'),
+  childTurnStarted: wsEmitter<ITeamChildTurnEvent>('team.childTurnStarted'),
+  childTurnCompleted: wsEmitter<ITeamChildTurnEvent>('team.childTurnCompleted'),
+  childTurnCancelled: wsEmitter<ITeamChildTurnEvent>('team.childTurnCancelled'),
 };

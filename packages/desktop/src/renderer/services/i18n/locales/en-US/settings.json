@@ -708,6 +708,7 @@
   "contactMe": "Contact Me",
   "officialWebsite": "Official Website",
   "checkForUpdates": "Check for updates",
+  "checkingForUpdates": "Checking for updates...",
   "includePrereleaseUpdates": "Include prerelease/dev builds",
   "saveModelConfigFailed": "Failed to save model configuration",
   "healthCheck": "Health Check",
@@ -1057,6 +1058,7 @@
     "mcp": "MCP",
     "customAgent": "Custom Agent"
   },
+  "updateReadyInstall": "{{version}} is ready, install now",
   "larkNotify": {
     "title": "Lark Group Notification",
     "description": "Push the last-24h session list to a Lark group when a session finishes or needs your decision",

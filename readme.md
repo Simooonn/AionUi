@@ -34,7 +34,7 @@
 </p>
 
 <p align="center">
-  <strong>💬 Community:</strong> <a href="https://discord.gg/2QAwJn7Egx" target="_blank">Discord (English)</a> | <a href="./resources/wx-11.png" target="_blank">微信 (中文群)</a> | <a href="https://twitter.com/AionUI" target="_blank">Twitter</a>
+  <strong>💬 Community:</strong> <a href="https://discord.gg/2QAwJn7Egx" target="_blank">Discord (English)</a> | <a href="./resources/wx-12.png" target="_blank">微信 (中文群)</a> | <a href="https://twitter.com/AionUI" target="_blank">Twitter</a>
 </p>
 
 ---
@@ -250,7 +250,6 @@ AionUi includes **21 professional assistants** with predefined capabilities, ext
 - **📗 Excel Creator** — Spreadsheet generation with analysis, charts, and auto-formatting
 - **🎓 Academic Paper Writer** — Structured academic paper writing
 - **💰 Financial Model Creator** — Financial models and projections
-- **⭐ Star Office Helper** — Office productivity assistant
 - **🎮 3D Game** — Single-file 3D game generation
 - **🎨 UI/UX Pro Max** — Professional UI/UX design (57 styles, 95 color palettes)
 - **📋 Planning with Files** — File-based planning for complex tasks (Manus-style persistent markdown planning)
@@ -677,7 +676,7 @@ brew install aionui
 - [Report Issues](https://github.com/iOfficeAI/AionUi/issues) — bugs and feature requests
 - [Release Updates](https://github.com/iOfficeAI/AionUi/releases) — get the latest version
 - [Discord Community](https://discord.gg/2QAwJn7Egx) — English community
-- [WeChat Group](./resources/wx-11.png) — Chinese community
+- [WeChat Group](./resources/wx-12.png) — Chinese community
 
 ### Contributing
 

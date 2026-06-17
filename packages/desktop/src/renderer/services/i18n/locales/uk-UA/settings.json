@@ -647,6 +647,7 @@
   "contactMe": "Зв'язатися зі мною",
   "officialWebsite": "Офіційний сайт",
   "checkForUpdates": "Перевірити оновлення",
+  "checkingForUpdates": "Перевірка оновлень...",
   "includePrereleaseUpdates": "Включити попередні/dev збірки",
   "saveModelConfigFailed": "Не вдалося зберегти конфігурацію моделі",
   "healthCheck": "Перевірка здоров'я",
@@ -979,6 +980,7 @@
     "codexAcp": "the Codex ACP runtime component",
     "claudeAgentAcp": "the Claude ACP runtime component"
   },
+  "updateReadyInstall": "{{version}} готова, установити зараз",
   "larkNotify": {
     "title": "Сповіщення в групу Lark",
     "description": "Надсилати список сесій за 24 год у групу Lark, коли сесія завершена або потребує рішення",

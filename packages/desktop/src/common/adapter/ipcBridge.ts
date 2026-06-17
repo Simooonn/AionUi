@@ -65,6 +65,7 @@ import type {
   ITeamTaskChangedEvent,
   ICancelTeamChildTurnParams,
   ICancelTeamRunParams,
+  IPauseTeamSlotParams,
   ISendTeamAgentMessageParams,
   ISendTeamMessageParams,
   ITeamTeammateMessageEvent,
@@ -72,9 +73,11 @@ import type {
   TeamAgent,
 } from '../types/team/teamTypes';
 import type {
+  AutoUpdateReadyResult,
   AutoUpdateStatus,
   UpdateCheckRequest,
   UpdateCheckResult,
+  UpdateDownloadCancelRequest,
   UpdateDownloadProgressEvent,
   UpdateDownloadRequest,
   UpdateDownloadResult,
@@ -493,9 +496,10 @@ export const application = {
 // ---------------------------------------------------------------------------
 
 export const update = {
-  open: bridge.buildEmitter<{ source?: 'menu' | 'about' }>('update.open'),
+  open: bridge.buildEmitter<{ source?: 'menu' | 'about' | 'tray' }>('update.open'),
   check: bridge.buildProvider<IBridgeResponse<UpdateCheckResult>, UpdateCheckRequest>('update.check'),
   download: bridge.buildProvider<IBridgeResponse<UpdateDownloadResult>, UpdateDownloadRequest>('update.download'),
+  cancelDownload: bridge.buildProvider<IBridgeResponse, UpdateDownloadCancelRequest>('update.download.cancel'),
   downloadProgress: bridge.buildEmitter<UpdateDownloadProgressEvent>('update.download.progress'),
 };
 
@@ -504,19 +508,13 @@ export const autoUpdate = {
     IBridgeResponse<{ updateInfo?: { version: string; releaseDate?: string; releaseNotes?: string } }>,
     { includePrerelease?: boolean }
   >('auto-update.check'),
+  restoreDownloaded: bridge.buildProvider<IBridgeResponse<AutoUpdateReadyResult>, void>(
+    'auto-update.restore-downloaded'
+  ),
   download: bridge.buildProvider<IBridgeResponse, void>('auto-update.download'),
+  cancelDownload: bridge.buildProvider<IBridgeResponse, void>('auto-update.download.cancel'),
   quitAndInstall: bridge.buildProvider<void, void>('auto-update.quit-and-install'),
   status: bridge.buildEmitter<AutoUpdateStatus>('auto-update.status'),
-};
-
-// ---------------------------------------------------------------------------
-// Star Office — routed to backend
-// ---------------------------------------------------------------------------
-
-export const starOffice = {
-  detectUrl: httpPost<{ url: string | null }, { preferredUrl?: string; force?: boolean; timeoutMs?: number }>(
-    '/api/star-office/detect'
-  ),
 };
 
 // ---------------------------------------------------------------------------
@@ -1950,6 +1948,12 @@ export const team = {
   ),
   cancelChildTurn: httpPost<void, ICancelTeamChildTurnParams>(
     (p) => `/api/teams/${p.team_id}/runs/${p.team_run_id}/agents/${p.slot_id}/cancel`,
+    (p) => ({
+      reason: p.reason,
+    })
+  ),
+  pauseSlotWork: httpPost<void, IPauseTeamSlotParams>(
+    (p) => `/api/teams/${p.team_id}/runs/${p.team_run_id}/agents/${p.slot_id}/pause`,
     (p) => ({
       reason: p.reason,
     })

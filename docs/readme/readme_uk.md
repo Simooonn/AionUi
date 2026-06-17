@@ -34,7 +34,7 @@
 </p>
 
 <p align="center">
-  <strong>💬 Спільнота:</strong> <a href="https://discord.gg/2QAwJn7Egx" target="_blank">Discord (English)</a> | <a href="../../resources/wx-11.png" target="_blank">微信 (中文群)</a> | <a href="https://twitter.com/AionUI" target="_blank">Twitter</a>
+  <strong>💬 Спільнота:</strong> <a href="https://discord.gg/2QAwJn7Egx" target="_blank">Discord (English)</a> | <a href="../../resources/wx-12.png" target="_blank">微信 (中文群)</a> | <a href="https://twitter.com/AionUI" target="_blank">Twitter</a>
 </p>
 
 ---
@@ -244,7 +244,6 @@ _Система асистентів із 21 вбудованим професі
 - **📗 Excel Creator** — Генерація електронних таблиць із аналізом, графіками та автоформатуванням
 - **🎓 Academic Paper Writer** — Структуроване написання наукових статей
 - **💰 Financial Model Creator** — Фінансові моделі та прогнози
-- **⭐ Star Office Helper** — Асистент для офісної продуктивності
 - **🎮 3D Game** — Створення 3D ігор в одному файлі
 - **🎨 UI/UX Pro Max** — Професійний дизайн (57 стилів, 95 палітр)
 - **📋 Planning with Files** — Планування на основі файлів (у стилі Manus)

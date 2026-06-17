@@ -708,6 +708,7 @@
   "contactMe": "联系我",
   "officialWebsite": "官网",
   "checkForUpdates": "检查更新",
+  "checkingForUpdates": "检查新版本中",
   "includePrereleaseUpdates": "包含预发布/dev 版本",
   "saveModelConfigFailed": "保存模型配置失败",
   "healthCheck": "健康检测",
@@ -1058,6 +1059,7 @@
     "mcp": "MCP",
     "customAgent": "自定义 Agent"
   },
+  "updateReadyInstall": "{{version}} 已就绪, 立即安装",
   "larkNotify": {
     "title": "Lark 群通知",
     "description": "会话完成或需人工决策时，向指定 Lark 群推送近 24 小时会话列表",

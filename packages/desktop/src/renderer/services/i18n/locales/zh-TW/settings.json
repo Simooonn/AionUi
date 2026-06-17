@@ -708,6 +708,7 @@
   "contactMe": "聯繫我",
   "officialWebsite": "官網",
   "checkForUpdates": "檢查更新",
+  "checkingForUpdates": "檢查新版本中",
   "includePrereleaseUpdates": "包含預發佈/dev 版本",
   "saveModelConfigFailed": "儲存模型設定失敗",
   "healthCheck": "健康檢測",
@@ -1059,6 +1060,7 @@
     "codexAcp": "Codex ACP 執行元件",
     "claudeAgentAcp": "Claude ACP 執行元件"
   },
+  "updateReadyInstall": "{{version}} 已就緒, 立即安裝",
   "larkNotify": {
     "title": "Lark 群組通知",
     "description": "會話完成或需人工決策時，向指定 Lark 群組推送近 24 小時會話列表",

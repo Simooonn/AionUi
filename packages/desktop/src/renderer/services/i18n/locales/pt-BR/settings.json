@@ -708,6 +708,7 @@
   "contactMe": "Contato",
   "officialWebsite": "Site Oficial",
   "checkForUpdates": "Verificar atualizações",
+  "checkingForUpdates": "Verificando atualizações...",
   "includePrereleaseUpdates": "Incluir versões de pré-lançamento/dev",
   "saveModelConfigFailed": "Falha ao salvar a configuração do modelo",
   "healthCheck": "Verificação de Saúde",
@@ -1060,6 +1061,7 @@
   "cdP": {
     "title": "CDP (Chrome DevTools Protocol)"
   },
+  "updateReadyInstall": "{{version}} está pronto, instalar agora",
   "larkNotify": {
     "title": "Notificação de grupo Lark",
     "description": "Envia a lista de sessões das últimas 24h para um grupo Lark quando uma sessão termina ou precisa de decisão",

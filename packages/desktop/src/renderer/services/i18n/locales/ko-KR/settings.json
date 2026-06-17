@@ -696,6 +696,7 @@
   "contactMe": "연락처",
   "officialWebsite": "공식 웹사이트",
   "checkForUpdates": "업데이트 확인",
+  "checkingForUpdates": "업데이트 확인 중...",
   "includePrereleaseUpdates": "프리릴리즈/dev 빌드 포함",
   "saveModelConfigFailed": "모델 구성 저장 실패",
   "healthCheck": "상태 확인",
@@ -1059,6 +1060,7 @@
     "codexAcp": "the Codex ACP runtime component",
     "claudeAgentAcp": "the Claude ACP runtime component"
   },
+  "updateReadyInstall": "{{version}} 준비 완료, 지금 설치",
   "larkNotify": {
     "title": "Lark 그룹 알림",
     "description": "세션이 완료되거나 결정이 필요할 때 최근 24시간 세션 목록을 Lark 그룹으로 전송",

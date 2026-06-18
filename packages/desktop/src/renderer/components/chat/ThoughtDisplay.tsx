@@ -18,6 +18,12 @@ interface ThoughtDisplayProps {
   thought?: ThoughtData;
   style?: 'default' | 'compact';
   running?: boolean;
+  /**
+   * Persistent processing start time (ms). When provided, the elapsed timer is
+   * anchored to it so it survives conversation switches / remounts instead of
+   * restarting from zero. Falls back to mount time when omitted.
+   */
+  startTime?: number | null;
   onStop?: () => void;
 }
 
@@ -29,6 +35,7 @@ const ThoughtDisplay: React.FC<ThoughtDisplayProps> = ({
   thought,
   style = 'default',
   running = false,
+  startTime,
   onStop: _onStop,
 }) => {
   const { theme } = useThemeContext();
@@ -48,7 +55,7 @@ const ThoughtDisplay: React.FC<ThoughtDisplayProps> = ({
   };
 
   const [elapsedTime, setElapsedTime] = useState(0);
-  const startTimeRef = useRef<number>(Date.now());
+  const mountTimeRef = useRef<number>(Date.now());
 
   // Timer for elapsed time
   useEffect(() => {
@@ -57,16 +64,17 @@ const ThoughtDisplay: React.FC<ThoughtDisplayProps> = ({
       return;
     }
 
-    startTimeRef.current = Date.now();
-    setElapsedTime(0);
+    // Prefer the persistent start time so the timer keeps counting across
+    // conversation switches; fall back to mount time when none is provided.
+    const base = startTime ?? mountTimeRef.current;
 
-    const timer = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      setElapsedTime(elapsed);
-    }, 1000);
+    const tick = () => setElapsedTime(Math.max(0, Math.floor((Date.now() - base) / 1000)));
+    tick();
+
+    const timer = setInterval(tick, 1000);
 
     return () => clearInterval(timer);
-  }, [running, thought?.subject]);
+  }, [running, thought?.subject, startTime]);
 
   // Calculate final style based on theme and style prop
   const containerStyle = useMemo(() => {

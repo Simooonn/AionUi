@@ -57,6 +57,13 @@ const runtimeViews = new Map<string, ConversationRuntimeView>();
 const fallbackSnapshots = new Map<string, ConversationRuntimeView>();
 const runtimeMetadata = new Map<string, ConversationRuntimeMetadata>();
 
+// Persistent per-conversation processing start time. Lives outside the React
+// component lifecycle so the "处理中 (Ns)" timer survives conversation switches
+// (which remount the chat view). Keyed by the active turn id so a brand-new run
+// gets a fresh start even if a stale entry lingered from a previous run.
+type ProcessingStartRecord = { turnId: string | null; startedAt: number };
+const processingStartTimes = new Map<string, ProcessingStartRecord>();
+
 const createRuntimeMetadata = (): ConversationRuntimeMetadata => ({
   pendingLocalSendSeq: null,
   pendingStopTurnId: null,
@@ -439,6 +446,7 @@ export const conversationDeleted = (conversation_id: string): ConversationRuntim
   runtimeViews.delete(conversation_id);
   fallbackSnapshots.delete(conversation_id);
   runtimeMetadata.delete(conversation_id);
+  processingStartTimes.delete(conversation_id);
   listeners.forEach((listener) => listener());
   return previous
     ? [
@@ -547,9 +555,39 @@ export const resetLocalGate = (conversation_id: string, reason: string): Convers
     resetLocalGateConversationRuntimeView(runtimeViews.get(conversation_id), conversation_id, reason)
   );
 
+/**
+ * Resolve the persistent start time for the conversation's current processing run.
+ * Returns the timestamp to count elapsed time from, or null when not processing.
+ * Lazily records `now` on the first processing render and reuses it across remounts.
+ */
+export const syncProcessingStartedAt = (conversation_id: string, isProcessing: boolean, activeTurnId: string | null): number | null => {
+  if (!isProcessing) {
+    processingStartTimes.delete(conversation_id);
+    return null;
+  }
+  const existing = processingStartTimes.get(conversation_id);
+  if (existing) {
+    if (existing.turnId === activeTurnId) {
+      return existing.startedAt;
+    }
+    // A pending run (no backend turn id yet) that just got its id is the same
+    // run — keep the original start instead of resetting to zero.
+    if (existing.turnId === null && activeTurnId !== null) {
+      existing.turnId = activeTurnId;
+      return existing.startedAt;
+    }
+  }
+  const startedAt = Date.now();
+  processingStartTimes.set(conversation_id, { turnId: activeTurnId, startedAt });
+  return startedAt;
+};
+
+export const getProcessingStartedAt = (conversation_id: string): number | null => processingStartTimes.get(conversation_id)?.startedAt ?? null;
+
 export const resetConversationRuntimeViewStoreForTest = () => {
   runtimeViews.clear();
   fallbackSnapshots.clear();
   runtimeMetadata.clear();
+  processingStartTimes.clear();
   listeners.clear();
 };

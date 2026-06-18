@@ -1,13 +1,16 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TConversationRuntimeSummary } from '@/common/config/storage';
 import {
+  conversationDeleted,
   getConversationRuntimeViewSnapshot,
+  getProcessingStartedAt,
   hydrateSucceeded,
   localSendAccepted,
   localSendStarted,
   localStopAcknowledged,
   localStopRequested,
   resetConversationRuntimeViewStoreForTest,
+  syncProcessingStartedAt,
   turnCompleted,
 } from '@/renderer/pages/conversation/runtime/conversationRuntimeViewStore';
 
@@ -142,5 +145,54 @@ describe('conversationRuntimeViewStore turn id contract', () => {
     expect(view.activeTurnId).toBe('turn-2');
     expect(view.isProcessing).toBe(true);
     expect(view.localStopping).toBe(false);
+  });
+});
+
+describe('conversationRuntimeViewStore processing start time', () => {
+  beforeEach(() => {
+    resetConversationRuntimeViewStoreForTest();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns null and clears the record when not processing', () => {
+    syncProcessingStartedAt('conv-1', true, 'turn-1');
+    expect(getProcessingStartedAt('conv-1')).not.toBeNull();
+
+    expect(syncProcessingStartedAt('conv-1', false, null)).toBeNull();
+    expect(getProcessingStartedAt('conv-1')).toBeNull();
+  });
+
+  it('keeps a stable start time across remounts within the same run', () => {
+    const first = syncProcessingStartedAt('conv-1', true, 'turn-1');
+    vi.advanceTimersByTime(5000);
+    // Simulates switching away and back: the run is unchanged, so the timer
+    // must keep its original anchor instead of restarting from zero.
+    const later = syncProcessingStartedAt('conv-1', true, 'turn-1');
+    expect(later).toBe(first);
+  });
+
+  it('keeps the original start when a pending run gets its backend turn id', () => {
+    const pending = syncProcessingStartedAt('conv-1', true, null);
+    vi.advanceTimersByTime(3000);
+    const assigned = syncProcessingStartedAt('conv-1', true, 'turn-1');
+    expect(assigned).toBe(pending);
+  });
+
+  it('resets the start time when a new turn begins', () => {
+    const first = syncProcessingStartedAt('conv-1', true, 'turn-1');
+    vi.advanceTimersByTime(10000);
+    const second = syncProcessingStartedAt('conv-1', true, 'turn-2');
+    expect(second).toBeGreaterThan(first ?? 0);
+  });
+
+  it('clears the processing start when the conversation is deleted', () => {
+    syncProcessingStartedAt('conv-1', true, 'turn-1');
+    conversationDeleted('conv-1');
+    expect(getProcessingStartedAt('conv-1')).toBeNull();
   });
 });

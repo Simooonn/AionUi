@@ -21,6 +21,7 @@ import {
   localStopRequested,
   resetLocalGate,
   subscribeConversationRuntimeView,
+  syncProcessingStartedAt,
   turnCompleted,
   type ConversationRuntimeView,
   type ConversationRuntimeViewLogEntry,
@@ -33,6 +34,7 @@ type UseConversationRuntimeViewReturn = {
   isProcessing: boolean;
   canSendMessage: boolean;
   activeTurnId: string | null;
+  processingStartedAt: number | null;
   markSendStarted: () => void;
   markSendAccepted: (turn_id: string, runtime: TConversationRuntimeSummary, msg_id?: string) => void;
   markSendFailed: (reason: string) => void;
@@ -69,6 +71,9 @@ const getRuntimeOrNull = (runtime: TConversationRuntimeSummary | undefined): TCo
 export const useConversationRuntimeView = (conversation_id: string): UseConversationRuntimeViewReturn => {
   const getSnapshot = useCallback(() => getConversationRuntimeViewSnapshot(conversation_id), [conversation_id]);
   const view = useSyncExternalStore(subscribeConversationRuntimeView, getSnapshot, getSnapshot);
+  // Persistent start time for the current processing run, so the elapsed timer
+  // does not reset to zero when the user switches between conversations.
+  const processingStartedAt = syncProcessingStartedAt(conversation_id, view.isProcessing, view.activeTurnId);
 
   useEffect(() => {
     if (!conversation_id) {
@@ -175,6 +180,7 @@ export const useConversationRuntimeView = (conversation_id: string): UseConversa
     isProcessing: view.isProcessing,
     canSendMessage: view.canSendMessage,
     activeTurnId: view.activeTurnId,
+    processingStartedAt,
     markSendStarted,
     markSendAccepted,
     markSendFailed,

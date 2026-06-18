@@ -25,7 +25,7 @@ import { useRelativeTimeTick } from '@/renderer/ace/useRelativeTimeTick';
 import { getActivityTime } from '@/renderer/utils/chat/timeline';
 // ace:end
 // ace:start copyable CLI resume command (claude --resume <id>, etc.)
-import { buildCliResumeCommand } from '@/renderer/ace/readonly';
+import { buildCliResumeCommand, useNativeResumeCommand } from '@/renderer/ace/readonly';
 import { copyText } from '@/renderer/utils/ui/clipboard';
 // ace:end
 
@@ -61,8 +61,12 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
   const { t } = useTranslation();
   const { info: assistantInfo } = usePresetAssistantInfo(conversation);
   const isPinned = isConversationPinned(conversation);
-  // Terminal resume command (e.g. `claude --resume <id>`) — only for CLI-imported sessions.
-  const resumeCommand = buildCliResumeCommand(conversation);
+  // Terminal resume command (e.g. `claude --resume <id>`). Imported sessions build
+  // it synchronously from extra; app-created ACP sessions resolve it lazily from the
+  // backend's acp_session table (the session id is not persisted in extra).
+  const importedResumeCommand = buildCliResumeCommand(conversation);
+  const nativeResumeCommand = useNativeResumeCommand(conversation.id, conversation.type === 'acp' && !importedResumeCommand);
+  const resumeCommand = importedResumeCommand ?? nativeResumeCommand;
   const cronStatus = getJobStatus(conversation.id);
   const siderTooltipProps = getSiderTooltipProps(tooltipEnabled);
   const inlineNameTooltipEnabled = !collapsed && !isMobile && !!conversation.name;

@@ -24,6 +24,7 @@ import {
   checkWorkspacesExist,
   deleteOpencodeSessions,
   resolveConversationFiles,
+  resolveResumeCommands,
   unlinkSessionFiles,
 } from './sessionFiles';
 import { ensureCliSessionResumable } from './sessionResume';
@@ -69,6 +70,17 @@ ipcMain.handle('ace:resolve-conversation-files', async (_event, ids: string[]) =
   try {
     const safe = Array.isArray(ids) ? ids.filter((id) => isSafeConversationId(id)) : [];
     return await resolveConversationFiles(safe);
+  } catch {
+    return {};
+  }
+});
+
+// Resolve copyable terminal resume commands (e.g. `claude --resume <id>`) for
+// app-created ACP sessions, whose CLI session id only lives in acp_session.
+ipcMain.handle('ace:resolve-resume-commands', async (_event, ids: string[]) => {
+  try {
+    const safe = Array.isArray(ids) ? ids.filter((id) => isSafeConversationId(id)) : [];
+    return await resolveResumeCommands(safe);
   } catch {
     return {};
   }

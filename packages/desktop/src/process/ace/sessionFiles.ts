@@ -17,6 +17,7 @@ import { homedir } from 'node:os';
 import { join, normalize, sep } from 'node:path';
 import { getDataPath } from '@process/utils';
 import type { CliSource, ResolvedFile, UnlinkResult } from '@/common/ace/types';
+import { backendToCliSource, buildResumeCommand } from '@/common/ace/resumeCommand';
 import { hasCoupledSchema } from './aioncoreSchema';
 import { cliImageCacheDir } from './messageImporter';
 import { findSessionFiles } from './messageParser';
@@ -124,6 +125,49 @@ export async function resolveConversationFiles(ids: string[]): Promise<Record<st
     if (!hasCoupledSchema(db, 'conversations') || !hasCoupledSchema(db, 'acp_session')) return out;
     for (const id of ids) {
       out[id] = resolveSessionFilePath(db, id);
+    }
+    return out;
+  } catch {
+    return out;
+  } finally {
+    db.close();
+  }
+}
+
+type AcpResumeRow = { session_id: string | null; agent_backend: string | null };
+
+/** Minimal read surface shared by better-sqlite3 and node:sqlite (tests). */
+type ResumeQueryDb = { prepare(sql: string): { get(...args: unknown[]): unknown } };
+
+/**
+ * Pure core: build the terminal resume command for one conversation from its
+ * authoritative acp_session row, or null when it has no resumable CLI session.
+ */
+export function resumeCommandForConversation(db: ResumeQueryDb, conversationId: string): string | null {
+  const row = db.prepare('SELECT session_id, agent_backend FROM acp_session WHERE conversation_id = ?').get(conversationId) as AcpResumeRow | undefined;
+  if (!row?.session_id) return null;
+  return buildResumeCommand(backendToCliSource(row.agent_backend), row.session_id);
+}
+
+/**
+ * Resolve the terminal resume command (e.g. `claude --resume <id>`) for each
+ * conversation id, using the authoritative acp_session row. Covers app-created
+ * conversations whose underlying CLI session id only lives in acp_session
+ * (imported conversations resolve too, since import points acp_session at the
+ * CLI session). Returns only ids that resolve to a command. Opens the DB once.
+ */
+export async function resolveResumeCommands(ids: string[]): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  if (!ids.length) return out;
+  const BetterSqlite3 = (await import('better-sqlite3')).default;
+  const db: Db = new BetterSqlite3(join(getDataPath(), BACKEND_DB));
+  try {
+    db.pragma('busy_timeout = 5000');
+    if (!hasCoupledSchema(db, 'acp_session')) return out;
+    for (const id of ids) {
+      if (typeof id !== 'string' || !id) continue;
+      const command = resumeCommandForConversation(db, id);
+      if (command) out[id] = command;
     }
     return out;
   } catch {

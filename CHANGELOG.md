@@ -1,5 +1,86 @@
 # Changelog
 
+## [2.1.23](https://github.com/iOfficeAI/AionUi/compare/v2.1.22...v2.1.23) (2026-06-23)
+
+### Desktop
+
+#### Features
+
+- **webui:** add browser notifications for permission requests and turn completion (#3401)
+
+#### Bug Fixes
+
+- **preview:** correct OfficeCLI repo slug casing and de-DE install hint (#3399)
+
+### Core ([v0.1.36](https://github.com/iOfficeAI/AionCore/releases/tag/v0.1.36))
+
+#### Bug Fixes
+
+- **deps:** update quinn-proto for RustSec advisory (#508)
+- load skills in custom workspaces (#506)
+- **agent:** support aionrs 0.1.31 (#503)
+
+---
+
+## [2.1.22](https://github.com/iOfficeAI/AionUi/compare/v2.1.21...v2.1.22) (2026-06-22)
+
+### Desktop
+
+#### Features
+
+- **acp:** preserve redacted raw error in AIONUI_INTERNAL_ERROR fallback (#3393)
+
+#### Bug Fixes
+
+- **markdown:** support local file hash line links (#3396)
+- **conversation:** localize OpenClaw Gateway startup error (#3392)
+- **mcp:** guard message calls against use-after-unmount crash (#3376)
+- **preview:** improve file diffs and local file links (#3379)
+- **installer:** harden win arm64 install (#3387)
+
+### Core ([v0.1.34](https://github.com/iOfficeAI/AionCore/releases/tag/v0.1.34))
+
+#### Bug Fixes
+
+- **agent:** expose aionrs mode config option (#501)
+- **agent:** surface OpenClaw Gateway unreachable errors (#498)
+- **aionrs:** classify engine errors structurally (#494)
+- **aionrs:** drop malformed tool-call events (#486)
+- **channel:** reuse stored credentials when re-enabling a plugin (#458)
+
+---
+
+## [2.1.21](https://github.com/iOfficeAI/AionUi/compare/v2.1.20...v2.1.21) (2026-06-18)
+
+### Desktop
+
+#### Features
+
+- **i18n:** add German (de-DE) locale (#3370)
+
+#### Bug Fixes
+
+- **preview:** restore local html and selected file reopen (#3369)
+- **preview:** build valid file:// URL for PDF preview on Windows (#3366)
+- **i18n:** wire pt-BR into language pickers and main-process loader (#3361)
+
+### Core ([v0.1.32](https://github.com/iOfficeAI/AionCore/releases/tag/v0.1.32))
+
+#### Features
+
+- **team:** centralize team MCP prompt governance ([#490](https://github.com/iOfficeAI/AionCore/issues/490))
+
+#### Bug Fixes
+
+- **acp:** recover dead ACP connections ([#487](https://github.com/iOfficeAI/AionCore/issues/487))
+- **conversation:** upsert streaming tool calls (AIO-30) ([#484](https://github.com/iOfficeAI/AionCore/issues/484))
+
+#### Documentation
+
+- **skills:** add cross-platform notes so Windows users translate shell examples ([#489](https://github.com/iOfficeAI/AionCore/issues/489))
+
+---
+
 ## [2.1.20](https://github.com/iOfficeAI/AionUi/compare/v2.1.19...v2.1.20) (2026-06-17)
 
 ### Desktop

@@ -34,7 +34,7 @@
 </p>
 
 <p align="center">
-  <strong>💬 Community:</strong> <a href="https://discord.gg/2QAwJn7Egx" target="_blank">Discord (English)</a> | <a href="./resources/wx-12.png" target="_blank">微信 (中文群)</a> | <a href="https://twitter.com/AionUI" target="_blank">Twitter</a>
+  <strong>💬 Community:</strong> <a href="https://discord.gg/2QAwJn7Egx" target="_blank">Discord (English)</a> | <a href="./resources/wx-13.png" target="_blank">微信 (中文群)</a> | <a href="https://twitter.com/AionUI" target="_blank">Twitter</a>
 </p>
 
 ---
@@ -86,13 +86,13 @@ AionUi ships with a complete AI agent engine. Unlike tools that require you to i
 
 ### **Office assistants — PPT, Word & Excel**
 
-These tracks match what the app actually ships: **Morph PPT** presets and the **`pptx` / `docx` / `xlsx` skills** (see `assistant/` presets and `skills/` in the repo). Want document/table output? AionUi’s built-in **[OfficeCLI](https://github.com/iOfficeAI/OfficeCli)** helps PPT (Morph), Word (`.docx`), and Excel (`.xlsx/.xlsm/.csv`) go from request to deliverable faster and more reliably.
+These tracks match what the app actually ships: **Morph PPT** presets and the **`pptx` / `docx` / `xlsx` skills** (see `assistant/` presets and `skills/` in the repo). Want document/table output? AionUi’s built-in **[OfficeCLI](https://github.com/iOfficeAI/OfficeCLI)** helps PPT (Morph), Word (`.docx`), and Excel (`.xlsx/.xlsm/.csv`) go from request to deliverable faster and more reliably.
 The three assistant types map to file workflows, and the final outputs are directly editable and reusable.
 
 #### **PPT assistant**
 
 > **Output:** editable Morph PPT (`.pptx`)
-> Morph-animated slide-to-slide transitions with coherent story pacing; powered by [OfficeCLI](https://github.com/iOfficeAI/OfficeCli).
+> Morph-animated slide-to-slide transitions with coherent story pacing; powered by [OfficeCLI](https://github.com/iOfficeAI/OfficeCLI).
 
 <table>
   <tr>
@@ -108,7 +108,7 @@ The three assistant types map to file workflows, and the final outputs are direc
 #### **Word assistant**
 
 > **Output:** editable Word (`.docx`)
-> Paper/thesis writing and production-ready document editing via the `docx` skill; powered by [OfficeCLI](https://github.com/iOfficeAI/OfficeCli).
+> Paper/thesis writing and production-ready document editing via the `docx` skill; powered by [OfficeCLI](https://github.com/iOfficeAI/OfficeCLI).
 
 <table>
   <tr>
@@ -124,7 +124,7 @@ The three assistant types map to file workflows, and the final outputs are direc
 #### **Excel assistant**
 
 > **Output:** usable Excel (`.xlsx/.xlsm/.csv`)
-> Generate/refresh spreadsheets with `xlsx` for analysis, auto-formatting, and charts; powered by [OfficeCLI](https://github.com/iOfficeAI/OfficeCli).
+> Generate/refresh spreadsheets with `xlsx` for analysis, auto-formatting, and charts; powered by [OfficeCLI](https://github.com/iOfficeAI/OfficeCLI).
 
 <table>
   <tr>
@@ -676,7 +676,7 @@ brew install aionui
 - [Report Issues](https://github.com/iOfficeAI/AionUi/issues) — bugs and feature requests
 - [Release Updates](https://github.com/iOfficeAI/AionUi/releases) — get the latest version
 - [Discord Community](https://discord.gg/2QAwJn7Egx) — English community
-- [WeChat Group](./resources/wx-12.png) — Chinese community
+- [WeChat Group](./resources/wx-13.png) — Chinese community
 
 ### Contributing
 

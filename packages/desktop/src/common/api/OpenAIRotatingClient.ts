@@ -16,9 +16,11 @@ export class OpenAIRotatingClient extends RotatingApiClient<OpenAI> {
   constructor(api_keys: string, config: OpenAIClientConfig = {}, options: RotatingApiClientOptions = {}) {
     const createClient = (api_key: string) => {
       const cleanedApiKey = api_key.replace(/[\s\r\n\t]/g, '').trim();
+      // Note: `any` is intentional — openai v5's ClientOptions no longer types
+      // `httpAgent`, which is still set below for proxy support.
       const openaiConfig: any = {
         baseURL: config.baseURL,
-        api_key: cleanedApiKey,
+        apiKey: cleanedApiKey,
         defaultHeaders: config.defaultHeaders,
       };
 

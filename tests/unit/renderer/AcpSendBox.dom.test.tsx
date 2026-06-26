@@ -74,6 +74,9 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
 }));
 
 vi.mock('@/renderer/components/agent/AgentModeSelector', () => ({ default: () => null }));
+vi.mock('@/renderer/components/agent/AcpRuntimeModelControls', () => ({
+  default: () => <div data-testid='acp-runtime-model-controls' />,
+}));
 vi.mock('@/renderer/components/chat/CommandQueuePanel', () => ({ default: () => null }));
 vi.mock('@/renderer/components/chat/MobileActionSheet', () => ({
   default: ({
@@ -101,6 +104,8 @@ vi.mock('@/renderer/hooks/agent/useAcpModelInfo', () => ({
   useAcpModelInfo: () => ({
     model_info: null,
     canSwitch: false,
+    isSetting: false,
+    setStatus: { state: 'idle' },
     selectModel: vi.fn(),
   }),
 }));
@@ -277,7 +282,7 @@ describe('AcpSendBox', () => {
     });
   });
 
-  it('keeps ACP config options enabled on desktop without rendering a standalone thought selector', () => {
+  it('renders the desktop toolbar model+thought controls and keeps ACP config options enabled', () => {
     useAcpConfigOptionsMock.mockReturnValue({
       setStatus: { state: 'idle' },
       mode: null,
@@ -302,7 +307,23 @@ describe('AcpSendBox', () => {
     );
 
     expect(useAcpConfigOptionsMock).toHaveBeenCalledWith(expect.objectContaining({ enabled: true }));
-    expect(screen.queryByTestId('mock-thought-selector')).not.toBeInTheDocument();
+    // Desktop now hosts the model + thought-level pills in the sendbox toolbar.
+    expect(screen.getByTestId('acp-runtime-model-controls')).toBeInTheDocument();
+  });
+
+  it('does not render the desktop toolbar model controls on mobile', () => {
+    isMobileMock.current = true;
+
+    render(
+      <AcpSendBox
+        conversation_id='conv-1'
+        backend='codex'
+        workspacePath='/tmp/workspace'
+        messageState={makeMessageState()}
+      />
+    );
+
+    expect(screen.queryByTestId('acp-runtime-model-controls')).not.toBeInTheDocument();
   });
 
   it('persists preferred thought level after the mobile action sheet observes the change', async () => {

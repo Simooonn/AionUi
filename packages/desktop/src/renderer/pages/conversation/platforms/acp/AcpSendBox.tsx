@@ -3,6 +3,7 @@ import type { IConversationMcpStatus } from '@/common/config/storage';
 import { isBackendHttpError } from '@/common/adapter/httpBridge';
 import { isSideQuestionSupported } from '@/common/chat/sideQuestion';
 import { parseError, uuid } from '@/common/utils';
+import AcpRuntimeModelControls from '@/renderer/components/agent/AcpRuntimeModelControls';
 import AgentModeSelector from '@/renderer/components/agent/AgentModeSelector';
 import CommandQueuePanel from '@/renderer/components/chat/CommandQueuePanel';
 import MobileActionSheet, {
@@ -110,6 +111,8 @@ const AcpSendBox: React.FC<{
   session_mode?: string;
   agent_name?: string;
   workspacePath?: string;
+  /** Conversation's persisted model id (`extra.current_model_id`). */
+  current_model_id?: string;
   messageState: UseAcpMessageReturn;
   teamSendMessage?: (payload: { input: string; files: string[] }) => Promise<void>;
   teamRuntime?: TeamSendBoxRuntime;
@@ -119,6 +122,7 @@ const AcpSendBox: React.FC<{
   session_mode,
   agent_name,
   workspacePath,
+  current_model_id,
   messageState,
   teamSendMessage,
   teamRuntime,
@@ -170,20 +174,51 @@ const AcpSendBox: React.FC<{
     [assistantId, backend, runtimeConfig]
   );
 
-  // Drive the mobile sheet's model entry off the same source AcpModelSelector uses
+  // Single source for both the mobile sheet's model entry and the desktop
+  // toolbar pills (AcpRuntimeModelControls). Enabled on all viewports so the
+  // desktop pills get model info without spinning up a second hook instance.
   const {
     model_info,
     canSwitch: canSwitchModel,
+    isSetting: isModelSetting,
+    setStatus: modelSetStatus,
     selectModel,
   } = useAcpModelInfo({
     conversation_id,
     backend,
+    initialModelId: current_model_id,
     prepareRuntime: prepareRuntimeSync,
-    enabled: isMobile,
+    enabled: true,
     persistGlobalPreference: !assistantId,
     onSelectModelSuccess: () => Message.success(t('agent.model.switchSuccess')),
     onSelectModelFailed: (_modelId, error) => Message.error(t(configErrorMessageKey(error))),
   });
+
+  // Authoritative current model for the toolbar pills. Persisted to the
+  // conversation so an idle switch takes effect on the next turn (the runtime
+  // `set_model` config path is unavailable for some backends, e.g. Claude Code,
+  // until an agent is active). We optimistically reflect the choice locally.
+  const [selectedModelId, setSelectedModelId] = useState<string | undefined>(current_model_id);
+  useEffect(() => {
+    setSelectedModelId(current_model_id);
+  }, [current_model_id]);
+  const handleSwitchModel = useCallback(
+    (nextModelId: string) => {
+      setSelectedModelId(nextModelId);
+      // Persist for the next turn (works while idle, no active agent needed).
+      void ipcBridge.conversation.update
+        .invoke({
+          id: conversation_id,
+          updates: { extra: { current_model_id: nextModelId } as Partial<TChatConversation['extra']> } as Partial<TChatConversation>,
+          merge_extra: true,
+        })
+        .then(() => emitter.emit('chat.history.refresh'))
+        .catch(() => Message.error(t('agent.model.switchFailed', { defaultValue: 'Failed to switch model' })));
+      // Best-effort live switch when an agent is already active.
+      selectModel(nextModelId);
+    },
+    [conversation_id, selectModel, t]
+  );
   const availableAgentModes = useAgentModesForBackend(backend);
 
   useEffect(() => {
@@ -708,6 +743,21 @@ Please check your local CLI tool authentication status`,
         }
         rightTools={
           <div className='flex items-center gap-8px min-w-0'>
+            {!isMobile && (
+              <AcpRuntimeModelControls
+                model_info={model_info}
+                currentModelId={selectedModelId}
+                isSetting={isModelSetting}
+                setStatus={modelSetStatus}
+                onSwitchModel={handleSwitchModel}
+                thoughtLevel={runtimeThoughtLevel}
+                onSelectThoughtLevel={(id, value) =>
+                  void handleThoughtLevelSetOption(id, value)
+                    .then(() => Message.success(t('agent.thoughtLevel.switchSuccess')))
+                    .catch((error) => Message.error(t(configErrorMessageKey(error))))
+                }
+              />
+            )}
             {showModeSelector && (
               <AgentModeSelector
                 backend={backend}

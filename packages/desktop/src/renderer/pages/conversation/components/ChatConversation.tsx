@@ -23,7 +23,6 @@ import { emitter } from '../../../utils/emitter';
 import AcpChat from '../platforms/acp/AcpChat';
 import ChatLayout from './ChatLayout';
 import ChatSlider from './ChatSlider.tsx';
-import AcpModelSelector from '@/renderer/components/agent/AcpModelSelector';
 import { saveAionrsDefaultModel } from '@/renderer/pages/guid/hooks/agentSelectionUtils';
 import { getConversationOrNull } from '@/renderer/pages/conversation/utils/conversationCache';
 import { getConversationCreateErrorMessage } from '@/renderer/pages/conversation/utils/conversationCreateError';
@@ -311,6 +310,7 @@ const ChatConversation: React.FC<{
             backend={conversation.extra?.backend || 'claude'}
             session_mode={conversation.extra?.session_mode}
             agent_name={assistantDisplayName}
+            current_model_id={(conversation.extra as { current_model_id?: string } | undefined)?.current_model_id}
             cron_job_id={(conversation.extra as { cron_job_id?: string })?.cron_job_id}
             hideSendBox={resolvedHideSendBox}
             loadedSkills={(conversation.extra as { skills?: string[] } | undefined)?.skills}
@@ -334,26 +334,15 @@ const ChatConversation: React.FC<{
     );
   }, [t]);
 
-  // For ACP/Codex conversations, use AcpModelSelector that can show/switch models.
-  // For other conversations, show disabled model selector.
-  // Mobile: model selection moves into the sendbox `+` action sheet, so the
-  // header selector is suppressed to free up vertical space.
+  // ACP/Codex conversations now show model + thought-level selectors inside the
+  // sendbox toolbar (AcpRuntimeModelControls), so the header selector is dropped
+  // for them. Non-ACP conversations keep the disabled header model selector.
+  // Mobile: model selection lives in the sendbox `+` action sheet either way.
   const modelSelector = useMemo(() => {
     if (!conversation || isAionrsConversation) return undefined;
     if (isMobile) return undefined;
     if (isLegacyReadOnlyConversation) return undefined;
-    if (conversation.type === 'acp') {
-      const extra = conversation.extra as { backend?: string; current_model_id?: string };
-      return (
-        <AcpModelSelector
-          conversation_id={conversation.id}
-          backend={extra.backend}
-          initialModelId={extra.current_model_id}
-          waitForWarmup
-          persistGlobalPreference={!acpAssistantId}
-        />
-      );
-    }
+    if (conversation.type === 'acp') return undefined;
     return <GoogleModelSelector disabled={true} />;
   }, [conversation, isAionrsConversation, isMobile, isLegacyReadOnlyConversation]);
 

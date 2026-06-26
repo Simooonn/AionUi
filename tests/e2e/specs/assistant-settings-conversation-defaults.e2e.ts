@@ -404,7 +404,7 @@ function normalizeUiText(value: string | null | undefined): string {
 
 function locateConversationModelButton(page: Page) {
   return page
-    .locator('[data-testid="aionrs-model-selector"], [data-testid="chat-model-selector"], .header-model-btn')
+    .locator('[data-testid="aionrs-model-selector"], [data-testid="chat-model-selector"], [data-testid="acp-toolbar-model-selector"], .header-model-btn')
     .first();
 }
 

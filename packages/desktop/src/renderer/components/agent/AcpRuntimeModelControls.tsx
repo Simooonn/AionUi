@@ -75,14 +75,20 @@ const uniqueBy = <T,>(items: T[], key: (item: T) => string): T[] => {
  *   because effort already covers it.
  * - Other backends: **Model** pill + (optional) separate **Thought-level** pill.
  *
- * `currentModelId` (the conversation's persisted model) is the source of truth
- * for the active selection so the pills reflect the real conversation model,
- * not the handshake default carried by `model_info`.
+ * The live `model_info.current_model_id` is the source of truth for the active
+ * selection (it updates after a switch). `currentModelId` (the conversation's
+ * persisted model) is only an initial fallback before runtime info loads.
  */
 const AcpRuntimeModelControls: React.FC<{
   model_info: AcpModelInfo | null;
-  /** Conversation's persisted current model id; falls back to model_info. */
+  /** Initial fallback model id (conversation's persisted model) used only until live model_info loads. */
   currentModelId?: string | null;
+  /**
+   * Whether the runtime actually exposes switchable config options. False while
+   * the ACP session is idle (backend returns 404 for `config-options`); the
+   * pills then render read-only instead of erroring on click.
+   */
+  canSwitch: boolean;
   /** Model-specific "setting in progress" flag from useAcpModelInfo. */
   isSetting: boolean;
   /** Shared config set-status (any option setting) for disable/loading gating. */
@@ -93,7 +99,7 @@ const AcpRuntimeModelControls: React.FC<{
   thoughtLevel: AcpDerivedOption | null;
   /** Persist + toast handled by the host; receives (optionId, value). */
   onSelectThoughtLevel: (optionId: string, value: string) => void;
-}> = ({ model_info, currentModelId, isSetting, setStatus, onSwitchModel, thoughtLevel, onSelectThoughtLevel }) => {
+}> = ({ model_info, currentModelId, canSwitch, isSetting, setStatus, onSwitchModel, thoughtLevel, onSelectThoughtLevel }) => {
   const { t } = useTranslation();
   const isRuntimeSetting = isConfigSetting(setStatus);
   const renderLogo = () => <Brain theme='outline' size='14' fill={iconColors.secondary} className='shrink-0' />;
@@ -102,7 +108,27 @@ const AcpRuntimeModelControls: React.FC<{
 
   const available = model_info?.available_models ?? [];
   const combined = parseCombinedModels(available);
-  const resolvedCurrentId = currentModelId || model_info?.current_model_id || null;
+  // Live runtime model wins; the static prop is only a pre-load fallback so a
+  // successful switch is reflected immediately (model_info updates, prop doesn't).
+  const resolvedCurrentId = model_info?.current_model_id || currentModelId || null;
+  // Interactive only when the runtime exposes switchable options. Idle sessions
+  // surface handshake `available_models` for display but cannot accept a switch,
+  // so the pills degrade to read-only rather than firing a doomed request.
+  const interactive = canSwitch;
+
+  /**
+   * Render a pill, wrapping it in a clickable dropdown only when interactive.
+   * Read-only pills drop the chevron and click affordance.
+   */
+  const renderPill = (opts: { testId: string; label: string; droplist: React.ReactNode; loading?: boolean }) => {
+    const pill = <RuntimeSelectorPill testId={opts.testId} className={pillClassName} label={opts.label} leading={renderLogo()} trailing={interactive ? trailing : undefined} loading={interactive ? opts.loading : false} disabled={interactive ? isRuntimeSetting : false} style={interactive ? undefined : { cursor: 'default' }} />;
+    if (!interactive) return <Tooltip content={opts.label} position='top'>{pill}</Tooltip>;
+    return (
+      <Dropdown trigger='click' droplist={opts.droplist}>
+        {pill}
+      </Dropdown>
+    );
+  };
 
   // No model info at all → read-only "Use CLI model" pill (backward compatible).
   if (!model_info || available.length === 0) {
@@ -131,44 +157,42 @@ const AcpRuntimeModelControls: React.FC<{
       if (nextId !== current.id) onSwitchModel(nextId);
     };
 
-    const modelPill = (
-      <Dropdown
-        trigger='click'
-        droplist={
-          <Menu>
-            <Menu.ItemGroup title={t('common.model', { defaultValue: 'Model' })}>
-              {models.map((m) => (
-                <Menu.Item key={m.modelKey} className={m.modelKey === current.modelKey ? 'bg-2!' : ''} onClick={() => switchTo(m.modelKey, current.effortKey)}>
-                  <RuntimeSelectorCheckedItem selected={m.modelKey === current.modelKey}>{m.modelLabel}</RuntimeSelectorCheckedItem>
-                </Menu.Item>
-              ))}
-            </Menu.ItemGroup>
-          </Menu>
-        }
-      >
-        <RuntimeSelectorPill testId='acp-toolbar-model-selector' className={pillClassName} label={current.modelLabel} leading={renderLogo()} trailing={trailing} loading={isSetting || isRuntimeSetting} disabled={isRuntimeSetting} />
-      </Dropdown>
-    );
+    const modelPill = renderPill({
+      testId: 'acp-toolbar-model-selector',
+      label: current.modelLabel,
+      loading: isSetting || isRuntimeSetting,
+      droplist: (
+        <Menu>
+          <Menu.ItemGroup title={t('common.model', { defaultValue: 'Model' })}>
+            {models.map((m) => (
+              <Menu.Item key={m.modelKey} className={m.modelKey === current.modelKey ? 'bg-2!' : ''} onClick={() => switchTo(m.modelKey, current.effortKey)}>
+                <RuntimeSelectorCheckedItem selected={m.modelKey === current.modelKey}>{m.modelLabel}</RuntimeSelectorCheckedItem>
+              </Menu.Item>
+            ))}
+          </Menu.ItemGroup>
+        </Menu>
+      ),
+    });
 
     const effortPill =
-      efforts.length > 1 ? (
-        <Dropdown
-          trigger='click'
-          droplist={
-            <Menu>
-              <Menu.ItemGroup title={t('agent.thoughtLevel.label')}>
-                {efforts.map((e) => (
-                  <Menu.Item key={e.effortKey} className={e.effortKey === current.effortKey ? 'bg-2!' : ''} onClick={() => switchTo(current.modelKey, e.effortKey)}>
-                    <RuntimeSelectorCheckedItem selected={e.effortKey === current.effortKey}>{e.effortLabel}</RuntimeSelectorCheckedItem>
-                  </Menu.Item>
-                ))}
-              </Menu.ItemGroup>
-            </Menu>
-          }
-        >
-          <RuntimeSelectorPill testId='acp-toolbar-thought-level-selector' className={pillClassName} label={current.effortLabel} leading={renderLogo()} trailing={trailing} loading={isSetting || isRuntimeSetting} disabled={isRuntimeSetting} />
-        </Dropdown>
-      ) : null;
+      efforts.length > 1
+        ? renderPill({
+            testId: 'acp-toolbar-thought-level-selector',
+            label: current.effortLabel,
+            loading: isSetting || isRuntimeSetting,
+            droplist: (
+              <Menu>
+                <Menu.ItemGroup title={t('agent.thoughtLevel.label')}>
+                  {efforts.map((e) => (
+                    <Menu.Item key={e.effortKey} className={e.effortKey === current.effortKey ? 'bg-2!' : ''} onClick={() => switchTo(current.modelKey, e.effortKey)}>
+                      <RuntimeSelectorCheckedItem selected={e.effortKey === current.effortKey}>{e.effortLabel}</RuntimeSelectorCheckedItem>
+                    </Menu.Item>
+                  ))}
+                </Menu.ItemGroup>
+              </Menu>
+            ),
+          })
+        : null;
 
     return (
       <>
@@ -186,42 +210,40 @@ const AcpRuntimeModelControls: React.FC<{
     fallbackLabel: t('conversation.welcome.useCliModel'),
   });
 
-  const modelPill = (
-    <Dropdown
-      trigger='click'
-      droplist={
-        <Menu>
-          <Menu.ItemGroup title={t('common.model', { defaultValue: 'Model' })}>
-            {available.map((model) => (
-              <Menu.Item key={model.id} className={model.id === resolvedCurrentId ? 'bg-2!' : ''} onClick={() => !isRuntimeSetting && model.id !== resolvedCurrentId && onSwitchModel(model.id)}>
-                <RuntimeSelectorCheckedItem selected={model.id === resolvedCurrentId}>{model.label || model.id}</RuntimeSelectorCheckedItem>
-              </Menu.Item>
-            ))}
-          </Menu.ItemGroup>
-        </Menu>
-      }
-    >
-      <RuntimeSelectorPill testId='acp-toolbar-model-selector' className={pillClassName} label={modelLabel} leading={renderLogo()} trailing={trailing} loading={isSetting || isRuntimeSetting} disabled={isRuntimeSetting} />
-    </Dropdown>
-  );
+  const modelPill = renderPill({
+    testId: 'acp-toolbar-model-selector',
+    label: modelLabel,
+    loading: isSetting || isRuntimeSetting,
+    droplist: (
+      <Menu>
+        <Menu.ItemGroup title={t('common.model', { defaultValue: 'Model' })}>
+          {available.map((model) => (
+            <Menu.Item key={model.id} className={model.id === resolvedCurrentId ? 'bg-2!' : ''} onClick={() => !isRuntimeSetting && model.id !== resolvedCurrentId && onSwitchModel(model.id)}>
+              <RuntimeSelectorCheckedItem selected={model.id === resolvedCurrentId}>{model.label || model.id}</RuntimeSelectorCheckedItem>
+            </Menu.Item>
+          ))}
+        </Menu.ItemGroup>
+      </Menu>
+    ),
+  });
 
-  const thoughtPill = thoughtLevel ? (
-    <Dropdown
-      trigger='click'
-      droplist={
-        <Menu>
-          {renderThoughtLevelMenuGroup({
-            thoughtLevel,
-            setStatus,
-            title: t('agent.thoughtLevel.label'),
-            onSelect: (value) => onSelectThoughtLevel(thoughtLevel.id, value),
-          })}
-        </Menu>
-      }
-    >
-      <RuntimeSelectorPill testId='acp-toolbar-thought-level-selector' className={pillClassName} label={getCurrentThoughtLevelLabel(thoughtLevel)} leading={renderLogo()} trailing={trailing} loading={isRuntimeSetting} disabled={isRuntimeSetting} />
-    </Dropdown>
-  ) : null;
+  const thoughtPill = thoughtLevel
+    ? renderPill({
+        testId: 'acp-toolbar-thought-level-selector',
+        label: getCurrentThoughtLevelLabel(thoughtLevel),
+        loading: isRuntimeSetting,
+        droplist: (
+          <Menu>
+            {renderThoughtLevelMenuGroup({
+              thoughtLevel,
+              setStatus,
+              title: t('agent.thoughtLevel.label'),
+              onSelect: (value) => onSelectThoughtLevel(thoughtLevel.id, value),
+            })}
+          </Menu>
+        ),
+      })
+    : null;
 
   return (
     <>

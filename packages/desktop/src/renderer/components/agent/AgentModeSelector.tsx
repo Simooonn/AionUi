@@ -174,7 +174,12 @@ const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
     [modeLabelFormatter]
   );
 
-  const can_switchMode = (supportsModeSwitch(backend) || modes.length > 0) && (conversation_id || onModeSelect);
+  // In a conversation, switching goes through the ACP runtime (`setConfigOption`),
+  // which needs a live `mode` config option. While the session is idle the backend
+  // serves no config options, so a switch would always fail — render the current
+  // mode read-only instead of letting the click error out.
+  const runtimeUnavailable = Boolean(conversation_id) && !onModeSelect && !runtimeMode;
+  const can_switchMode = (supportsModeSwitch(backend) || modes.length > 0) && Boolean(conversation_id || onModeSelect) && !runtimeUnavailable;
   // Mobile conversation header agent pill is display-only by design.
   const canInteract = can_switchMode && !(compact && compactLabelType === 'agent');
 
@@ -292,9 +297,9 @@ const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
     const baseCompactLabel =
       compactLabelType === 'agent'
         ? agent_name || backend || 'Agent'
-        : can_switchMode
-          ? getCurrentModeLabel()
-          : agent_name || backend || 'Agent';
+        : // Show the current mode read-only when known (e.g. runtime idle), only
+          // falling back to the agent name when there is no mode to display.
+          getCurrentModeLabel() || agent_name || backend || 'Agent';
     const compactLabel =
       compactLabelOverride ||
       (compactLabelPrefix && compactLabelType !== 'agent'
@@ -302,7 +307,9 @@ const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
           ? baseCompactLabel
           : `${compactLabelPrefix} · ${baseCompactLabel}`
         : baseCompactLabel);
-    if (!canInteract && legacyCompactBehavior) {
+    // Keep the current mode visible (read-only) when the runtime is merely idle;
+    // only fully hide when mode switching isn't applicable at all.
+    if (!canInteract && legacyCompactBehavior && !runtimeUnavailable) {
       return null;
     }
 

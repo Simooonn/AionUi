@@ -126,6 +126,33 @@ describe('AgentModeSelector', () => {
     expect(screen.getByText('权限 · 默认')).toBeInTheDocument();
   });
 
+  it('renders the current mode read-only when the runtime exposes no mode option', async () => {
+    useAcpConfigOptionsMock.mockImplementation(() => ({
+      setStatus: { state: 'idle' },
+      mode: null,
+      model: null,
+      thoughtLevel: null,
+      reload: vi.fn(),
+      setConfigOption: vi.fn(),
+    }));
+
+    render(
+      <AgentModeSelector
+        backend='claude'
+        conversation_id='conv-1'
+        compact
+        initialMode='default'
+        modeLabelFormatter={(mode) => (mode.value === 'default' ? '默认' : '全自动')}
+        compactLabelPrefix='权限'
+      />
+    );
+
+    // Pill stays visible with the current mode label...
+    expect(screen.getByText('权限 · 默认')).toBeInTheDocument();
+    // ...but is read-only: no dropdown chevron is rendered.
+    expect(screen.queryByText('v')).not.toBeInTheDocument();
+  });
+
   it('renders setting progress at the compact trailing edge instead of using Arco button loading', async () => {
     useAcpConfigOptionsMock.mockImplementation(() => ({
       setStatus: { state: 'setting' },

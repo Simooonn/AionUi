@@ -10,6 +10,7 @@ import type { IResponseMessage } from '@/common/adapter/ipcBridge';
 import type {
   AcpConfigOptionDto,
   AcpConfigSelectOptionDto,
+  AcpModelInfo,
   SetConfigOptionResponse,
 } from '@/common/types/platform/acpTypes';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -128,14 +129,59 @@ function subscribeConversationSetStatus(
   };
 }
 
-const fetchConfigOptions = async ([, conversation_id]: AcpConfigOptionsKey): Promise<AcpConfigOptionDto[] | null> => {
+// ---------------------------------------------------------------------------
+// aioncore exposes ACP runtime config as discrete `/model` and `/mode`
+// endpoints, not a unified `config-options` list. These adapters synthesize the
+// `AcpConfigOptionDto[]` shape the selectors consume so the rest of the hook and
+// its consumers stay unchanged. Reasoning effort is encoded into the model id
+// (`<model>/<effort>`), so there is no separate thought-level option.
+// ---------------------------------------------------------------------------
+
+function modelInfoToOption(info: AcpModelInfo | null | undefined): AcpConfigOptionDto | null {
+  if (!info || info.available_models.length === 0) return null;
+  return {
+    id: 'model',
+    category: 'model',
+    option_type: 'select',
+    current_value: info.current_model_id,
+    options: info.available_models.map((model) => ({ value: model.id, label: model.label, name: model.label })),
+  };
+}
+
+function modeToOption(mode: { mode: string } | null | undefined): AcpConfigOptionDto | null {
+  if (!mode) return null;
+  // `/mode` reports only the active mode; the available list comes from the
+  // agent's cached/static modes (AgentModeSelector), so `options` stays empty.
+  return {
+    id: 'mode',
+    category: 'mode',
+    option_type: 'select',
+    current_value: mode.mode,
+    options: [],
+  };
+}
+
+function buildConfigOptions(model: AcpModelInfo | null | undefined, mode: { mode: string } | null | undefined): AcpConfigOptionDto[] | null {
+  const options = [modelInfoToOption(model), modeToOption(mode)].filter((option): option is AcpConfigOptionDto => option !== null);
+  return options.length > 0 ? options : null;
+}
+
+/** Resolve to null on the pre-warmup 404 that both GETs return while idle. */
+async function fetchOrNull<T>(promise: Promise<T>): Promise<T | null> {
   try {
-    const result = await ipcBridge.acpConversation.getConfigOptions.invoke({ conversation_id });
-    return result.config_options;
+    return await promise;
   } catch (error) {
     if (isBackendHttpError(error) && error.status === 404) return null;
     throw error;
   }
+}
+
+const fetchConfigOptions = async ([, conversation_id]: AcpConfigOptionsKey): Promise<AcpConfigOptionDto[] | null> => {
+  const [model, mode] = await Promise.all([
+    fetchOrNull(ipcBridge.acpConversation.getModelInfo.invoke({ conversation_id })),
+    fetchOrNull(ipcBridge.acpConversation.getMode.invoke({ conversation_id })),
+  ]);
+  return buildConfigOptions(model?.model_info ?? null, mode ?? null);
 };
 
 export function useAcpConfigOptions({
@@ -191,17 +237,26 @@ export function useAcpConfigOptions({
       setConversationSetStatus(conversation_id, { state: 'setting', optionId, requestedValue: value });
       try {
         await prepareRuntime?.();
-        const response = await ipcBridge.acpConversation.setConfigOption.invoke({
-          conversation_id,
-          option_id: optionId,
-          value,
-        });
-        const confirmation = response.confirmation;
-        if (!hasObservedValue(response, optionId, value)) {
-          throw new Error(confirmation === 'command_ack' ? 'command_ack' : 'config_not_observed');
+        const previous = optionsRef.current ?? [];
+        const preserve = (id: string) => previous.find((option) => option.id === id) ?? null;
+        let next: AcpConfigOptionDto[];
+        let observed: boolean;
+        if (optionId === 'mode') {
+          const response = await ipcBridge.acpConversation.setMode.invoke({ conversation_id, mode: value });
+          observed = response.mode === value;
+          next = [preserve('model'), modeToOption(response)].filter((option): option is AcpConfigOptionDto => option !== null);
+        } else {
+          // Model + reasoning effort both flow through `/model` (effort is encoded
+          // in the `<model>/<effort>` id).
+          const response = await ipcBridge.acpConversation.setModel.invoke({ conversation_id, model_id: value });
+          observed = response.model_info?.current_model_id === value;
+          next = [modelInfoToOption(response.model_info), preserve('mode')].filter((option): option is AcpConfigOptionDto => option !== null);
         }
-        replaceSnapshot(response.config_options);
-        return response.config_options;
+        if (!observed) {
+          throw new Error('config_not_observed');
+        }
+        replaceSnapshot(next);
+        return next;
       } finally {
         setConversationSetStatus(conversation_id, { state: 'idle' });
       }

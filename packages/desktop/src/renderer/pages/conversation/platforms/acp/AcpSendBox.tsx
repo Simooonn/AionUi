@@ -194,31 +194,6 @@ const AcpSendBox: React.FC<{
     onSelectModelFailed: (_modelId, error) => Message.error(t(configErrorMessageKey(error))),
   });
 
-  // Authoritative current model for the toolbar pills. Persisted to the
-  // conversation so an idle switch takes effect on the next turn (the runtime
-  // `set_model` config path is unavailable for some backends, e.g. Claude Code,
-  // until an agent is active). We optimistically reflect the choice locally.
-  const [selectedModelId, setSelectedModelId] = useState<string | undefined>(current_model_id);
-  useEffect(() => {
-    setSelectedModelId(current_model_id);
-  }, [current_model_id]);
-  const handleSwitchModel = useCallback(
-    (nextModelId: string) => {
-      setSelectedModelId(nextModelId);
-      // Persist for the next turn (works while idle, no active agent needed).
-      void ipcBridge.conversation.update
-        .invoke({
-          id: conversation_id,
-          updates: { extra: { current_model_id: nextModelId } as Partial<TChatConversation['extra']> } as Partial<TChatConversation>,
-          merge_extra: true,
-        })
-        .then(() => emitter.emit('chat.history.refresh'))
-        .catch(() => Message.error(t('agent.model.switchFailed', { defaultValue: 'Failed to switch model' })));
-      // Best-effort live switch when an agent is already active.
-      selectModel(nextModelId);
-    },
-    [conversation_id, selectModel, t]
-  );
   const availableAgentModes = useAgentModesForBackend(backend);
 
   useEffect(() => {
@@ -746,10 +721,11 @@ Please check your local CLI tool authentication status`,
             {!isMobile && (
               <AcpRuntimeModelControls
                 model_info={model_info}
-                currentModelId={selectedModelId}
+                currentModelId={current_model_id}
+                canSwitch={canSwitchModel}
                 isSetting={isModelSetting}
                 setStatus={modelSetStatus}
-                onSwitchModel={handleSwitchModel}
+                onSwitchModel={selectModel}
                 thoughtLevel={runtimeThoughtLevel}
                 onSelectThoughtLevel={(id, value) =>
                   void handleThoughtLevelSetOption(id, value)

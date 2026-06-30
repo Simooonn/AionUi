@@ -9,18 +9,22 @@ import { createElement, type PropsWithChildren } from 'react';
 import { SWRConfig } from 'swr';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IResponseMessage } from '@/common/adapter/ipcBridge';
-import type { AcpConfigOptionDto, AcpModelInfo } from '@/common/types/platform/acpTypes';
+import type { AcpModelInfo } from '@/common/types/platform/acpTypes';
 import { useAcpModelInfo } from '@/renderer/hooks/agent/useAcpModelInfo';
 
 const {
-  getConfigOptionsInvokeMock,
-  setConfigOptionInvokeMock,
+  getModelInfoInvokeMock,
+  setModelInvokeMock,
+  getModeInvokeMock,
+  setModeInvokeMock,
   configServiceSetMock,
   fetchDetectedAgentsMock,
   responseStreamHandlers,
 } = vi.hoisted(() => ({
-  getConfigOptionsInvokeMock: vi.fn(),
-  setConfigOptionInvokeMock: vi.fn(),
+  getModelInfoInvokeMock: vi.fn(),
+  setModelInvokeMock: vi.fn(),
+  getModeInvokeMock: vi.fn(),
+  setModeInvokeMock: vi.fn(),
   configServiceSetMock: vi.fn(),
   fetchDetectedAgentsMock: vi.fn(),
   responseStreamHandlers: [] as Array<(message: IResponseMessage) => void>,
@@ -29,8 +33,10 @@ const {
 vi.mock('@/common', () => ({
   ipcBridge: {
     acpConversation: {
-      getConfigOptions: { invoke: getConfigOptionsInvokeMock },
-      setConfigOption: { invoke: setConfigOptionInvokeMock },
+      getModelInfo: { invoke: getModelInfoInvokeMock },
+      setModel: { invoke: setModelInvokeMock },
+      getMode: { invoke: getModeInvokeMock },
+      setMode: { invoke: setModeInvokeMock },
       responseStream: {
         on: vi.fn().mockImplementation((handler: (message: IResponseMessage) => void) => {
           responseStreamHandlers.push(handler);
@@ -56,28 +62,14 @@ vi.mock('@/renderer/utils/model/agentTypes', () => ({
   fetchDetectedAgents: fetchDetectedAgentsMock,
 }));
 
-const buildConfigOptions = (currentModelId = 'sonnet-4'): AcpConfigOptionDto[] => [
-  {
-    id: 'model',
-    category: 'model',
-    option_type: 'select',
-    current_value: currentModelId,
-    options: [
-      { value: 'sonnet-4', label: 'Claude Sonnet 4' },
-      { value: 'opus-4', label: 'Claude Opus 4' },
-    ],
-  },
-  {
-    id: 'thought_level',
-    category: 'thought_level',
-    option_type: 'select',
-    current_value: 'medium',
-    options: [
-      { value: 'low', label: 'Low' },
-      { value: 'medium', label: 'Medium' },
-    ],
-  },
-];
+const buildModelInfo = (currentModelId = 'sonnet-4'): AcpModelInfo => ({
+  current_model_id: currentModelId,
+  current_model_label: currentModelId === 'opus-4' ? 'Claude Opus 4' : 'Claude Sonnet 4',
+  available_models: [
+    { id: 'sonnet-4', label: 'Claude Sonnet 4' },
+    { id: 'opus-4', label: 'Claude Opus 4' },
+  ],
+});
 
 const buildLegacyModelInfo = (overrides: Partial<AcpModelInfo> = {}): AcpModelInfo => ({
   current_model_id: 'sonnet-4',
@@ -131,22 +123,21 @@ describe('useAcpModelInfo', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     responseStreamHandlers.length = 0;
-    getConfigOptionsInvokeMock.mockReset();
-    setConfigOptionInvokeMock.mockReset();
+    getModelInfoInvokeMock.mockReset();
+    setModelInvokeMock.mockReset();
+    getModeInvokeMock.mockReset();
+    setModeInvokeMock.mockReset();
     configServiceSetMock.mockReset();
-    getConfigOptionsInvokeMock.mockResolvedValue({ config_options: buildConfigOptions() });
-    setConfigOptionInvokeMock.mockResolvedValue({
-      confirmation: 'observed',
-      config_options: buildConfigOptions('opus-4'),
-    });
+    getModelInfoInvokeMock.mockResolvedValue({ model_info: buildModelInfo() });
+    getModeInvokeMock.mockResolvedValue({ mode: 'default', initialized: true });
+    setModelInvokeMock.mockResolvedValue({ model_info: buildModelInfo('opus-4') });
+    setModeInvokeMock.mockResolvedValue({ mode: 'default', initialized: true });
     configServiceSetMock.mockResolvedValue(undefined);
     fetchDetectedAgentsMock.mockResolvedValue([]);
   });
 
-  it('derives model info from the model config option and ignores thought_level values', async () => {
-    getConfigOptionsInvokeMock.mockResolvedValue({
-      config_options: buildConfigOptions('opus-4'),
-    });
+  it('derives model info from the /model endpoint', async () => {
+    getModelInfoInvokeMock.mockResolvedValue({ model_info: buildModelInfo('opus-4') });
 
     const { result } = renderUseAcpModelInfo({
       conversation_id: 'conv-1',
@@ -162,13 +153,10 @@ describe('useAcpModelInfo', () => {
   });
 
   it('waits for observed confirmation before updating selected model and saving preference', async () => {
-    const setConfigDeferred = deferred<{
-      confirmation: 'observed';
-      config_options: AcpConfigOptionDto[];
-    }>();
+    const setModelDeferred = deferred<{ model_info: AcpModelInfo }>();
     const onSelectModelSuccess = vi.fn();
     const onSelectModelFailed = vi.fn();
-    setConfigOptionInvokeMock.mockReturnValue(setConfigDeferred.promise);
+    setModelInvokeMock.mockReturnValue(setModelDeferred.promise);
 
     const { result } = renderUseAcpModelInfo({
       conversation_id: 'conv-1',
@@ -187,21 +175,17 @@ describe('useAcpModelInfo', () => {
     });
 
     await waitFor(() => {
-      expect(setConfigOptionInvokeMock).toHaveBeenCalledWith({
+      expect(setModelInvokeMock).toHaveBeenCalledWith({
         conversation_id: 'conv-1',
-        option_id: 'model',
-        value: 'opus-4',
+        model_id: 'opus-4',
       });
     });
     expect(result.current.model_info?.current_model_id).toBe('sonnet-4');
     expect(result.current.isSetting).toBe(true);
 
     await act(async () => {
-      setConfigDeferred.resolve({
-        confirmation: 'observed',
-        config_options: buildConfigOptions('opus-4'),
-      });
-      await setConfigDeferred.promise;
+      setModelDeferred.resolve({ model_info: buildModelInfo('opus-4') });
+      await setModelDeferred.promise;
     });
 
     await waitFor(() => {
@@ -214,13 +198,11 @@ describe('useAcpModelInfo', () => {
     });
   });
 
-  it('does not update model info when backend only returns command acknowledgement', async () => {
+  it('does not update model info when the backend does not observe the requested model', async () => {
     const onSelectModelSuccess = vi.fn();
     const onSelectModelFailed = vi.fn();
-    setConfigOptionInvokeMock.mockResolvedValue({
-      confirmation: 'command_ack',
-      config_options: null,
-    });
+    // Backend echoes back the previous model (switch not observed).
+    setModelInvokeMock.mockResolvedValue({ model_info: buildModelInfo('sonnet-4') });
 
     const { result } = renderUseAcpModelInfo({
       conversation_id: 'conv-1',
@@ -273,7 +255,8 @@ describe('useAcpModelInfo', () => {
   });
 
   it('uses legacy acp_model_info stream only before config options are available', async () => {
-    getConfigOptionsInvokeMock.mockResolvedValue({ config_options: [] });
+    getModelInfoInvokeMock.mockResolvedValue({ model_info: null });
+    getModeInvokeMock.mockResolvedValue(null);
 
     const { result } = renderUseAcpModelInfo({
       conversation_id: 'conv-1',

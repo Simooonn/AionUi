@@ -35,11 +35,7 @@ import type {
   UpdateAssistantRequest,
 } from '../types/agent/assistantTypes';
 import type { PreviewHistoryTarget, PreviewSnapshotInfo } from '../types/office/preview';
-import type {
-  GetConfigOptionsResponse,
-  SetConfigOptionRequest,
-  SetConfigOptionResponse,
-} from '../types/platform/acpTypes';
+import type { AcpModelInfo } from '../types/platform/acpTypes';
 import type {
   CreateProviderRequest,
   FetchModelsAnonymousRequest,
@@ -828,13 +824,26 @@ export const acpConversation = {
   checkProviderHealth: httpPost<ProviderHealthCheckResponse, ProviderHealthCheckRequest>(
     '/api/agents/provider-health-check'
   ),
-  getConfigOptions: httpGet<GetConfigOptionsResponse, { conversation_id: string }>(
-    (p) => `/api/conversations/${p.conversation_id}/config-options`,
+  // ACP runtime model/mode are served as discrete endpoints by aioncore
+  // (`/model`, `/mode`). `useAcpConfigOptions` adapts them into the unified
+  // config-option shape the selectors consume. Reasoning effort is encoded into
+  // the model id (`<model>/<effort>`), so there is no separate thought-level
+  // endpoint. GETs 404 before the ACP session is warmed — silenced.
+  getModelInfo: httpGet<{ model_info: AcpModelInfo | null }, { conversation_id: string }>(
+    (p) => `/api/conversations/${p.conversation_id}/model`,
     { silentStatuses: [404] }
   ),
-  setConfigOption: httpPut<SetConfigOptionResponse, { conversation_id: string; option_id: string; value: string }>(
-    (p) => `/api/conversations/${p.conversation_id}/config-options/${encodeURIComponent(p.option_id)}`,
-    (p): SetConfigOptionRequest => ({ value: p.value })
+  setModel: httpPut<{ model_info: AcpModelInfo | null }, { conversation_id: string; model_id: string }>(
+    (p) => `/api/conversations/${p.conversation_id}/model`,
+    (p) => ({ model_id: p.model_id })
+  ),
+  getMode: httpGet<{ mode: string; initialized: boolean } | null, { conversation_id: string }>(
+    (p) => `/api/conversations/${p.conversation_id}/mode`,
+    { silentStatuses: [404] }
+  ),
+  setMode: httpPut<{ mode: string; initialized: boolean }, { conversation_id: string; mode: string }>(
+    (p) => `/api/conversations/${p.conversation_id}/mode`,
+    (p) => ({ mode: p.mode })
   ),
 };
 

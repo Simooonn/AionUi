@@ -51,6 +51,7 @@ type Props = React.ComponentProps<typeof AcpRuntimeModelControls>;
 const makeProps = (overrides: Partial<Props> = {}): Props => ({
   model_info: combinedModelInfo,
   currentModelId: combinedModelInfo.current_model_id,
+  canSwitch: true,
   isSetting: false,
   setStatus: { state: 'idle' } as AcpConfigSetStatus,
   onSwitchModel: vi.fn(),
@@ -173,20 +174,37 @@ describe('AcpRuntimeModelControls', () => {
     });
 
     it('selecting a different model keeps the current effort (recombines id)', () => {
-      const selectModel = vi.fn();
-      render(<AcpRuntimeModelControls {...makeProps({ selectModel })} />);
+      const onSwitchModel = vi.fn();
+      render(<AcpRuntimeModelControls {...makeProps({ onSwitchModel })} />);
       const modelGroup = screen.getByRole('group', { name: 'Model' });
       fireEvent.click(within(modelGroup).getByText('claude-sonnet-4-6'));
       // current effort is 'high' (from opus[1m]/high)
-      expect(selectModel).toHaveBeenCalledWith('sonnet/high');
+      expect(onSwitchModel).toHaveBeenCalledWith('sonnet/high');
     });
 
     it('selecting a different effort keeps the current model (recombines id)', () => {
-      const selectModel = vi.fn();
-      render(<AcpRuntimeModelControls {...makeProps({ selectModel })} />);
+      const onSwitchModel = vi.fn();
+      render(<AcpRuntimeModelControls {...makeProps({ onSwitchModel })} />);
       const effortGroup = screen.getByRole('group', { name: 'Thinking Level' });
       fireEvent.click(within(effortGroup).getByText('max'));
-      expect(selectModel).toHaveBeenCalledWith('opus[1m]/max');
+      expect(onSwitchModel).toHaveBeenCalledWith('opus[1m]/max');
+    });
+
+    it('reflects the live model_info over a stale currentModelId prop', () => {
+      // Stale persisted prop points at sonnet; live runtime says opus[1m]/high.
+      render(<AcpRuntimeModelControls {...makeProps({ currentModelId: 'sonnet/low' })} />);
+      expect(screen.getByTestId('acp-toolbar-model-selector')).toHaveTextContent('Opus (1M context)');
+      expect(screen.getByTestId('acp-toolbar-thought-level-selector')).toHaveTextContent('high');
+    });
+
+    it('renders read-only pills with no dropdown when canSwitch is false', () => {
+      render(<AcpRuntimeModelControls {...makeProps({ canSwitch: false })} />);
+      // Pills still show the current model + effort...
+      expect(screen.getByTestId('acp-toolbar-model-selector')).toHaveTextContent('Opus (1M context)');
+      expect(screen.getByTestId('acp-toolbar-thought-level-selector')).toHaveTextContent('high');
+      // ...but the switch dropdowns are absent (read-only).
+      expect(screen.queryByRole('group', { name: 'Model' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('group', { name: 'Thinking Level' })).not.toBeInTheDocument();
     });
   });
 
@@ -203,17 +221,23 @@ describe('AcpRuntimeModelControls', () => {
       expect(screen.queryByTestId('acp-toolbar-thought-level-selector')).not.toBeInTheDocument();
     });
 
-    it('selecting a model calls selectModel with the raw id', () => {
-      const selectModel = vi.fn();
-      render(<AcpRuntimeModelControls {...makeProps({ model_info: plainModelInfo, selectModel })} />);
+    it('selecting a model calls onSwitchModel with the raw id', () => {
+      const onSwitchModel = vi.fn();
+      render(<AcpRuntimeModelControls {...makeProps({ model_info: plainModelInfo, onSwitchModel })} />);
       const modelGroup = screen.getByRole('group', { name: 'Model' });
       fireEvent.click(within(modelGroup).getByText('GPT-5.2 Mini'));
-      expect(selectModel).toHaveBeenCalledWith('gpt-5.2-mini');
+      expect(onSwitchModel).toHaveBeenCalledWith('gpt-5.2-mini');
+    });
+
+    it('renders a read-only model pill with no dropdown when canSwitch is false', () => {
+      render(<AcpRuntimeModelControls {...makeProps({ model_info: plainModelInfo, canSwitch: false })} />);
+      expect(screen.getByTestId('acp-toolbar-model-selector')).toHaveTextContent('GPT-5.2');
+      expect(screen.queryByRole('group', { name: 'Model' })).not.toBeInTheDocument();
     });
   });
 
   it('shows a read-only "Use CLI model" pill when there is no model info', () => {
-    render(<AcpRuntimeModelControls {...makeProps({ model_info: null })} />);
+    render(<AcpRuntimeModelControls {...makeProps({ model_info: null, currentModelId: undefined })} />);
     expect(screen.getByText('Use CLI model')).toBeInTheDocument();
     expect(screen.queryByTestId('acp-toolbar-model-selector')).not.toBeInTheDocument();
   });

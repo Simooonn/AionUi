@@ -532,11 +532,5 @@
     "monthsAgo": "{{count}} мес. назад",
     "yearsAgo": "{{count}} г. назад",
     "messageCount": "{{count}} сообщ."
-  },
-  "terminalView": {
-    "open": "Открыть терминальный вид",
-    "close": "Закрыть терминальный вид",
-    "placeholder": "Отправить сообщение AI...",
-    "title": "Терминальный вид"
   }
 }

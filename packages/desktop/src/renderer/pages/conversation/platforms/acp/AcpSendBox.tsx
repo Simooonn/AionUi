@@ -1,6 +1,8 @@
 import { ipcBridge } from '@/common';
 import type { IConversationMcpStatus } from '@/common/config/storage';
+import { isBackendHttpError } from '@/common/adapter/httpBridge';
 import { isSideQuestionSupported } from '@/common/chat/sideQuestion';
+import { parseError, uuid } from '@/common/utils';
 import AcpRuntimeModelControls from '@/renderer/components/agent/AcpRuntimeModelControls';
 import AgentModeSelector from '@/renderer/components/agent/AgentModeSelector';
 import CommandQueuePanel from '@/renderer/components/chat/CommandQueuePanel';
@@ -26,7 +28,14 @@ import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useOpenFileSelector } from '@/renderer/hooks/file/useOpenFileSelector';
 import { useLatestRef } from '@/renderer/hooks/ui/useLatestRef';
 import { useAddOrUpdateMessage } from '@/renderer/pages/conversation/Messages/hooks';
-import type { ConversationCommandQueueItem } from '@/renderer/pages/conversation/platforms/useConversationCommandQueue';
+import {
+  shouldEnqueueConversationCommand,
+  useConversationCommandQueue,
+  type ConversationCommandQueueItem,
+} from '@/renderer/pages/conversation/platforms/useConversationCommandQueue';
+// ace:start CLI-imported conversation resume wiring
+import { ensureCliResumeBeforeSend } from '@/renderer/ace/ensureCliMessagesImported';
+// ace:end
 import { usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import { useConversationRuntimeView } from '@/renderer/pages/conversation/runtime/useConversationRuntimeView';
 import { getConversationRuntimeWorkspaceErrorMessage } from '@/renderer/pages/conversation/utils/conversationCreateError';
@@ -37,10 +46,12 @@ import { allSupportedExts } from '@/renderer/services/FileService';
 import { iconColors } from '@/renderer/styles/colors';
 import { emitter, useAddEventListener } from '@/renderer/utils/emitter';
 import { mergeFileSelectionItems } from '@/renderer/utils/file/fileSelection';
+import { buildDisplayMessage } from '@/renderer/utils/file/messageFiles';
 import { Message, Tag } from '@arco-design/web-react';
 import { Brain, MagicHat, Shield } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { buildSendFailureError } from './buildSendFailureError';
 import { useAcpInitialMessage } from './useAcpInitialMessage';
 import type { UseAcpMessageReturn } from './useAcpMessage';
 
@@ -105,19 +116,6 @@ const AcpSendBox: React.FC<{
   messageState: UseAcpMessageReturn;
   teamSendMessage?: (payload: { input: string; files: string[] }) => Promise<void>;
   teamRuntime?: TeamSendBoxRuntime;
-  // Queue props lifted from AcpChat
-  queuedCommands: ConversationCommandQueueItem[];
-  isQueueInteractionLocked: boolean;
-  hasPendingCommands: boolean;
-  enqueue: (item: Pick<ConversationCommandQueueItem, 'input' | 'files'>) => ConversationCommandQueueItem | null;
-  remove: (id: string) => void;
-  clear: () => void;
-  reorder: (activeCommandId: string, overCommandId: string) => void;
-  lockInteraction: () => void;
-  unlockInteraction: () => void;
-  resetActiveExecution: (reason: string) => void;
-  handleSendCommand: (input: string, files: string[]) => Promise<void>;
-  isBusy: boolean;
 }> = ({
   conversation_id,
   backend,
@@ -128,18 +126,6 @@ const AcpSendBox: React.FC<{
   messageState,
   teamSendMessage,
   teamRuntime,
-  queuedCommands,
-  isQueueInteractionLocked,
-  hasPendingCommands: _hasPendingCommands,
-  enqueue: _enqueue,
-  remove,
-  clear,
-  reorder,
-  lockInteraction,
-  unlockInteraction,
-  resetActiveExecution,
-  handleSendCommand,
-  isBusy,
 }) => {
   const { aiProcessing, setAiProcessing, resetState, hasThinkingMessage, slashCommands, fetchSlashCommands } =
     messageState;
@@ -271,6 +257,14 @@ const AcpSendBox: React.FC<{
     setAtPath,
     setUploadFile,
   });
+  const commandQueueRuntimeGate = teamRuntime?.runtimeGate ?? {
+    hydrated: runtimeView.hydrated,
+    canSendMessage: runtimeView.canSendMessage,
+    isProcessing: runtimeView.isProcessing,
+  };
+  const isCancelling = runtimeView.state === 'cancelling';
+  const isBusy = isCancelling || commandQueueRuntimeGate.isProcessing || !commandQueueRuntimeGate.canSendMessage;
+
   // Register handler for adding text from preview panel to sendbox
   useEffect(() => {
     const handler = (text: string) => {
@@ -305,6 +299,136 @@ const AcpSendBox: React.FC<{
     addOrUpdateMessage: addOrUpdateMessageRef.current,
   });
 
+  const executeCommand = useCallback(
+    async ({ input, files }: Pick<ConversationCommandQueueItem, 'input' | 'files'>) => {
+      const displayMessage = buildDisplayMessage(input, files, workspacePath || '');
+
+      try {
+        if (teamPermission) await teamPermission.warmupSession();
+        // ace:start re-wire CLI resume right before the send (covers queued commands too)
+        await ensureCliResumeBeforeSend(conversation_id);
+        // ace:end
+        void checkAndUpdateTitle(conversation_id, input);
+        if (teamSendMessage) {
+          await teamSendMessage({ input: displayMessage, files });
+          emitter.emit('chat.history.refresh');
+          if (files.length > 0) {
+            emitter.emit('acp.workspace.refresh');
+          }
+          return;
+        }
+
+        runtimeView.markSendStarted();
+        setAiProcessing(true);
+        const result = await ipcBridge.acpConversation.sendMessage.invoke({
+          input: displayMessage,
+          conversation_id,
+          files,
+        });
+        runtimeView.markSendAccepted(result.turn_id, result.runtime, result.msg_id);
+        emitter.emit('chat.history.refresh');
+      } catch (error: unknown) {
+        const errorMsg =
+          getConversationRuntimeWorkspaceErrorMessage(error, t) || parseError(error) || t('common.unknownError');
+        runtimeView.markSendFailed(errorMsg);
+
+        // Archived conversation (e.g. legacy Gemini). Backend signals this
+        // via HTTP 410 + code='CONVERSATION_ARCHIVED' — identified by code,
+        // not by substring matching.
+        if (isBackendHttpError(error) && error.code === 'CONVERSATION_ARCHIVED') {
+          Message.error({
+            content: error.backendMessage || errorMsg,
+            duration: 6000,
+          });
+          setAiProcessing(false);
+          throw error;
+        }
+
+        const isAuthError =
+          errorMsg.includes('[ACP-AUTH-') ||
+          errorMsg.includes('authentication failed') ||
+          errorMsg.includes('认证失败');
+        if (isAuthError) {
+          const errorMessage = {
+            id: uuid(),
+            msg_id: uuid(),
+            turn_id: '',
+            conversation_id,
+            type: 'error',
+            data: t('acp.auth.failed', {
+              backend,
+              error: errorMsg,
+              defaultValue: `${backend} authentication failed:
+
+{{error}}
+
+Please check your local CLI tool authentication status`,
+            }),
+          };
+
+          ipcBridge.acpConversation.responseStream.emit(errorMessage);
+        } else {
+          addOrUpdateMessageRef.current(
+            {
+              id: uuid(),
+              msg_id: uuid(),
+              type: 'tips',
+              position: 'center',
+              conversation_id,
+              created_at: Date.now(),
+              content: {
+                content: errorMsg,
+                type: 'error',
+                error: buildSendFailureError(error, errorMsg),
+              },
+            },
+            true
+          );
+        }
+
+        resetState();
+        setAiProcessing(false);
+        throw error;
+      }
+
+      if (files.length > 0) {
+        emitter.emit('acp.workspace.refresh');
+      }
+    },
+    [
+      backend,
+      checkAndUpdateTitle,
+      conversation_id,
+      resetState,
+      runtimeView,
+      setAiProcessing,
+      t,
+      teamPermission,
+      teamSendMessage,
+      workspacePath,
+    ]
+  );
+
+  const {
+    items: queuedCommands,
+    isInteractionLocked: isQueueInteractionLocked,
+    hasPendingCommands,
+    enqueue,
+    remove,
+    clear,
+    reorder,
+    lockInteraction,
+    unlockInteraction,
+    resetActiveExecution,
+  } = useConversationCommandQueue({
+    conversation_id: conversation_id,
+    enabled: true,
+    isBusy,
+    runtimeGate: commandQueueRuntimeGate,
+    teamUpgradeHandoffReady: Boolean(teamRuntime && teamSendMessage),
+    onExecute: executeCommand,
+  });
+
   const onSendHandler = async (message: string) => {
     const atPathFiles = atPath.map((item) => (typeof item === 'string' ? item : item.path));
     const allFiles = [...uploadFile, ...atPathFiles];
@@ -312,7 +436,18 @@ const AcpSendBox: React.FC<{
     clearFiles();
     emitter.emit('acp.selected.file.clear');
 
-    await handleSendCommand(message, allFiles);
+    if (
+      shouldEnqueueConversationCommand({
+        enabled: true,
+        isBusy,
+        hasPendingCommands,
+      })
+    ) {
+      enqueue({ input: message, files: allFiles });
+      return;
+    }
+
+    await executeCommand({ input: message, files: allFiles });
   };
 
   const handleEditQueuedCommand = useCallback(

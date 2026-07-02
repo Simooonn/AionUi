@@ -534,11 +534,5 @@
     "monthsAgo": "{{count}} ay önce",
     "yearsAgo": "{{count}} yıl önce",
     "messageCount": "{{count}} mesaj"
-  },
-  "terminalView": {
-    "open": "Terminal görünümünü aç",
-    "close": "Terminal görünümünü kapat",
-    "placeholder": "AI'ya mesaj gönder...",
-    "title": "Terminal Görünümü"
   }
 }

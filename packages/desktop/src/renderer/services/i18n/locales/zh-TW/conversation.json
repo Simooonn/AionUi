@@ -532,11 +532,5 @@
     "monthsAgo": "{{count}} 個月前",
     "yearsAgo": "{{count}} 年前",
     "messageCount": "{{count}} 則"
-  },
-  "terminalView": {
-    "open": "開啟終端視圖",
-    "close": "關閉終端視圖",
-    "placeholder": "發送訊息給 AI...",
-    "title": "終端視圖"
   }
 }

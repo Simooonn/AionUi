@@ -532,11 +532,5 @@
     "monthsAgo": "{{count}}ヶ月前",
     "yearsAgo": "{{count}} 年前",
     "messageCount": "{{count}} 件"
-  },
-  "terminalView": {
-    "open": "ターミナルビューを開く",
-    "close": "ターミナルビューを閉じる",
-    "placeholder": "AIにメッセージを送信...",
-    "title": "ターミナルビュー"
   }
 }

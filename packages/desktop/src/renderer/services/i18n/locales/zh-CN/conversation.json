@@ -532,11 +532,5 @@
     "monthsAgo": "{{count}} 月前",
     "yearsAgo": "{{count}} 年前",
     "messageCount": "{{count}} 条"
-  },
-  "terminalView": {
-    "open": "打开终端视图",
-    "close": "关闭终端视图",
-    "placeholder": "发送消息给 AI...",
-    "title": "终端视图"
   }
 }

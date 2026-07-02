@@ -538,11 +538,5 @@
     "monthsAgo": "há {{count}} m",
     "yearsAgo": "há {{count}} a",
     "messageCount": "{{count}} mensagens"
-  },
-  "terminalView": {
-    "open": "Abrir visão de terminal",
-    "close": "Fechar visão de terminal",
-    "placeholder": "Enviar mensagem para IA...",
-    "title": "Visão de Terminal"
   }
 }

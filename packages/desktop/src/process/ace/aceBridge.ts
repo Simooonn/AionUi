@@ -28,6 +28,25 @@ import {
   unlinkSessionFiles,
 } from './sessionFiles';
 import { ensureCliSessionResumable } from './sessionResume';
+import { readHudStatusline, type HudStatuslineParams, type HudStatuslineResult } from './hudStatusline';
+
+// HUD statusline for the normal ACP chat view: synthesize the statusline
+// stdin from conversation data and run the user's configured statusLine
+// command (see hudStatusline.ts). Null → the renderer hides the bar.
+ipcMain.handle('ace:hud-statusline', async (_event, rawParams: unknown): Promise<HudStatuslineResult> => {
+  try {
+    const p = (rawParams ?? {}) as Partial<HudStatuslineParams>;
+    if (typeof p.workspace !== 'string' || !p.workspace) return null;
+    return await readHudStatusline({
+      workspace: p.workspace,
+      conversationId: typeof p.conversationId === 'string' ? p.conversationId : undefined,
+      modelId: typeof p.modelId === 'string' ? p.modelId : undefined,
+      modelLabel: typeof p.modelLabel === 'string' ? p.modelLabel : undefined,
+    });
+  } catch {
+    return null;
+  }
+});
 
 ipcMain.handle('ace:import-cli-sessions', async (): Promise<ImportCliSessionsResult> => {
   try {

@@ -21,6 +21,9 @@ import HOC from '@renderer/utils/ui/HOC';
 import React from 'react';
 import AcpE2EStreamInjector from './AcpE2EStreamInjector';
 import AcpSendBox from './AcpSendBox';
+// ace:start HUD statusline under the sendbox (auto-hides when no data)
+import HudStatusBar from './hudStatusBar/HudStatusBar';
+// ace:end
 import { useAcpMessage } from './useAcpMessage';
 
 const AcpChat: React.FC<{
@@ -94,6 +97,9 @@ const AcpChat: React.FC<{
               teamRuntime={teamRuntime}
             ></AcpSendBox>
           )}
+          {/* ace:start HUD statusline — very bottom of the conversation column, like the native CLI */}
+          <HudStatusBar conversation_id={conversation_id} workspace={workspace} current_model_id={current_model_id} />
+          {/* ace:end */}
         </div>
       </ConversationArtifactProvider>
     </ConversationProvider>

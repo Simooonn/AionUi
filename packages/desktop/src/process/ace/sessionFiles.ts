@@ -144,7 +144,9 @@ type ResumeQueryDb = { prepare(sql: string): { get(...args: unknown[]): unknown 
  * authoritative acp_session row, or null when it has no resumable CLI session.
  */
 export function resumeCommandForConversation(db: ResumeQueryDb, conversationId: string): string | null {
-  const row = db.prepare('SELECT session_id, agent_backend FROM acp_session WHERE conversation_id = ?').get(conversationId) as AcpResumeRow | undefined;
+  const row = db
+    .prepare('SELECT session_id, agent_backend FROM acp_session WHERE conversation_id = ?')
+    .get(conversationId) as AcpResumeRow | undefined;
   if (!row?.session_id) return null;
   return buildResumeCommand(backendToCliSource(row.agent_backend), row.session_id);
 }

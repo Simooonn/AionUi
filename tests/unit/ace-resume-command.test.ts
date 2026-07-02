@@ -96,11 +96,17 @@ describe('buildResumeCommand', () => {
 describe('resumeCommandForConversation (app-created acp_session route)', () => {
   const ID = '3bde1ea7-0943-4ffd-b62f-711d690d9911';
 
-  function acpDb(rows: Array<{ conversation_id: string; session_id: string | null; agent_backend: string }>): DatabaseSync {
+  function acpDb(
+    rows: Array<{ conversation_id: string; session_id: string | null; agent_backend: string }>
+  ): DatabaseSync {
     const db = new DatabaseSync(':memory:');
     db.exec('CREATE TABLE acp_session (conversation_id TEXT PRIMARY KEY, session_id TEXT, agent_backend TEXT)');
     for (const r of rows) {
-      db.prepare('INSERT INTO acp_session (conversation_id, session_id, agent_backend) VALUES (?, ?, ?)').run(r.conversation_id, r.session_id, r.agent_backend);
+      db.prepare('INSERT INTO acp_session (conversation_id, session_id, agent_backend) VALUES (?, ?, ?)').run(
+        r.conversation_id,
+        r.session_id,
+        r.agent_backend
+      );
     }
     return db;
   }

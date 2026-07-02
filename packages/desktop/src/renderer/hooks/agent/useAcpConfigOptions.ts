@@ -161,8 +161,13 @@ function modeToOption(mode: { mode: string } | null | undefined): AcpConfigOptio
   };
 }
 
-function buildConfigOptions(model: AcpModelInfo | null | undefined, mode: { mode: string } | null | undefined): AcpConfigOptionDto[] | null {
-  const options = [modelInfoToOption(model), modeToOption(mode)].filter((option): option is AcpConfigOptionDto => option !== null);
+function buildConfigOptions(
+  model: AcpModelInfo | null | undefined,
+  mode: { mode: string } | null | undefined
+): AcpConfigOptionDto[] | null {
+  const options = [modelInfoToOption(model), modeToOption(mode)].filter(
+    (option): option is AcpConfigOptionDto => option !== null
+  );
   return options.length > 0 ? options : null;
 }
 
@@ -244,13 +249,17 @@ export function useAcpConfigOptions({
         if (optionId === 'mode') {
           const response = await ipcBridge.acpConversation.setMode.invoke({ conversation_id, mode: value });
           observed = response.mode === value;
-          next = [preserve('model'), modeToOption(response)].filter((option): option is AcpConfigOptionDto => option !== null);
+          next = [preserve('model'), modeToOption(response)].filter(
+            (option): option is AcpConfigOptionDto => option !== null
+          );
         } else {
           // Model + reasoning effort both flow through `/model` (effort is encoded
           // in the `<model>/<effort>` id).
           const response = await ipcBridge.acpConversation.setModel.invoke({ conversation_id, model_id: value });
           observed = response.model_info?.current_model_id === value;
-          next = [modelInfoToOption(response.model_info), preserve('mode')].filter((option): option is AcpConfigOptionDto => option !== null);
+          next = [modelInfoToOption(response.model_info), preserve('mode')].filter(
+            (option): option is AcpConfigOptionDto => option !== null
+          );
         }
         if (!observed) {
           throw new Error('config_not_observed');

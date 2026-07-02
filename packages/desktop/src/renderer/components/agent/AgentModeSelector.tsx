@@ -179,7 +179,10 @@ const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
   // serves no config options, so a switch would always fail — render the current
   // mode read-only instead of letting the click error out.
   const runtimeUnavailable = Boolean(conversation_id) && !onModeSelect && !runtimeMode;
-  const can_switchMode = (supportsModeSwitch(backend) || modes.length > 0) && Boolean(conversation_id || onModeSelect) && !runtimeUnavailable;
+  const can_switchMode =
+    (supportsModeSwitch(backend) || modes.length > 0) &&
+    Boolean(conversation_id || onModeSelect) &&
+    !runtimeUnavailable;
   // Mobile conversation header agent pill is display-only by design.
   const canInteract = can_switchMode && !(compact && compactLabelType === 'agent');
 

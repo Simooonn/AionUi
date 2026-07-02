@@ -44,7 +44,10 @@ export function backendToCliSource(backend: string | null | undefined): CliSourc
 }
 
 /** Build the resume command from a source + session id, or null when unbuildable. */
-export function buildResumeCommand(source: CliSource | null | undefined, sessionId: string | null | undefined): string | null {
+export function buildResumeCommand(
+  source: CliSource | null | undefined,
+  sessionId: string | null | undefined
+): string | null {
   if (!source || !sessionId) return null;
   const build = CLI_RESUME_BUILDERS[source];
   return build ? build(sessionId) : null;

@@ -13,7 +13,12 @@ import { Brain, Down } from '@icon-park/react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import RuntimeSelectorPill from './RuntimeSelectorPill';
-import { getCurrentThoughtLevelLabel, isConfigSetting, RuntimeSelectorCheckedItem, renderThoughtLevelMenuGroup } from './runtimeSelectorOptions';
+import {
+  getCurrentThoughtLevelLabel,
+  isConfigSetting,
+  RuntimeSelectorCheckedItem,
+  renderThoughtLevelMenuGroup,
+} from './runtimeSelectorOptions';
 
 /**
  * Some ACP backends (notably Claude Code) encode the reasoning effort INTO the
@@ -99,7 +104,16 @@ const AcpRuntimeModelControls: React.FC<{
   thoughtLevel: AcpDerivedOption | null;
   /** Persist + toast handled by the host; receives (optionId, value). */
   onSelectThoughtLevel: (optionId: string, value: string) => void;
-}> = ({ model_info, currentModelId, canSwitch, isSetting, setStatus, onSwitchModel, thoughtLevel, onSelectThoughtLevel }) => {
+}> = ({
+  model_info,
+  currentModelId,
+  canSwitch,
+  isSetting,
+  setStatus,
+  onSwitchModel,
+  thoughtLevel,
+  onSelectThoughtLevel,
+}) => {
   const { t } = useTranslation();
   const isRuntimeSetting = isConfigSetting(setStatus);
   const renderLogo = () => <Brain theme='outline' size='14' fill={iconColors.secondary} className='shrink-0' />;
@@ -121,8 +135,24 @@ const AcpRuntimeModelControls: React.FC<{
    * Read-only pills drop the chevron and click affordance.
    */
   const renderPill = (opts: { testId: string; label: string; droplist: React.ReactNode; loading?: boolean }) => {
-    const pill = <RuntimeSelectorPill testId={opts.testId} className={pillClassName} label={opts.label} leading={renderLogo()} trailing={interactive ? trailing : undefined} loading={interactive ? opts.loading : false} disabled={interactive ? isRuntimeSetting : false} style={interactive ? undefined : { cursor: 'default' }} />;
-    if (!interactive) return <Tooltip content={opts.label} position='top'>{pill}</Tooltip>;
+    const pill = (
+      <RuntimeSelectorPill
+        testId={opts.testId}
+        className={pillClassName}
+        label={opts.label}
+        leading={renderLogo()}
+        trailing={interactive ? trailing : undefined}
+        loading={interactive ? opts.loading : false}
+        disabled={interactive ? isRuntimeSetting : false}
+        style={interactive ? undefined : { cursor: 'default' }}
+      />
+    );
+    if (!interactive)
+      return (
+        <Tooltip content={opts.label} position='top'>
+          {pill}
+        </Tooltip>
+      );
     return (
       <Dropdown trigger='click' droplist={opts.droplist}>
         {pill}
@@ -141,7 +171,12 @@ const AcpRuntimeModelControls: React.FC<{
       }) || t('conversation.welcome.useCliModel');
     return (
       <Tooltip content={model_info ? label : t('conversation.welcome.modelSwitchNotSupported')} position='top'>
-        <RuntimeSelectorPill className={pillClassName} label={label} leading={renderLogo()} style={{ cursor: 'default' }} />
+        <RuntimeSelectorPill
+          className={pillClassName}
+          label={label}
+          leading={renderLogo()}
+          style={{ cursor: 'default' }}
+        />
       </Tooltip>
     );
   }
@@ -165,8 +200,14 @@ const AcpRuntimeModelControls: React.FC<{
         <Menu>
           <Menu.ItemGroup title={t('common.model', { defaultValue: 'Model' })}>
             {models.map((m) => (
-              <Menu.Item key={m.modelKey} className={m.modelKey === current.modelKey ? 'bg-2!' : ''} onClick={() => switchTo(m.modelKey, current.effortKey)}>
-                <RuntimeSelectorCheckedItem selected={m.modelKey === current.modelKey}>{m.modelLabel}</RuntimeSelectorCheckedItem>
+              <Menu.Item
+                key={m.modelKey}
+                className={m.modelKey === current.modelKey ? 'bg-2!' : ''}
+                onClick={() => switchTo(m.modelKey, current.effortKey)}
+              >
+                <RuntimeSelectorCheckedItem selected={m.modelKey === current.modelKey}>
+                  {m.modelLabel}
+                </RuntimeSelectorCheckedItem>
               </Menu.Item>
             ))}
           </Menu.ItemGroup>
@@ -184,8 +225,14 @@ const AcpRuntimeModelControls: React.FC<{
               <Menu>
                 <Menu.ItemGroup title={t('agent.thoughtLevel.label')}>
                   {efforts.map((e) => (
-                    <Menu.Item key={e.effortKey} className={e.effortKey === current.effortKey ? 'bg-2!' : ''} onClick={() => switchTo(current.modelKey, e.effortKey)}>
-                      <RuntimeSelectorCheckedItem selected={e.effortKey === current.effortKey}>{e.effortLabel}</RuntimeSelectorCheckedItem>
+                    <Menu.Item
+                      key={e.effortKey}
+                      className={e.effortKey === current.effortKey ? 'bg-2!' : ''}
+                      onClick={() => switchTo(current.modelKey, e.effortKey)}
+                    >
+                      <RuntimeSelectorCheckedItem selected={e.effortKey === current.effortKey}>
+                        {e.effortLabel}
+                      </RuntimeSelectorCheckedItem>
                     </Menu.Item>
                   ))}
                 </Menu.ItemGroup>
@@ -205,7 +252,10 @@ const AcpRuntimeModelControls: React.FC<{
   // ---- Non-combined backends: Model pill + optional separate Thought-level pill ----
   const modelLabel = getModelDisplayLabel({
     selected_value: resolvedCurrentId,
-    selectedLabel: (resolvedCurrentId && available.find((m) => m.id === resolvedCurrentId)?.label) || model_info.current_model_label || '',
+    selectedLabel:
+      (resolvedCurrentId && available.find((m) => m.id === resolvedCurrentId)?.label) ||
+      model_info.current_model_label ||
+      '',
     defaultModelLabel: t('common.defaultModel'),
     fallbackLabel: t('conversation.welcome.useCliModel'),
   });
@@ -218,8 +268,14 @@ const AcpRuntimeModelControls: React.FC<{
       <Menu>
         <Menu.ItemGroup title={t('common.model', { defaultValue: 'Model' })}>
           {available.map((model) => (
-            <Menu.Item key={model.id} className={model.id === resolvedCurrentId ? 'bg-2!' : ''} onClick={() => !isRuntimeSetting && model.id !== resolvedCurrentId && onSwitchModel(model.id)}>
-              <RuntimeSelectorCheckedItem selected={model.id === resolvedCurrentId}>{model.label || model.id}</RuntimeSelectorCheckedItem>
+            <Menu.Item
+              key={model.id}
+              className={model.id === resolvedCurrentId ? 'bg-2!' : ''}
+              onClick={() => !isRuntimeSetting && model.id !== resolvedCurrentId && onSwitchModel(model.id)}
+            >
+              <RuntimeSelectorCheckedItem selected={model.id === resolvedCurrentId}>
+                {model.label || model.id}
+              </RuntimeSelectorCheckedItem>
             </Menu.Item>
           ))}
         </Menu.ItemGroup>

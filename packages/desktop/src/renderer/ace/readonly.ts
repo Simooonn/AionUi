@@ -122,7 +122,10 @@ function subscribeNativeResume(listener: () => void): () => void {
  * false to skip resolution (e.g. for imported conversations handled elsewhere).
  */
 export function useNativeResumeCommand(conversationId: string, enabled: boolean): string | null {
-  const getSnapshot = useCallback((): string | null => (enabled ? nativeResumeCache.get(conversationId) ?? null : null), [enabled, conversationId]);
+  const getSnapshot = useCallback(
+    (): string | null => (enabled ? (nativeResumeCache.get(conversationId) ?? null) : null),
+    [enabled, conversationId]
+  );
   const value = useSyncExternalStore(subscribeNativeResume, getSnapshot, getSnapshot);
   useEffect(() => {
     if (!enabled) return;

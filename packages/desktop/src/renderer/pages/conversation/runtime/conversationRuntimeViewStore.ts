@@ -560,7 +560,11 @@ export const resetLocalGate = (conversation_id: string, reason: string): Convers
  * Returns the timestamp to count elapsed time from, or null when not processing.
  * Lazily records `now` on the first processing render and reuses it across remounts.
  */
-export const syncProcessingStartedAt = (conversation_id: string, isProcessing: boolean, activeTurnId: string | null): number | null => {
+export const syncProcessingStartedAt = (
+  conversation_id: string,
+  isProcessing: boolean,
+  activeTurnId: string | null
+): number | null => {
   if (!isProcessing) {
     processingStartTimes.delete(conversation_id);
     return null;
@@ -582,7 +586,8 @@ export const syncProcessingStartedAt = (conversation_id: string, isProcessing: b
   return startedAt;
 };
 
-export const getProcessingStartedAt = (conversation_id: string): number | null => processingStartTimes.get(conversation_id)?.startedAt ?? null;
+export const getProcessingStartedAt = (conversation_id: string): number | null =>
+  processingStartTimes.get(conversation_id)?.startedAt ?? null;
 
 export const resetConversationRuntimeViewStoreForTest = () => {
   runtimeViews.clear();

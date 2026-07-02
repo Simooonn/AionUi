@@ -65,7 +65,10 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
   // it synchronously from extra; app-created ACP sessions resolve it lazily from the
   // backend's acp_session table (the session id is not persisted in extra).
   const importedResumeCommand = buildCliResumeCommand(conversation);
-  const nativeResumeCommand = useNativeResumeCommand(conversation.id, conversation.type === 'acp' && !importedResumeCommand);
+  const nativeResumeCommand = useNativeResumeCommand(
+    conversation.id,
+    conversation.type === 'acp' && !importedResumeCommand
+  );
   const resumeCommand = importedResumeCommand ?? nativeResumeCommand;
   const cronStatus = getJobStatus(conversation.id);
   const siderTooltipProps = getSiderTooltipProps(tooltipEnabled);

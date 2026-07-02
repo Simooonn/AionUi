@@ -47,7 +47,9 @@ vi.mock('@/common', () => ({
       create: { provider: (fn: (...a: unknown[]) => unknown) => (H.providers.create = fn) },
       resize: { provider: (fn: (...a: unknown[]) => unknown) => (H.providers.resize = fn) },
       dispose: { provider: (fn: (...a: unknown[]) => unknown) => (H.providers.dispose = fn) },
-      disposeByConversation: { provider: (fn: (...a: unknown[]) => unknown) => (H.providers.disposeByConversation = fn) },
+      disposeByConversation: {
+        provider: (fn: (...a: unknown[]) => unknown) => (H.providers.disposeByConversation = fn),
+      },
       list: { provider: (fn: (...a: unknown[]) => unknown) => (H.providers.list = fn) },
       exit: { emit: H.exitEmit },
     },

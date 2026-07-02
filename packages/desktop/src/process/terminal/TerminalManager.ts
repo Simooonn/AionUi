@@ -15,7 +15,19 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import type { ConversationId, IPtyDisposable, IPtyProcess, OutputTarget, TerminalCreateParams, TerminalCreateResult, TerminalExitEvent, TerminalId, TerminalInfo, TerminalManagerDeps, TerminalStatus } from './types';
+import type {
+  ConversationId,
+  IPtyDisposable,
+  IPtyProcess,
+  OutputTarget,
+  TerminalCreateParams,
+  TerminalCreateResult,
+  TerminalExitEvent,
+  TerminalId,
+  TerminalInfo,
+  TerminalManagerDeps,
+  TerminalStatus,
+} from './types';
 import { TERMINAL_OUTPUT_CHANNEL } from './types';
 
 /** Fallback shell when `$SHELL` is unset (GUI apps often inherit a stripped env). */

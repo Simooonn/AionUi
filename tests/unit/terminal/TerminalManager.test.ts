@@ -15,7 +15,12 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TerminalManager } from '@/process/terminal/TerminalManager';
-import { TERMINAL_OUTPUT_CHANNEL, type OutputTarget, type TerminalExitEvent, type TerminalOutputPayload } from '@/process/terminal/types';
+import {
+  TERMINAL_OUTPUT_CHANNEL,
+  type OutputTarget,
+  type TerminalExitEvent,
+  type TerminalOutputPayload,
+} from '@/process/terminal/types';
 import { createSpawnSpy, type SpawnSpy } from './_fakePty';
 
 const FLUSH_INTERVAL_MS = 16;
@@ -353,7 +358,9 @@ describe('TerminalManager', () => {
       manager.bindSender(terminalId, sink);
       manager.replayBuffer(terminalId);
 
-      expect(sink.frames).toEqual([{ channel: TERMINAL_OUTPUT_CHANNEL, payload: { terminalId, data: 'line1\nline2\n' } }]);
+      expect(sink.frames).toEqual([
+        { channel: TERMINAL_OUTPUT_CHANNEL, payload: { terminalId, data: 'line1\nline2\n' } },
+      ]);
     });
 
     it('is a no-op when no sender is bound', () => {

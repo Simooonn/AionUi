@@ -1186,10 +1186,16 @@ const terminalIsWebUI = typeof window !== 'undefined' && !(window as { electronA
 
 export const terminal = terminalIsWebUI
   ? {
-      create: stubProvider<ITerminalCreateResult, ITerminalCreateParams>('terminal:create', { terminalId: '', pid: -1 }),
+      create: stubProvider<ITerminalCreateResult, ITerminalCreateParams>('terminal:create', {
+        terminalId: '',
+        pid: -1,
+      }),
       resize: stubProvider<void, ITerminalResizeParams>('terminal:resize', undefined),
       dispose: stubProvider<void, ITerminalDisposeParams>('terminal:dispose', undefined),
-      disposeByConversation: stubProvider<void, ITerminalDisposeByConversationParams>('terminal:dispose-by-conversation', undefined),
+      disposeByConversation: stubProvider<void, ITerminalDisposeByConversationParams>(
+        'terminal:dispose-by-conversation',
+        undefined
+      ),
       list: stubProvider<ITerminalInfo[], ITerminalListParams>('terminal:list', []),
       exit: bridge.buildEmitter<ITerminalExitEvent>(TERMINAL_EXIT_EVENT),
     }
@@ -1197,7 +1203,9 @@ export const terminal = terminalIsWebUI
       create: bridge.buildProvider<ITerminalCreateResult, ITerminalCreateParams>('terminal:create'),
       resize: bridge.buildProvider<void, ITerminalResizeParams>('terminal:resize'),
       dispose: bridge.buildProvider<void, ITerminalDisposeParams>('terminal:dispose'),
-      disposeByConversation: bridge.buildProvider<void, ITerminalDisposeByConversationParams>('terminal:dispose-by-conversation'),
+      disposeByConversation: bridge.buildProvider<void, ITerminalDisposeByConversationParams>(
+        'terminal:dispose-by-conversation'
+      ),
       list: bridge.buildProvider<ITerminalInfo[], ITerminalListParams>('terminal:list'),
       exit: bridge.buildEmitter<ITerminalExitEvent>(TERMINAL_EXIT_EVENT),
     };

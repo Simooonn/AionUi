@@ -5,16 +5,19 @@
  */
 
 /**
- * Reproduce the user's Claude Code HUD statusline for a conversation workspace.
+ * Reproduce the user's Claude Code HUD statusline for a conversation.
  *
- * oh-my-claudecode's hooks cache the statusline stdin payload at
- * `<workspace>/.omc/state/hud-stdin-cache.json` while an aioncore (Claude
- * Code) session is active. Feeding that payload to the statusLine command
- * configured in `~/.claude/settings.json` reproduces the exact HUD the user
- * sees in a native CLI session, ANSI colors included.
+ * Native Claude Code CLI sessions feed a stdin JSON payload to the statusLine
+ * command configured in `~/.claude/settings.json`. aioncore is headless and
+ * never invokes that command, so for AionUi conversations we SYNTHESIZE the
+ * payload from what the app already knows (workspace, transcript jsonl path,
+ * model) and pipe it through the same command — the HUD then renders this
+ * conversation's own data (branch, session time, tool counts, ...).
  *
- * Both inputs are user-owned local files; absence of either simply means
- * "no statusline to show" (returns null, never throws).
+ * Fallback: when the conversation's transcript cannot be resolved, replay the
+ * workspace's OMC stdin cache (`.omc/state/hud-stdin-cache.json`), which
+ * exists where the user also runs the native CLI. Absence of both simply
+ * means "no statusline to show" (returns null, never throws).
  */
 
 import { spawn } from 'node:child_process';
@@ -22,10 +25,27 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+export type HudStatuslineParams = {
+  workspace: string;
+  conversationId?: string;
+  modelId?: string;
+  modelLabel?: string;
+};
+
 export type HudStatuslineResult = { text: string } | null;
+
+/** Resolve a conversation's transcript jsonl path; injectable for tests. */
+export type HudStatuslineDeps = {
+  resolveTranscript?: (conversationId: string) => Promise<string | null>;
+};
 
 const EXEC_TIMEOUT_MS = 3_000;
 const MAX_OUTPUT_BYTES = 64 * 1024;
+
+// Session-identity env vars that could leak from a parent CLI session (e.g.
+// `bun run dev` launched inside a claude session) and would make the HUD
+// script resolve the WRONG session/worktree. CLAUDE_CONFIG_DIR must survive.
+const LEAKY_SESSION_ENV = ['CLAUDE_PROJECT_DIR', 'CLAUDE_SESSION_ID', 'CLAUDECODE_SESSION_ID', 'OMC_STATE_DIR'];
 
 function claudeConfigDir(): string {
   return process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
@@ -46,26 +66,52 @@ function readStatuslineCommand(): string | null {
   return null;
 }
 
-export async function readHudStatusline(workspace: string): Promise<HudStatuslineResult> {
-  // Statusline commands are POSIX shell lines; not supported on Windows.
-  if (!workspace || process.platform === 'win32') return null;
+/** Default transcript resolver, backed by the acp_session/conversations DB. */
+async function resolveTranscriptFromDb(conversationId: string): Promise<string | null> {
+  // Lazy import: sessionFiles pulls Electron-side storage helpers that must
+  // not load in unit tests (tests inject their own resolver).
+  const { resolveConversationFiles } = await import('./sessionFiles');
+  const resolved = (await resolveConversationFiles([conversationId]))[conversationId];
+  if (resolved?.kind === 'file' && resolved.path && fs.existsSync(resolved.path)) return resolved.path;
+  return null;
+}
 
-  let stdinPayload: string;
+/** Build the statusline stdin payload for a conversation, or null. */
+async function buildStdinPayload(params: HudStatuslineParams, deps: HudStatuslineDeps): Promise<string | null> {
+  if (!params.conversationId) return null;
   try {
-    stdinPayload = fs.readFileSync(path.join(workspace, '.omc', 'state', 'hud-stdin-cache.json'), 'utf8');
-  } catch {
-    return null; // workspace has no OMC HUD cache → nothing to show
-  }
-
-  const command = readStatuslineCommand();
-  if (!command) return null;
-
-  return new Promise((resolve) => {
-    const child = spawn('/bin/sh', ['-c', command], {
-      cwd: workspace,
-      env: process.env,
-      stdio: ['pipe', 'pipe', 'ignore'],
+    const resolveTranscript = deps.resolveTranscript ?? resolveTranscriptFromDb;
+    const transcriptPath = await resolveTranscript(params.conversationId);
+    if (!transcriptPath) return null;
+    return JSON.stringify({
+      transcript_path: transcriptPath,
+      cwd: params.workspace,
+      workspace: { current_dir: params.workspace, project_dir: params.workspace },
+      model:
+        params.modelId || params.modelLabel
+          ? { id: params.modelId, display_name: params.modelLabel || params.modelId }
+          : undefined,
     });
+  } catch {
+    return null;
+  }
+}
+
+/** Read the workspace's OMC stdin cache (native-CLI sessions), or null. */
+function readCachedPayload(workspace: string): string | null {
+  try {
+    return fs.readFileSync(path.join(workspace, '.omc', 'state', 'hud-stdin-cache.json'), 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+function runStatuslineCommand(command: string, stdinPayload: string, cwd: string): Promise<HudStatuslineResult> {
+  return new Promise((resolve) => {
+    const env = { ...process.env };
+    for (const key of LEAKY_SESSION_ENV) delete env[key];
+
+    const child = spawn('/bin/sh', ['-c', command], { cwd, env, stdio: ['pipe', 'pipe', 'ignore'] });
 
     let out = '';
     let settled = false;
@@ -92,4 +138,22 @@ export async function readHudStatusline(workspace: string): Promise<HudStatuslin
     child.stdin.on('error', () => undefined);
     child.stdin.end(stdinPayload);
   });
+}
+
+export async function readHudStatusline(
+  params: HudStatuslineParams,
+  deps: HudStatuslineDeps = {}
+): Promise<HudStatuslineResult> {
+  // Statusline commands are POSIX shell lines; not supported on Windows.
+  if (!params.workspace || process.platform === 'win32') return null;
+
+  const command = readStatuslineCommand();
+  if (!command) return null;
+
+  // Prefer the synthesized per-conversation payload (this conversation's own
+  // data); fall back to the workspace's native-CLI cache.
+  const payload = (await buildStdinPayload(params, deps)) ?? readCachedPayload(params.workspace);
+  if (!payload) return null;
+
+  return runStatuslineCommand(command, payload, params.workspace);
 }

@@ -16,13 +16,15 @@ import styles from './TerminalHudStatusBar.module.css';
 
 const REFRESH_MS = 30_000;
 
-type AceApi = { hudStatusline?: (workspace: string) => Promise<{ text: string } | null> };
+type HudParams = { workspace: string; conversationId?: string; modelId?: string; modelLabel?: string };
+type AceApi = { hudStatusline?: (params: HudParams) => Promise<{ text: string } | null> };
 
 const getAceApi = (): AceApi | undefined => (window as unknown as { electronAPI?: AceApi }).electronAPI;
 
-const TerminalHudStatusBar: React.FC = () => {
+const TerminalHudStatusBar: React.FC<{ current_model_id?: string }> = ({ current_model_id }) => {
   const conversation = useConversationContextSafe();
   const workspace = conversation?.workspace;
+  const conversationId = conversation?.conversation_id;
   const [text, setText] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,7 +33,7 @@ const TerminalHudStatusBar: React.FC = () => {
     let disposed = false;
     const refresh = async () => {
       try {
-        const result = await api.hudStatusline!(workspace);
+        const result = await api.hudStatusline!({ workspace, conversationId, modelId: current_model_id });
         if (!disposed) setText(result?.text ?? null);
       } catch {
         if (!disposed) setText(null);
@@ -43,7 +45,7 @@ const TerminalHudStatusBar: React.FC = () => {
       disposed = true;
       clearInterval(timer);
     };
-  }, [workspace]);
+  }, [workspace, conversationId, current_model_id]);
 
   if (!text) return null;
 

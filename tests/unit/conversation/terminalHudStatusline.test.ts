@@ -80,29 +80,61 @@ describe('readHudStatusline', () => {
     fs.writeFileSync(path.join(configDir, 'settings.json'), JSON.stringify({ statusLine }));
   };
 
-  it('returns null when the workspace has no HUD cache', async () => {
+  it('returns null when the workspace has no HUD cache and no transcript resolves', async () => {
     writeSettings({ type: 'command', command: 'cat' });
-    expect(await readHudStatusline(workspace)).toBeNull();
+    expect(await readHudStatusline({ workspace })).toBeNull();
   });
 
   it('returns null when no statusLine command is configured', async () => {
     writeCache('{"model":"x"}');
-    expect(await readHudStatusline(workspace)).toBeNull();
+    expect(await readHudStatusline({ workspace })).toBeNull();
   });
 
-  it('pipes the cached payload through the configured command', async () => {
+  it('replays the cached payload when no conversation transcript resolves', async () => {
     writeCache('{"model":"x"}');
     writeSettings({ type: 'command', command: 'cat' });
-    expect(await readHudStatusline(workspace)).toEqual({ text: '{"model":"x"}' });
+    expect(await readHudStatusline({ workspace })).toEqual({ text: '{"model":"x"}' });
+  });
+
+  it('prefers the synthesized per-conversation payload over the cache', async () => {
+    writeCache('{"from":"cache"}');
+    writeSettings({ type: 'command', command: 'cat' });
+    const transcript = path.join(workspace, 'session.jsonl');
+    fs.writeFileSync(transcript, '{}');
+
+    const result = await readHudStatusline(
+      { workspace, conversationId: 'conv-1', modelId: 'claude-fable-5', modelLabel: 'Fable 5' },
+      { resolveTranscript: async () => transcript }
+    );
+
+    expect(result).not.toBeNull();
+    const payload = JSON.parse(result!.text) as {
+      transcript_path: string;
+      cwd: string;
+      model: { id: string; display_name: string };
+    };
+    expect(payload.transcript_path).toBe(transcript);
+    expect(payload.cwd).toBe(workspace);
+    expect(payload.model).toEqual({ id: 'claude-fable-5', display_name: 'Fable 5' });
+  });
+
+  it('falls back to the cache when the transcript resolver returns null', async () => {
+    writeCache('{"from":"cache"}');
+    writeSettings({ type: 'command', command: 'cat' });
+    const result = await readHudStatusline(
+      { workspace, conversationId: 'conv-1' },
+      { resolveTranscript: async () => null }
+    );
+    expect(result).toEqual({ text: '{"from":"cache"}' });
   });
 
   it('returns null when the command fails', async () => {
     writeCache('{"model":"x"}');
     writeSettings({ type: 'command', command: 'exit 3' });
-    expect(await readHudStatusline(workspace)).toBeNull();
+    expect(await readHudStatusline({ workspace })).toBeNull();
   });
 
   it('returns null for empty workspace path', async () => {
-    expect(await readHudStatusline('')).toBeNull();
+    expect(await readHudStatusline({ workspace: '' })).toBeNull();
   });
 });

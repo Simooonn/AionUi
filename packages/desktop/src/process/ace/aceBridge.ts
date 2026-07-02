@@ -28,13 +28,21 @@ import {
   unlinkSessionFiles,
 } from './sessionFiles';
 import { ensureCliSessionResumable } from './sessionResume';
-import { readHudStatusline, type HudStatuslineResult } from './hudStatusline';
+import { readHudStatusline, type HudStatuslineParams, type HudStatuslineResult } from './hudStatusline';
 
-// HUD statusline for the terminal-style chat view: replay the OMC-cached
-// statusline stdin through the user's configured statusLine command.
-ipcMain.handle('ace:hud-statusline', async (_event, workspace: unknown): Promise<HudStatuslineResult> => {
+// HUD statusline for the terminal-style chat view: synthesize (or replay) the
+// statusline stdin and run the user's configured statusLine command.
+ipcMain.handle('ace:hud-statusline', async (_event, rawParams: unknown): Promise<HudStatuslineResult> => {
   try {
-    return await readHudStatusline(typeof workspace === 'string' ? workspace : '');
+    const p = (rawParams ?? {}) as Partial<HudStatuslineParams>;
+    if (typeof p.workspace !== 'string' || !p.workspace) return null;
+    const params: HudStatuslineParams = {
+      workspace: p.workspace,
+      conversationId: typeof p.conversationId === 'string' ? p.conversationId : undefined,
+      modelId: typeof p.modelId === 'string' ? p.modelId : undefined,
+      modelLabel: typeof p.modelLabel === 'string' ? p.modelLabel : undefined,
+    };
+    return await readHudStatusline(params);
   } catch {
     return null;
   }

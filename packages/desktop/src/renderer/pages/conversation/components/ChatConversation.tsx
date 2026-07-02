@@ -21,6 +21,8 @@ import { useNavigate } from 'react-router-dom';
 import useSWR from 'swr';
 import { emitter } from '../../../utils/emitter';
 import AcpChat from '../platforms/acp/AcpChat';
+import { TerminalChatViewProvider } from '../platforms/acp/terminalChatView/TerminalChatViewContext';
+import TerminalChatToggleButton from '../platforms/acp/terminalChatView/TerminalChatToggleButton';
 import ChatLayout from './ChatLayout';
 import ChatSlider from './ChatSlider.tsx';
 import { saveAionrsDefaultModel } from '@/renderer/pages/guid/hooks/agentSelectionUtils';
@@ -376,6 +378,11 @@ const ChatConversation: React.FC<{
           agent_name: conversationAgentName,
         };
 
+  // ace:start terminal-style full-screen chat view (ACP only, desktop only)
+  const isAcpConversation = conversation?.type === 'acp';
+  const showTerminalChatToggle = isAcpConversation && !isMobile;
+  // ace:end
+
   const headerExtraNode = (
     <div className='flex items-center gap-8px'>
       {conversation && (
@@ -387,11 +394,18 @@ const ChatConversation: React.FC<{
           />
         </div>
       )}
+      {/* ace:start terminal-style chat view toggle, right of the cron icon */}
+      {showTerminalChatToggle && (
+        <div className='shrink-0'>
+          <TerminalChatToggleButton />
+        </div>
+      )}
+      {/* ace:end */}
       {modelSelector && <div className='shrink-0'>{modelSelector}</div>}
     </div>
   );
 
-  return (
+  const chatLayoutNode = (
     <ChatLayout
       title={conversation?.name}
       {...chatLayoutProps}
@@ -411,6 +425,15 @@ const ChatConversation: React.FC<{
       {conversationNode}
     </ChatLayout>
   );
+
+  // ace:start wrap ACP conversations so the header toggle button and the
+  // in-tree full-screen overlay (inside AcpChat) share one open/draft state.
+  if (isAcpConversation) {
+    return <TerminalChatViewProvider>{chatLayoutNode}</TerminalChatViewProvider>;
+  }
+  // ace:end
+
+  return chatLayoutNode;
 };
 
 export default ChatConversation;

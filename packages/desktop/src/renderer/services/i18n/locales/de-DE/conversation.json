@@ -500,5 +500,11 @@
       }
     }
   },
-  "notFound": "Unterhaltung nicht gefunden oder wurde gelöscht"
+  "notFound": "Unterhaltung nicht gefunden oder wurde gelöscht",
+  "terminalView": {
+    "open": "Terminalansicht öffnen",
+    "close": "Terminalansicht schließen",
+    "placeholder": "Nachricht an KI senden...",
+    "title": "Terminalansicht"
+  }
 }

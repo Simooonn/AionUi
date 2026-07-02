@@ -532,5 +532,11 @@
     "monthsAgo": "{{count}}개월 전",
     "yearsAgo": "{{count}}년 전",
     "messageCount": "{{count}}개"
+  },
+  "terminalView": {
+    "open": "터미널 뷰 열기",
+    "close": "터미널 뷰 닫기",
+    "placeholder": "AI에게 메시지 보내기...",
+    "title": "터미널 뷰"
   }
 }

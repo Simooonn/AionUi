@@ -532,5 +532,11 @@
     "monthsAgo": "{{count}}mo ago",
     "yearsAgo": "{{count}}y ago",
     "messageCount": "{{count}} messages"
+  },
+  "terminalView": {
+    "open": "Open terminal view",
+    "close": "Close terminal view",
+    "placeholder": "Send message to AI...",
+    "title": "Terminal View"
   }
 }

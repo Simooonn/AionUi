@@ -11,6 +11,7 @@ import {
   LARK_NOTIFY_TRIGGER_STATES,
   LARK_NOTIFY_STATUS_DOT_WINDOW_MS,
   buildLarkCard,
+  formatNotifySendTime,
   formatNotifyTime,
   truncateNotifyName,
   workspaceTail,
@@ -89,6 +90,22 @@ describe('formatNotifyTime (seconds tier)', () => {
   });
 });
 
+describe('formatNotifySendTime (card title stamp)', () => {
+  it('renders MM-DD HH:mm in local time', () => {
+    // Compute expected from the same Date to stay timezone-independent.
+    const d = new Date(NOW);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const expected = `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    expect(formatNotifySendTime(NOW)).toBe(expected);
+    expect(formatNotifySendTime(NOW)).toMatch(/^\d{2}-\d{2} \d{2}:\d{2}$/);
+  });
+  it('returns empty string for degenerate inputs', () => {
+    expect(formatNotifySendTime(0)).toBe('');
+    expect(formatNotifySendTime(-5)).toBe('');
+    expect(formatNotifySendTime(NaN)).toBe('');
+  });
+});
+
 describe('isWithinActiveWindow (24h boundary)', () => {
   it('includes 23h59m and excludes 24h+1m', () => {
     expect(isWithinActiveWindow(NOW - (24 * 3_600_000 - 60_000), NOW)).toBe(true);
@@ -147,7 +164,7 @@ describe('buildLarkCard', () => {
       new Map([['c1', '排查登录超时问题']]),
       NOW
     );
-    expect(card.header.title.content).toBe('AionUi 会话动态（近 24 小时，共 1 个）');
+    expect(card.header.title.content).toBe(`AionUi 会话动态（近 24 小时，共 1 个） · ${formatNotifySendTime(NOW)}`);
     const body = card.elements[0].text.content;
     expect(body).toContain(
       '**1. 🤖 codex · 🕒 1 分钟前 · 💬 42 条 · 🟡 待决策 · 📁 Pelago-Card**\n修复登录：排查登录超时问题'
@@ -192,7 +209,7 @@ describe('buildLarkCard', () => {
   });
   it('renders a header-only card for empty rows', () => {
     const card = buildLarkCard([], new Map(), NOW);
-    expect(card.header.title.content).toBe('AionUi 会话动态（近 24 小时，共 0 个）');
+    expect(card.header.title.content).toBe(`AionUi 会话动态（近 24 小时，共 0 个） · ${formatNotifySendTime(NOW)}`);
     expect(card.elements[0].text.content).toBe('');
   });
   it('shows ? for failed totals and caps at 30 rows with a trailing line', () => {

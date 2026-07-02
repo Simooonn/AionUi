@@ -57,6 +57,20 @@ export const formatNotifyTime = (activityMs: number, nowMs: number): string => {
   return `${Math.floor(diffMs / HOUR_MS)} 小时前`;
 };
 
+/**
+ * Send-time stamp for the card title ("07-02 19:35"). Gives the per-row
+ * relative times ("11 秒前") a fixed reference point — without it a card
+ * read two hours later still claims "11 秒前". Degenerate input → ''.
+ */
+export const formatNotifySendTime = (nowMs: number): string => {
+  if (!Number.isFinite(nowMs) || nowMs <= 0) {
+    return '';
+  }
+  const d = new Date(nowMs);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 /** Fixed-Chinese status texts (message body is intentionally not i18n'd). */
 export const LARK_NOTIFY_STATUS_TEXT: Record<LarkNotifyStatus, string> = {
   waiting_decision: '待决策',
@@ -161,10 +175,15 @@ export const buildLarkCard = (
   if (sorted.length > shown.length) {
     lines.push(`…还有 ${sorted.length - shown.length} 条`);
   }
+  // Send-time suffix anchors the per-row relative times to a fixed moment.
+  const sendTime = formatNotifySendTime(nowMs);
   return {
     config: { wide_screen_mode: true },
     header: {
-      title: { tag: 'plain_text', content: `AionUi 会话动态（近 24 小时，共 ${sorted.length} 个）` },
+      title: {
+        tag: 'plain_text',
+        content: `AionUi 会话动态（近 24 小时，共 ${sorted.length} 个）${sendTime ? ` · ${sendTime}` : ''}`,
+      },
       template: 'blue',
     },
     elements: [{ tag: 'div', text: { tag: 'lark_md', content: lines.join('\n') } }],

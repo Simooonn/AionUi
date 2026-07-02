@@ -36,6 +36,12 @@ const TerminalTabs: React.FC<TerminalTabsProps> = ({ conversationId, workspace, 
   const { ids, activeId } = useTerminalStore(conversationId);
 
   const createTerminal = useCallback(async () => {
+    if (!workspace) {
+      // Workspace not ready yet — creating now would spawn the PTY in the main
+      // process cwd. The auto-create effect refires once `workspace` arrives.
+      console.warn('[Terminal] create skipped: workspace not ready');
+      return;
+    }
     if (terminalStore.getState(conversationId).ids.length >= TERMINAL_SOFT_CAP) {
       Message.warning(t('conversation.workspace.terminal.capReached', { max: TERMINAL_SOFT_CAP }));
       return;
@@ -98,12 +104,14 @@ const TerminalTabs: React.FC<TerminalTabsProps> = ({ conversationId, workspace, 
     };
   }, [conversationId]);
 
-  // Auto-create the first terminal once the panel is shown and none exist.
+  // Auto-create the first terminal once the panel is shown, none exist, and
+  // the workspace is known (createTerminal depends on `workspace`, so this
+  // effect refires when it becomes available).
   useEffect(() => {
-    if (visible && didInitRef.current && ids.length === 0) {
+    if (visible && didInitRef.current && ids.length === 0 && workspace) {
       void createTerminal();
     }
-  }, [visible, ids.length, createTerminal]);
+  }, [visible, ids.length, workspace, createTerminal]);
 
   const onTabChange = useCallback(
     (key: string) => {

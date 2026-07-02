@@ -22,10 +22,17 @@
 
 import { ipcMain } from 'electron';
 import type { IpcMainEvent, IpcMainInvokeEvent } from 'electron';
+import fs from 'node:fs';
+import os from 'node:os';
 import { ipcBridge } from '@/common';
 import { createNodePtySpawn } from '@process/terminal/ptyFactory';
 import { TerminalManager } from '@process/terminal/TerminalManager';
-import type { TerminalAttachPayload, TerminalExitEvent, TerminalOutputPayload } from '@process/terminal/types';
+import type {
+  TerminalAttachPayload,
+  TerminalCreateResult,
+  TerminalExitEvent,
+  TerminalOutputPayload,
+} from '@process/terminal/types';
 import { TERMINAL_ATTACH_CHANNEL, TERMINAL_INPUT_CHANNEL } from '@process/terminal/types';
 
 /** Active manager singleton — also consumed by quit cleanup (`getTerminalManager`). */
@@ -56,16 +63,49 @@ function emitTerminalExit(event: TerminalExitEvent): void {
   });
 }
 
+/** DB-backed workspace lookup, lazy-imported so tests never touch Electron storage. */
+async function resolveWorkspaceFromDb(conversationId: string): Promise<string | null> {
+  const { resolveConversationWorkspace } = await import('@process/ace/sessionFiles');
+  return resolveConversationWorkspace(conversationId);
+}
+
+const isUsableCwd = (cwd: string | undefined): cwd is string => {
+  if (!cwd) return false;
+  try {
+    return fs.statSync(cwd).isDirectory();
+  } catch {
+    return false;
+  }
+};
+
 /**
  * Initialize the terminal bridge. `options.manager` lets tests inject a fake manager
- * (and skips loading the native PTY addon).
+ * (and skips loading the native PTY addon); `options.resolveWorkspace` lets tests
+ * stub the conversation-workspace DB lookup.
  */
-export function initTerminalBridge(options: { manager?: TerminalManager } = {}): TerminalManager {
+export function initTerminalBridge(
+  options: {
+    manager?: TerminalManager;
+    resolveWorkspace?: (conversationId: string) => Promise<string | null>;
+  } = {}
+): TerminalManager {
   const manager = options.manager ?? createDefaultManager();
+  const resolveWorkspace = options.resolveWorkspace ?? resolveWorkspaceFromDb;
   activeManager = manager;
 
   // --- Control plane (typed bridge) ---------------------------------------
-  ipcBridge.terminal.create.provider((params) => Promise.resolve(manager.create(params)));
+  // The renderer's `workspace` prop can be empty/stale at create time and
+  // node-pty silently falls back to the MAIN PROCESS cwd (≈ app dir or $HOME)
+  // — the shell then opens outside the conversation. Resolve a usable cwd
+  // here: renderer cwd → conversation workspace from DB → homedir.
+  ipcBridge.terminal.create.provider(async (params): Promise<TerminalCreateResult> => {
+    let cwd = params.cwd;
+    if (!isUsableCwd(cwd)) {
+      const fromDb = await resolveWorkspace(params.conversationId).catch((): null => null);
+      cwd = isUsableCwd(fromDb ?? undefined) ? (fromDb as string) : os.homedir();
+    }
+    return manager.create({ ...params, cwd });
+  });
 
   ipcBridge.terminal.resize.provider(({ terminalId, cols, rows }) => {
     manager.resize(terminalId, cols, rows);

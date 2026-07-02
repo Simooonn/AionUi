@@ -25,6 +25,9 @@
  * conversationId-drop exit mapping; the two affected cases are marked todo below.
  */
 
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const H = vi.hoisted(() => ({
@@ -111,11 +114,48 @@ describe('terminalBridge', () => {
       const manager = createFakeManager();
       initTerminalBridge({ manager: manager as never });
 
-      const params = { conversationId: 'c1', cwd: '/ws', cols: 80, rows: 24 };
+      // cwd must actually exist — nonexistent cwds go through the fallback chain.
+      const params = { conversationId: 'c1', cwd: os.tmpdir(), cols: 80, rows: 24 };
       const result = await H.providers.create(params);
 
       expect(manager.create).toHaveBeenCalledWith(params);
       expect(result).toEqual({ terminalId: 't-fake', pid: 4242 });
+    });
+
+    describe('create cwd resolution (renderer cwd → DB workspace → homedir)', () => {
+      it('passes a usable renderer cwd through and skips the DB lookup', async () => {
+        const manager = createFakeManager();
+        const resolveWorkspace = vi.fn(async () => '/never-used');
+        initTerminalBridge({ manager: manager as never, resolveWorkspace });
+
+        await H.providers.create({ conversationId: 'c1', cwd: os.tmpdir(), cols: 80, rows: 24 });
+
+        expect(resolveWorkspace).not.toHaveBeenCalled();
+        expect(manager.create).toHaveBeenCalledWith(expect.objectContaining({ cwd: os.tmpdir() }));
+      });
+
+      it('falls back to the conversation workspace when the renderer cwd is empty or missing', async () => {
+        const manager = createFakeManager();
+        const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'term-ws-'));
+        const resolveWorkspace = vi.fn(async () => ws);
+        initTerminalBridge({ manager: manager as never, resolveWorkspace });
+
+        await H.providers.create({ conversationId: 'c1', cwd: '', cols: 80, rows: 24 });
+
+        expect(resolveWorkspace).toHaveBeenCalledWith('c1');
+        expect(manager.create).toHaveBeenCalledWith(expect.objectContaining({ cwd: ws }));
+        fs.rmSync(ws, { recursive: true, force: true });
+      });
+
+      it('falls back to homedir when neither renderer cwd nor DB workspace is usable', async () => {
+        const manager = createFakeManager();
+        const resolveWorkspace = vi.fn(async () => '/nonexistent-db-workspace');
+        initTerminalBridge({ manager: manager as never, resolveWorkspace });
+
+        await H.providers.create({ conversationId: 'c1', cwd: '/nonexistent-renderer-cwd', cols: 80, rows: 24 });
+
+        expect(manager.create).toHaveBeenCalledWith(expect.objectContaining({ cwd: os.homedir() }));
+      });
     });
 
     it('terminal:resize delegates to manager.resize', async () => {

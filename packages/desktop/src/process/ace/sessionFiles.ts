@@ -152,6 +152,31 @@ export function resumeCommandForConversation(db: ResumeQueryDb, conversationId: 
 }
 
 /**
+ * Resolve a conversation's workspace directory from the conversations table
+ * (extra.workspace), or null when absent/unparsable. Used by the terminal
+ * bridge as the cwd fallback when the renderer-supplied cwd is missing or
+ * does not exist on disk.
+ */
+export async function resolveConversationWorkspace(conversationId: string): Promise<string | null> {
+  const BetterSqlite3 = (await import('better-sqlite3')).default;
+  const db: Db = new BetterSqlite3(join(getDataPath(), BACKEND_DB));
+  try {
+    db.pragma('busy_timeout = 5000');
+    if (!hasCoupledSchema(db, 'conversations')) return null;
+    const row = db.prepare('SELECT extra FROM conversations WHERE id = ?').get(conversationId) as
+      | { extra?: string }
+      | undefined;
+    if (!row?.extra) return null;
+    const extra = JSON.parse(row.extra) as { workspace?: string };
+    return typeof extra.workspace === 'string' && extra.workspace ? extra.workspace : null;
+  } catch {
+    return null;
+  } finally {
+    db.close();
+  }
+}
+
+/**
  * Resolve the terminal resume command (e.g. `claude --resume <id>`) for each
  * conversation id, using the authoritative acp_session row. Covers app-created
  * conversations whose underlying CLI session id only lives in acp_session

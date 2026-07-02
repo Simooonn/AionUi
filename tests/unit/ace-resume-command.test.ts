@@ -96,17 +96,20 @@ describe('buildResumeCommand', () => {
 describe('resumeCommandForConversation (app-created acp_session route)', () => {
   const ID = '3bde1ea7-0943-4ffd-b62f-711d690d9911';
 
+  // v0.1.41 schema: acp_session keeps only the agent_id FK; the backend name
+  // ('claude', 'codex', ...) lives on agent_metadata.
   function acpDb(
     rows: Array<{ conversation_id: string; session_id: string | null; agent_backend: string }>
   ): DatabaseSync {
     const db = new DatabaseSync(':memory:');
-    db.exec('CREATE TABLE acp_session (conversation_id TEXT PRIMARY KEY, session_id TEXT, agent_backend TEXT)');
+    db.exec(`CREATE TABLE acp_session (conversation_id TEXT PRIMARY KEY, session_id TEXT, agent_source TEXT, agent_id TEXT);
+             CREATE TABLE agent_metadata (id TEXT PRIMARY KEY, backend TEXT)`);
     for (const r of rows) {
-      db.prepare('INSERT INTO acp_session (conversation_id, session_id, agent_backend) VALUES (?, ?, ?)').run(
-        r.conversation_id,
-        r.session_id,
-        r.agent_backend
-      );
+      const agentId = `agent-${r.agent_backend}`;
+      db.prepare(
+        'INSERT INTO acp_session (conversation_id, session_id, agent_source, agent_id) VALUES (?, ?, ?, ?)'
+      ).run(r.conversation_id, r.session_id, 'builtin', agentId);
+      db.prepare('INSERT OR IGNORE INTO agent_metadata (id, backend) VALUES (?, ?)').run(agentId, r.agent_backend);
     }
     return db;
   }
@@ -128,6 +131,12 @@ describe('resumeCommandForConversation (app-created acp_session route)', () => {
 
   it('returns null for a non-CLI backend', () => {
     const db = acpDb([{ conversation_id: 'conv1', session_id: ID, agent_backend: 'aionrs' }]);
+    expect(resumeCommandForConversation(db, 'conv1')).toBeNull();
+  });
+
+  it('returns null when the agent_metadata row is missing (LEFT JOIN keeps the session row)', () => {
+    const db = acpDb([{ conversation_id: 'conv1', session_id: ID, agent_backend: 'claude' }]);
+    db.exec('DELETE FROM agent_metadata');
     expect(resumeCommandForConversation(db, 'conv1')).toBeNull();
   });
 });

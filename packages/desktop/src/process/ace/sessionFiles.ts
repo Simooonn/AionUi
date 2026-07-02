@@ -142,10 +142,14 @@ type ResumeQueryDb = { prepare(sql: string): { get(...args: unknown[]): unknown 
 /**
  * Pure core: build the terminal resume command for one conversation from its
  * authoritative acp_session row, or null when it has no resumable CLI session.
+ * Since aioncore v0.1.41 the backend name lives on agent_metadata (acp_session
+ * only keeps the agent_id foreign key), hence the JOIN.
  */
 export function resumeCommandForConversation(db: ResumeQueryDb, conversationId: string): string | null {
   const row = db
-    .prepare('SELECT session_id, agent_backend FROM acp_session WHERE conversation_id = ?')
+    .prepare(
+      'SELECT s.session_id AS session_id, m.backend AS agent_backend FROM acp_session s LEFT JOIN agent_metadata m ON m.id = s.agent_id WHERE s.conversation_id = ?'
+    )
     .get(conversationId) as AcpResumeRow | undefined;
   if (!row?.session_id) return null;
   return buildResumeCommand(backendToCliSource(row.agent_backend), row.session_id);
@@ -216,7 +220,7 @@ export async function resolveResumeCommands(ids: string[]): Promise<Record<strin
   const db: Db = new BetterSqlite3(join(getDataPath(), BACKEND_DB));
   try {
     db.pragma('busy_timeout = 5000');
-    if (!hasCoupledSchema(db, 'acp_session')) return out;
+    if (!hasCoupledSchema(db, 'acp_session') || !hasCoupledSchema(db, 'agent_metadata')) return out;
     for (const id of ids) {
       if (typeof id !== 'string' || !id) continue;
       const command = resumeCommandForConversation(db, id);

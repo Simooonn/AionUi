@@ -11,8 +11,10 @@
  */
 
 export const ACE_AIONCORE_COUPLED_SCHEMA = {
-  /** Runtime table driving ACP session/load resume (migration v26). */
-  acp_session: ['conversation_id', 'session_id', 'session_status', 'agent_backend'],
+  /** Runtime table driving ACP session/load resume (v0.1.41 split agent_backend into agent_source + agent_id). */
+  acp_session: ['conversation_id', 'session_id', 'session_status', 'agent_source', 'agent_id'],
+  /** Agent catalog; acp_session.agent_id points here, backend names the CLI ('claude', 'codex', ...). */
+  agent_metadata: ['id', 'backend'],
   /** Display table for chat history (lazy jsonl sync writes here). */
   messages: ['id', 'conversation_id', 'msg_id', 'type', 'content', 'position', 'status', 'hidden', 'created_at'],
   /** List table; updated_at drives sidebar ordering (renderer modified_at). */

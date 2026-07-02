@@ -28,17 +28,6 @@ import {
   unlinkSessionFiles,
 } from './sessionFiles';
 import { ensureCliSessionResumable } from './sessionResume';
-import { readHudStatusline, type HudStatuslineResult } from './hudStatusline';
-
-// HUD statusline for the terminal-style chat view: replay the OMC-cached
-// statusline stdin through the user's configured statusLine command.
-ipcMain.handle('ace:hud-statusline', async (_event, workspace: unknown): Promise<HudStatuslineResult> => {
-  try {
-    return await readHudStatusline(typeof workspace === 'string' ? workspace : '');
-  } catch {
-    return null;
-  }
-});
 
 ipcMain.handle('ace:import-cli-sessions', async (): Promise<ImportCliSessionsResult> => {
   try {

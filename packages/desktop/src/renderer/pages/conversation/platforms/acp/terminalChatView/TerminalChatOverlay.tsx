@@ -16,7 +16,6 @@ import MessageList from '@renderer/pages/conversation/Messages/MessageList';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTerminalChatView } from './TerminalChatViewContext';
-import TerminalHudStatusBar from './TerminalHudStatusBar';
 import styles from './TerminalChatOverlay.module.css';
 
 type Props = {
@@ -77,7 +76,6 @@ const TerminalChatOverlayInner: React.FC<Props> = ({ handleSendCommand }) => {
           autoFocus
         />
       </div>
-      <TerminalHudStatusBar />
     </div>
   );
 };

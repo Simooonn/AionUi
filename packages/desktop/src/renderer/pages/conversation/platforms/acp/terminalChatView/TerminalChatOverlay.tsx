@@ -21,10 +21,9 @@ import styles from './TerminalChatOverlay.module.css';
 
 type Props = {
   handleSendCommand: (input: string, files: string[]) => Promise<void>;
-  current_model_id?: string;
 };
 
-const TerminalChatOverlayInner: React.FC<Props> = ({ handleSendCommand, current_model_id }) => {
+const TerminalChatOverlayInner: React.FC<Props> = ({ handleSendCommand }) => {
   const { t } = useTranslation();
   const terminalView = useTerminalChatView();
   const draft = terminalView?.draft ?? '';
@@ -78,7 +77,7 @@ const TerminalChatOverlayInner: React.FC<Props> = ({ handleSendCommand, current_
           autoFocus
         />
       </div>
-      <TerminalHudStatusBar current_model_id={current_model_id} />
+      <TerminalHudStatusBar />
     </div>
   );
 };

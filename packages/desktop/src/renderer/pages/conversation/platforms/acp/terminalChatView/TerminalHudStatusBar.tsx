@@ -16,15 +16,13 @@ import styles from './TerminalHudStatusBar.module.css';
 
 const REFRESH_MS = 30_000;
 
-type HudParams = { workspace: string; conversationId?: string; modelId?: string; modelLabel?: string };
-type AceApi = { hudStatusline?: (params: HudParams) => Promise<{ text: string } | null> };
+type AceApi = { hudStatusline?: (workspace: string) => Promise<{ text: string } | null> };
 
 const getAceApi = (): AceApi | undefined => (window as unknown as { electronAPI?: AceApi }).electronAPI;
 
-const TerminalHudStatusBar: React.FC<{ current_model_id?: string }> = ({ current_model_id }) => {
+const TerminalHudStatusBar: React.FC = () => {
   const conversation = useConversationContextSafe();
   const workspace = conversation?.workspace;
-  const conversationId = conversation?.conversation_id;
   const [text, setText] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,7 +31,7 @@ const TerminalHudStatusBar: React.FC<{ current_model_id?: string }> = ({ current
     let disposed = false;
     const refresh = async () => {
       try {
-        const result = await api.hudStatusline!({ workspace, conversationId, modelId: current_model_id });
+        const result = await api.hudStatusline!(workspace);
         if (!disposed) setText(result?.text ?? null);
       } catch {
         if (!disposed) setText(null);
@@ -45,7 +43,7 @@ const TerminalHudStatusBar: React.FC<{ current_model_id?: string }> = ({ current
       disposed = true;
       clearInterval(timer);
     };
-  }, [workspace, conversationId, current_model_id]);
+  }, [workspace]);
 
   if (!text) return null;
 

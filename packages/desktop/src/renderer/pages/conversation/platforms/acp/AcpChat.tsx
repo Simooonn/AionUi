@@ -263,7 +263,7 @@ Please check your local CLI tool authentication status`,
             <MessageList className='flex-1' emptySlot={emptySlot} />
           </FlexFullContainer>
           <AcpE2EStreamInjector conversationId={conversation_id} />
-          <TerminalChatOverlay handleSendCommand={handleSendCommand} current_model_id={current_model_id} />
+          <TerminalChatOverlay handleSendCommand={handleSendCommand} />
           {!hideSendBox && (
             <AcpSendBox
               conversation_id={conversation_id}

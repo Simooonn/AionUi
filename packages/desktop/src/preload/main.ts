@@ -69,8 +69,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   larkNotifySaveConfig: (config: unknown) => ipcRenderer.invoke('ace:lark-notify-save-config', config),
   larkNotifyTest: () => ipcRenderer.invoke('ace:lark-notify-test'),
   larkNotifySend: (rows: unknown[]) => ipcRenderer.invoke('ace:lark-notify-send', rows),
-  hudStatusline: (params: { workspace: string; conversationId?: string; modelId?: string; modelLabel?: string }) =>
-    ipcRenderer.invoke('ace:hud-statusline', params),
+  hudStatusline: (workspace: string) => ipcRenderer.invoke('ace:hud-statusline', workspace),
   // ace:end
 });
 

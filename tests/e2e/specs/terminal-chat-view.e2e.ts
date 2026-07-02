@@ -82,7 +82,7 @@ test.describe('Terminal chat view overlay', () => {
     await deleteConversation(page, conversationId).catch(() => {});
   });
 
-  test('hudStatusline IPC runs the statusLine command against this repo', async ({ page }) => {
+  test('hudStatusline IPC replays the OMC cache through the statusLine command', async ({ page }) => {
     // End-to-end check of preload → main → /bin/sh statusline replay, using
     // this repo's own OMC HUD cache. Skips where the cache or a statusLine
     // command is absent (e.g. CI).
@@ -95,11 +95,9 @@ test.describe('Terminal chat view overlay', () => {
 
     const result = await page.evaluate(async (ws) => {
       const api = (
-        window as unknown as {
-          electronAPI?: { hudStatusline?: (p: { workspace: string }) => Promise<{ text: string } | null> };
-        }
+        window as unknown as { electronAPI?: { hudStatusline?: (w: string) => Promise<{ text: string } | null> } }
       ).electronAPI;
-      return (await api?.hudStatusline?.({ workspace: ws })) ?? null;
+      return (await api?.hudStatusline?.(ws)) ?? null;
     }, projectRoot);
 
     if (result === null) {

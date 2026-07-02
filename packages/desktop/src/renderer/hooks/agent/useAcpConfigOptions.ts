@@ -101,7 +101,7 @@ export function classifyConfigSetError(error: unknown): AcpConfigSetErrorKind {
 
 type AcpConfigOptionsKey = readonly ['acp-config-options', string];
 
-const getConfigOptionsKey = (conversation_id: string): AcpConfigOptionsKey =>
+const getRuntimeConfigOptionsKey = (conversation_id: string): AcpConfigOptionsKey =>
   ['acp-config-options', conversation_id] as const;
 
 const statusByConversation = new Map<string, AcpConfigSetStatus>();
@@ -129,7 +129,7 @@ function subscribeConversationSetStatus(
   };
 }
 
-// ---------------------------------------------------------------------------
+// ace:start ---------------------------------------------------------------
 // aioncore exposes ACP runtime config as discrete `/model` and `/mode`
 // endpoints, not a unified `config-options` list. These adapters synthesize the
 // `AcpConfigOptionDto[]` shape the selectors consume so the rest of the hook and
@@ -188,6 +188,25 @@ const fetchConfigOptions = async ([, conversation_id]: AcpConfigOptionsKey): Pro
   ]);
   return buildConfigOptions(model?.model_info ?? null, mode ?? null);
 };
+// ace:end -----------------------------------------------------------------
+
+const configOptionsInFlight = new Map<string, Promise<AcpConfigOptionDto[] | null>>();
+
+function fetchConfigOptionsOnce(key: AcpConfigOptionsKey): Promise<AcpConfigOptionDto[] | null> {
+  const [, conversation_id] = key;
+  const existing = configOptionsInFlight.get(conversation_id);
+  if (existing) return existing;
+
+  // ace: dedup wraps the aioncore /model+/mode fetch instead of upstream's
+  // ensureConversationRuntime config-options snapshot.
+  const promise = fetchConfigOptions(key).finally(() => {
+    if (configOptionsInFlight.get(conversation_id) === promise) {
+      configOptionsInFlight.delete(conversation_id);
+    }
+  });
+  configOptionsInFlight.set(conversation_id, promise);
+  return promise;
+}
 
 export function useAcpConfigOptions({
   conversation_id,
@@ -200,12 +219,12 @@ export function useAcpConfigOptions({
 }) {
   const [setStatus, setSetStatus] = useState<AcpConfigSetStatus>(() => getConversationSetStatus(conversation_id));
   const optionsRef = useRef<AcpConfigOptionDto[] | null>(null);
-  const key = useMemo(() => getConfigOptionsKey(conversation_id), [conversation_id]);
+  const key = useMemo(() => getRuntimeConfigOptionsKey(conversation_id), [conversation_id]);
   const {
     data: snapshotData,
     mutate,
     isLoading,
-  } = useSWR<AcpConfigOptionDto[] | null>(enabled ? key : null, fetchConfigOptions, {
+  } = useSWR<AcpConfigOptionDto[] | null>(enabled ? key : null, fetchConfigOptionsOnce, {
     revalidateOnMount: false,
   });
   const configOptions = enabled ? (snapshotData ?? null) : null;
@@ -229,8 +248,8 @@ export function useAcpConfigOptions({
 
   const reload = useCallback(async () => {
     await prepareRuntime?.();
-    const next = await fetchConfigOptions(key);
-    if (next) replaceSnapshot(next);
+    const next = await fetchConfigOptionsOnce(key);
+    replaceSnapshot(next);
     return next;
   }, [key, prepareRuntime, replaceSnapshot]);
 
@@ -242,6 +261,7 @@ export function useAcpConfigOptions({
       setConversationSetStatus(conversation_id, { state: 'setting', optionId, requestedValue: value });
       try {
         await prepareRuntime?.();
+        // ace:start writes go through aioncore's discrete /mode and /model endpoints
         const previous = optionsRef.current ?? [];
         const preserve = (id: string) => previous.find((option) => option.id === id) ?? null;
         let next: AcpConfigOptionDto[];
@@ -261,6 +281,7 @@ export function useAcpConfigOptions({
             (option): option is AcpConfigOptionDto => option !== null
           );
         }
+        // ace:end
         if (!observed) {
           throw new Error('config_not_observed');
         }

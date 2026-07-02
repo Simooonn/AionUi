@@ -7,6 +7,12 @@ import { type FeedbackEventTags, submitFeedbackReport } from '@/renderer/service
 const AIONUI_DOWNLOAD_URL = 'https://www.aionui.com/';
 const INSTALLATION_INTEGRITY_REPORT_FLUSH_TIMEOUT_MS = 2000;
 
+type InstallationIntegrityDialogKind =
+  | 'incomplete_installation'
+  | 'data_migration'
+  | 'local_data_repair'
+  | 'recoverable_database_corruption';
+
 export type InstallationIntegrityDiagnostics = {
   source: 'backend_startup_failure' | 'runtime_status';
   description?: string;
@@ -26,8 +32,17 @@ export function openDownloadLatest(): void {
   window.open(AIONUI_DOWNLOAD_URL, '_blank', 'noopener,noreferrer');
 }
 
-export function getInstallationIntegrityTitle(t: TFunction): string {
-  return t('common.backendStartup.incompleteInstallation.title');
+export function getInstallationIntegrityTitle(
+  t: TFunction,
+  diagnosticsKind: InstallationIntegrityDialogKind = 'incomplete_installation'
+): string {
+  if (diagnosticsKind === 'recoverable_database_corruption') {
+    return t('common.backendStartup.recoverableDatabaseCorruption.title');
+  }
+  if (diagnosticsKind === 'local_data_repair') return t('common.backendStartup.localDataRepair.title');
+  return diagnosticsKind === 'data_migration'
+    ? t('common.backendStartup.dataMigration.title')
+    : t('common.backendStartup.incompleteInstallation.title');
 }
 
 export function getBackendStartupInstallationDescription(t: TFunction): string {
@@ -46,8 +61,17 @@ export function getInstallationIntegritySendDiagnosticsText(t: TFunction): strin
   return t('common.backendStartup.incompleteInstallation.sendDiagnostics');
 }
 
-export function getInstallationIntegrityDiagnosticsSentText(t: TFunction): string {
-  return t('common.backendStartup.incompleteInstallation.diagnosticsSent');
+export function getInstallationIntegrityDiagnosticsSentText(
+  t: TFunction,
+  diagnosticsKind: InstallationIntegrityDialogKind = 'incomplete_installation'
+): string {
+  if (diagnosticsKind === 'recoverable_database_corruption') {
+    return t('common.backendStartup.recoverableDatabaseCorruption.diagnosticsSent');
+  }
+  if (diagnosticsKind === 'local_data_repair') return t('common.backendStartup.localDataRepair.diagnosticsSent');
+  return diagnosticsKind === 'data_migration'
+    ? t('common.backendStartup.dataMigration.diagnosticsSent')
+    : t('common.backendStartup.incompleteInstallation.diagnosticsSent');
 }
 
 function buildInstallationIntegrityTags(diagnostics: InstallationIntegrityDiagnostics): FeedbackEventTags {
@@ -73,13 +97,22 @@ function buildInstallationIntegrityTags(diagnostics: InstallationIntegrityDiagno
   if (typeof reason === 'string') {
     tags['aionui.backend_startup_failure.reason'] = reason;
   }
+  const backendBoundaryCode = diagnostics.backendStartupFailure?.backendBoundaryCode;
+  if (typeof backendBoundaryCode === 'string') {
+    tags['aionui.backend_startup_failure.backend_boundary_code'] = backendBoundaryCode;
+  }
+  const backendBoundaryStage = diagnostics.backendStartupFailure?.backendBoundaryStage;
+  if (typeof backendBoundaryStage === 'string') {
+    tags['aionui.backend_startup_failure.backend_boundary_stage'] = backendBoundaryStage;
+  }
 
   return tags;
 }
 
 export async function reportInstallationIntegrityDiagnostics(
   diagnostics: InstallationIntegrityDiagnostics,
-  t: TFunction
+  t: TFunction,
+  diagnosticsKind: InstallationIntegrityDialogKind = 'incomplete_installation'
 ): Promise<void> {
   await submitFeedbackReport({
     collectLogs: true,
@@ -89,7 +122,7 @@ export async function reportInstallationIntegrityDiagnostics(
     },
     flushTimeoutMs: INSTALLATION_INTEGRITY_REPORT_FLUSH_TIMEOUT_MS,
     module: 'installation-integrity',
-    moduleLabel: getInstallationIntegrityTitle(t),
+    moduleLabel: getInstallationIntegrityTitle(t, diagnosticsKind),
     tags: buildInstallationIntegrityTags(diagnostics),
   });
 
@@ -102,20 +135,37 @@ export async function reportInstallationIntegrityDiagnostics(
 export function getInstallationIntegrityModalActions(
   t: TFunction,
   options: {
+    diagnosticsKind?: InstallationIntegrityDialogKind;
     onDownloadLatest?: () => void;
+    onRecoverCorruptedDatabase?: () => Promise<unknown> | void;
     onReportDiagnostics?: () => Promise<unknown> | void;
   } = {}
 ): {
-  downloadText: string;
+  downloadText?: string;
   onDownloadLatest: () => void;
+  onRecoverCorruptedDatabase: () => Promise<unknown> | void;
   onReportDiagnostics: () => Promise<unknown> | void;
+  recoverText?: string;
   reportText: string;
 } {
+  const diagnosticsKind = options.diagnosticsKind ?? 'incomplete_installation';
   return {
-    downloadText: getInstallationIntegrityDownloadText(t),
+    downloadText: diagnosticsKind === 'incomplete_installation' ? getInstallationIntegrityDownloadText(t) : undefined,
     onDownloadLatest: options.onDownloadLatest ?? openDownloadLatest,
+    onRecoverCorruptedDatabase: options.onRecoverCorruptedDatabase ?? (() => Promise.resolve()),
     onReportDiagnostics: options.onReportDiagnostics ?? (() => Promise.resolve()),
-    reportText: getInstallationIntegritySendDiagnosticsText(t),
+    recoverText:
+      diagnosticsKind === 'recoverable_database_corruption'
+        ? t('common.backendStartup.recoverableDatabaseCorruption.confirmRebuild')
+        : undefined,
+    reportText:
+      diagnosticsKind === 'recoverable_database_corruption'
+        ? t('common.backendStartup.recoverableDatabaseCorruption.sendDiagnostics')
+        : diagnosticsKind === 'local_data_repair'
+          ? t('common.backendStartup.localDataRepair.sendDiagnostics')
+          : diagnosticsKind === 'data_migration'
+            ? t('common.backendStartup.dataMigration.sendDiagnostics')
+            : getInstallationIntegritySendDiagnosticsText(t),
   };
 }
 
@@ -139,22 +189,34 @@ export function getDownloadLatestModalActionProps(t: TFunction): {
   };
 }
 
-export const InstallationIntegrityContent: React.FC<{ description: string }> = ({ description }) => (
+export const InstallationIntegrityContent: React.FC<{ description: string; diagnosticsHint?: string }> = ({
+  description,
+  diagnosticsHint,
+}) => (
   <div className='text-t-1' data-testid='installation-integrity-dialog'>
     <Typography.Paragraph className='mb-0 text-t-secondary' data-testid='installation-integrity-description'>
       {description}
     </Typography.Paragraph>
+    {diagnosticsHint ? (
+      <Typography.Paragraph className='mt-12px mb-0 text-12px text-t-tertiary'>{diagnosticsHint}</Typography.Paragraph>
+    ) : null}
   </div>
 );
 
 const InstallationIntegrityFooter: React.FC<{
   diagnostics?: InstallationIntegrityDiagnostics;
-}> = ({ diagnostics }) => {
+  diagnosticsKind?: InstallationIntegrityDialogKind;
+}> = ({ diagnostics, diagnosticsKind = 'incomplete_installation' }) => {
   const { t } = useTranslation();
   const [reported, setReported] = useState(false);
   const [reporting, setReporting] = useState(false);
+  const [recovering, setRecovering] = useState(false);
   const actions = getInstallationIntegrityModalActions(t, {
-    onReportDiagnostics: diagnostics ? () => reportInstallationIntegrityDiagnostics(diagnostics, t) : undefined,
+    diagnosticsKind,
+    onRecoverCorruptedDatabase: () => window.electronAPI?.recoverCorruptedDatabase?.(),
+    onReportDiagnostics: diagnostics
+      ? () => reportInstallationIntegrityDiagnostics(diagnostics, t, diagnosticsKind)
+      : undefined,
   });
 
   const handleReportDiagnostics = async () => {
@@ -163,11 +225,38 @@ const InstallationIntegrityFooter: React.FC<{
     try {
       await actions.onReportDiagnostics();
       setReported(true);
-      Message.success(t('common.backendStartup.incompleteInstallation.diagnosticsReportSuccess'));
+      Message.success(
+        diagnosticsKind === 'recoverable_database_corruption'
+          ? t('common.backendStartup.recoverableDatabaseCorruption.diagnosticsReportSuccess')
+          : diagnosticsKind === 'local_data_repair'
+            ? t('common.backendStartup.localDataRepair.diagnosticsReportSuccess')
+            : diagnosticsKind === 'data_migration'
+              ? t('common.backendStartup.dataMigration.diagnosticsReportSuccess')
+              : t('common.backendStartup.incompleteInstallation.diagnosticsReportSuccess')
+      );
     } catch {
-      Message.error(t('common.backendStartup.incompleteInstallation.diagnosticsReportFailed'));
+      Message.error(
+        diagnosticsKind === 'recoverable_database_corruption'
+          ? t('common.backendStartup.recoverableDatabaseCorruption.diagnosticsReportFailed')
+          : diagnosticsKind === 'local_data_repair'
+            ? t('common.backendStartup.localDataRepair.diagnosticsReportFailed')
+            : diagnosticsKind === 'data_migration'
+              ? t('common.backendStartup.dataMigration.diagnosticsReportFailed')
+              : t('common.backendStartup.incompleteInstallation.diagnosticsReportFailed')
+      );
     } finally {
       setReporting(false);
+    }
+  };
+
+  const handleRecoverCorruptedDatabase = async () => {
+    if (recovering) return;
+    setRecovering(true);
+    try {
+      await actions.onRecoverCorruptedDatabase();
+    } catch {
+      Message.error(t('common.backendStartup.recoverableDatabaseCorruption.rebuildFailed'));
+      setRecovering(false);
     }
   };
 
@@ -179,11 +268,23 @@ const InstallationIntegrityFooter: React.FC<{
         loading={reporting}
         onClick={handleReportDiagnostics}
       >
-        {reported ? getInstallationIntegrityDiagnosticsSentText(t) : actions.reportText}
+        {reported ? getInstallationIntegrityDiagnosticsSentText(t, diagnosticsKind) : actions.reportText}
       </Button>
-      <Button data-testid='installation-integrity-download' type='primary' onClick={actions.onDownloadLatest}>
-        {actions.downloadText}
-      </Button>
+      {actions.downloadText ? (
+        <Button data-testid='installation-integrity-download' type='primary' onClick={actions.onDownloadLatest}>
+          {actions.downloadText}
+        </Button>
+      ) : null}
+      {actions.recoverText ? (
+        <Button
+          data-testid='recoverable-database-corruption-rebuild'
+          loading={recovering}
+          type='primary'
+          onClick={handleRecoverCorruptedDatabase}
+        >
+          {actions.recoverText}
+        </Button>
+      ) : null}
     </Space>
   );
 };
@@ -194,12 +295,18 @@ export function showInstallationIntegrityModal(
   modal: InstallationIntegrityModalController,
   t: TFunction,
   description: string,
-  diagnostics?: InstallationIntegrityDiagnostics
+  diagnostics?: InstallationIntegrityDiagnostics,
+  diagnosticsKind: InstallationIntegrityDialogKind = 'incomplete_installation'
 ): void {
+  const diagnosticsHint =
+    diagnosticsKind === 'recoverable_database_corruption'
+      ? t('common.backendStartup.recoverableDatabaseCorruption.diagnosticsHint')
+      : undefined;
+
   modal.error({
-    title: getInstallationIntegrityTitle(t),
-    content: <InstallationIntegrityContent description={description} />,
-    footer: <InstallationIntegrityFooter diagnostics={diagnostics} />,
+    title: getInstallationIntegrityTitle(t, diagnosticsKind),
+    content: <InstallationIntegrityContent description={description} diagnosticsHint={diagnosticsHint} />,
+    footer: <InstallationIntegrityFooter diagnostics={diagnostics} diagnosticsKind={diagnosticsKind} />,
     closable: false,
     maskClosable: false,
   });
@@ -208,7 +315,8 @@ export function showInstallationIntegrityModal(
 export const InstallationIntegrityModalHost: React.FC<{
   description: string;
   diagnostics?: InstallationIntegrityDiagnostics;
-}> = ({ description, diagnostics }) => {
+  diagnosticsKind?: InstallationIntegrityDialogKind;
+}> = ({ description, diagnostics, diagnosticsKind = 'incomplete_installation' }) => {
   const [modal, modalContextHolder] = Modal.useModal();
   const { t } = useTranslation();
   const shownRef = useRef(false);
@@ -216,8 +324,8 @@ export const InstallationIntegrityModalHost: React.FC<{
   useEffect(() => {
     if (shownRef.current) return;
     shownRef.current = true;
-    showInstallationIntegrityModal(modal, t, description, diagnostics);
-  }, [description, diagnostics, modal, t]);
+    showInstallationIntegrityModal(modal, t, description, diagnostics, diagnosticsKind);
+  }, [description, diagnostics, diagnosticsKind, modal, t]);
 
   return <>{modalContextHolder}</>;
 };

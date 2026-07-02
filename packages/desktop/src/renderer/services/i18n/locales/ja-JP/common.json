@@ -14,6 +14,7 @@
   "system": "システム",
   "about": "私たちについて",
   "back": "チャットに戻る",
+  "goBack": "戻る",
   "add": "追加",
   "edit": "編集",
   "website": "公式サイト",
@@ -90,6 +91,33 @@
     "packageArchitectureMismatch": {
       "title": "AionUi package architecture mismatch",
       "description": "This AionUi package is for {{packageArch}}, but this Mac is {{deviceArch}}. You may have downloaded the wrong package. Please download and install the {{expectedArch}} package."
+    },
+    "dataMigration": {
+      "title": "Local data migration failed",
+      "description": "AionUi opened, but AionCore stopped while initializing local data. Reinstalling AionUi may not fix this. Send a diagnostics report or contact support so the local database migration can be inspected.",
+      "sendDiagnostics": "Send diagnostics",
+      "diagnosticsSent": "Diagnostics sent",
+      "diagnosticsReportSuccess": "Diagnostics report sent",
+      "diagnosticsReportFailed": "Failed to send diagnostics report"
+    },
+    "localDataRepair": {
+      "title": "Local data repair failed",
+      "description": "AionUi opened, but AionCore stopped while repairing local agent cache data. Reinstalling AionUi may not fix this. Send a diagnostics report or contact support so the local database can be inspected.",
+      "sendDiagnostics": "Send diagnostics",
+      "diagnosticsSent": "Diagnostics sent",
+      "diagnosticsReportSuccess": "Diagnostics report sent",
+      "diagnosticsReportFailed": "Failed to send diagnostics report"
+    },
+    "recoverableDatabaseCorruption": {
+      "title": "ローカルデータが破損しています",
+      "description": "ローカルデータベースの破損を検出したため、AionUi は起動を続行できません。確認後、古いデータベースをバックアップし、新しいローカルデータベースを作成して起動を続行します。過去のローカルデータは当面表示されず、古いデータベースはバックアップとして保持されます。",
+      "confirmRebuild": "古いDBをバックアップして新しいDBを再作成",
+      "sendDiagnostics": "診断レポートを送信",
+      "diagnosticsHint": "診断レポートの送信ではローカルデータベースは変更されません。",
+      "diagnosticsSent": "診断レポートを送信しました",
+      "diagnosticsReportSuccess": "診断レポートを送信しました",
+      "diagnosticsReportFailed": "診断レポートの送信に失敗しました",
+      "rebuildFailed": "古いDBのバックアップと新しいDBの再作成に失敗しました"
     }
   },
   "fileAttach.addFiles": "ファイルを追加",

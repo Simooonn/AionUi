@@ -21,6 +21,7 @@ export interface ElectronBridgeAPI {
   captureFeedbackScreenshot?: () => Promise<{ filename: string; data: number[] } | null>;
   // Forward feedback diagnostics logs to the main process console / 转发反馈诊断日志到主进程控制台
   logFeedbackEvent?: (payload: { details?: unknown; level: 'info' | 'warn' | 'error'; message: string }) => void;
+  recoverCorruptedDatabase?: () => Promise<void>;
 }
 
 // Embedded terminal (node-pty + xterm) — renderer-facing data plane.
@@ -59,12 +60,17 @@ export type BackendStartupFailureReason =
   | 'backend_incompatible_runtime'
   | 'backend_incomplete_installation'
   | 'backend_package_architecture_mismatch'
+  | 'backend_data_migration_failed'
+  | 'backend_local_data_repair_failed'
+  | 'backend_recoverable_database_corruption'
   | 'backend_startup_failed';
 
 export type BackendIncompleteInstallationKind = 'missing_backend_binary' | 'missing_directory_resources';
+export type BackendLocalDataIssueKind = 'agent_metadata_invalid_utf8';
 
 export interface BackendStartupFailureInfo {
   incompleteInstallationKind?: BackendIncompleteInstallationKind;
+  localDataIssueKind?: BackendLocalDataIssueKind;
   missingBackendBinary?: boolean;
   missingBundledAioncoreDir?: boolean;
   missingHubDir?: boolean;

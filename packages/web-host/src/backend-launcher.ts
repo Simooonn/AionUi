@@ -69,6 +69,11 @@ type SpawnConfig = {
   workDir?: string;
   appVersion: string;
   isPackaged: boolean;
+  recoverCorruptedDatabase?: boolean;
+};
+
+export type BackendLaunchFlags = {
+  recoverCorruptedDatabase?: boolean;
 };
 
 export type BackendDirConfig = {
@@ -193,9 +198,11 @@ export function buildSpawnArgs(config: SpawnConfig): string[] {
     config.appVersion,
   ];
   if (config.isPackaged) args.push('--managed-resources-mode', 'bundled');
+  if (!config.isPackaged) args.push('--dump-prompts');
   if (config.logDir) args.push('--log-dir', config.logDir);
   if (config.workDir) args.push('--work-dir', config.workDir);
   if (config.local) args.push('--local');
+  if (config.recoverCorruptedDatabase) args.push('--recover-corrupted-database');
   return args;
 }
 
@@ -485,7 +492,8 @@ export class BackendLifecycleManager {
     logDir?: string,
     dirs?: BackendDirConfig,
     options?: BackendStartOptions,
-    preferredPort?: number
+    preferredPort?: number,
+    launchFlags: BackendLaunchFlags = {}
   ): Promise<number> {
     const appVersion = this.appMeta.version;
     let binaryPath: string;
@@ -564,6 +572,7 @@ export class BackendLifecycleManager {
       workDir: dirs?.workDir,
       appVersion,
       isPackaged: this.appMeta.isPackaged,
+      recoverCorruptedDatabase: launchFlags.recoverCorruptedDatabase === true,
     });
     console.log(`[aioncore] starting: ${binaryPath} ${args.join(' ')}`);
 
@@ -571,6 +580,7 @@ export class BackendLifecycleManager {
       this.childProcess = spawn(binaryPath, args, {
         stdio: ['pipe', 'pipe', 'pipe'],
         env: dirs ? buildSpawnEnv(dirs) : process.env,
+        cwd: dirs?.workDir ?? dbPath,
         detached: process.platform !== 'win32',
       });
     } catch (error) {

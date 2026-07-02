@@ -34,7 +34,7 @@
 </p>
 
 <p align="center">
-  <strong>💬 Comunidad:</strong> <a href="https://discord.gg/2QAwJn7Egx" target="_blank">Discord (English)</a> | <a href="../../resources/wx-13.png" target="_blank">微信 (中文群)</a> | <a href="https://twitter.com/AionUI" target="_blank">Twitter</a>
+  <strong>💬 Comunidad:</strong> <a href="https://discord.gg/2QAwJn7Egx" target="_blank">Discord (English)</a> | <a href="../../resources/wx-14.png" target="_blank">微信 (中文群)</a> | <a href="https://twitter.com/AionUI" target="_blank">Twitter</a>
 </p>
 
 ---
@@ -615,7 +615,7 @@ brew install aionui
 - [Reportar problemas](https://github.com/iOfficeAI/AionUi/issues) — errores y solicitudes de funciones
 - [Actualizaciones de lanzamiento](https://github.com/iOfficeAI/AionUi/releases) — obtén la última versión
 - [Comunidad Discord](https://discord.gg/2QAwJn7Egx) — comunidad en inglés
-- [Grupo WeChat](../../resources/wx-13.png) — comunidad china
+- [Grupo WeChat](../../resources/wx-14.png) — comunidad china
 
 ### Contribuir
 
@@ -629,13 +629,7 @@ Por favor, lee [CONTRIBUTING.md](../../CONTRIBUTING.md) antes de abrir un PR.
 
 ### Configuración de desarrollo
 
-Stack tecnológico: Electron · Vite · React · Bun
-
-```bash
-bun install        # instalar dependencias
-bun run dev        # iniciar servidor de desarrollo
-bun run test       # ejecutar pruebas unitarias
-```
+El desarrollo local de AionUi usa dos repositorios: AionUi para el frontend de Electron y AionCore para el backend local. Consulta la [guía de desarrollo](../contributing/development.md) para la configuración completa en macOS, Linux y Windows.
 
 ---
 

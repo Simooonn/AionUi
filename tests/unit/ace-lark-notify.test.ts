@@ -265,11 +265,12 @@ describe('extractLastUserMessage', () => {
   const textMessage = (id: string, position: 'left' | 'right', content: unknown): TMessage =>
     ({ id, type: 'text', position, conversation_id: 'c', msg_id: id, content }) as unknown as TMessage;
 
-  it('picks the first user text row from a DESC page and collapses whitespace', () => {
+  it('picks the newest user text row from the ASC latest page and collapses whitespace', () => {
+    // Cursor-API latest page: chronologically ascending, newest message last.
     const items = [
-      textMessage('a1', 'left', { content: 'assistant reply' }),
-      textMessage('u2', 'right', { content: '  帮我\n修复  登录bug  ' }),
       textMessage('u1', 'right', { content: 'older user message' }),
+      textMessage('u2', 'right', { content: '  帮我\n修复  登录bug  ' }),
+      textMessage('a1', 'left', { content: 'assistant reply' }),
     ];
     expect(extractLastUserMessage(items)).toEqual({ id: 'u2', text: '帮我 修复 登录bug' });
   });
@@ -285,8 +286,8 @@ describe('extractLastUserMessage', () => {
   });
   it('skips non-string (multimodal/structured) content instead of stringifying it', () => {
     const items = [
-      textMessage('u2', 'right', { content: [{ type: 'text', text: 'part' }] }),
       textMessage('u1', 'right', { content: 'plain older message' }),
+      textMessage('u2', 'right', { content: [{ type: 'text', text: 'part' }] }),
     ];
     expect(extractLastUserMessage(items)).toEqual({ id: 'u1', text: 'plain older message' });
   });

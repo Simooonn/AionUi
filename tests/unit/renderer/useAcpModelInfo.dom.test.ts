@@ -12,23 +12,14 @@ import type { IResponseMessage } from '@/common/adapter/ipcBridge';
 import type { AcpModelInfo } from '@/common/types/platform/acpTypes';
 import { useAcpModelInfo } from '@/renderer/hooks/agent/useAcpModelInfo';
 
-const {
-  getModelInfoInvokeMock,
-  setModelInvokeMock,
-  getModeInvokeMock,
-  setModeInvokeMock,
-  configServiceSetMock,
-  fetchDetectedAgentsMock,
-  responseStreamHandlers,
-} = vi.hoisted(() => ({
-  getModelInfoInvokeMock: vi.fn(),
-  setModelInvokeMock: vi.fn(),
-  getModeInvokeMock: vi.fn(),
-  setModeInvokeMock: vi.fn(),
-  configServiceSetMock: vi.fn(),
-  fetchDetectedAgentsMock: vi.fn(),
-  responseStreamHandlers: [] as Array<(message: IResponseMessage) => void>,
-}));
+const { getModelInfoInvokeMock, setModelInvokeMock, getModeInvokeMock, setModeInvokeMock, responseStreamHandlers } =
+  vi.hoisted(() => ({
+    getModelInfoInvokeMock: vi.fn(),
+    setModelInvokeMock: vi.fn(),
+    getModeInvokeMock: vi.fn(),
+    setModeInvokeMock: vi.fn(),
+    responseStreamHandlers: [] as Array<(message: IResponseMessage) => void>,
+  }));
 
 vi.mock('@/common', () => ({
   ipcBridge: {
@@ -48,18 +39,6 @@ vi.mock('@/common', () => ({
       },
     },
   },
-}));
-
-vi.mock('@/common/config/configService', () => ({
-  configService: {
-    get: vi.fn().mockReturnValue({}),
-    set: configServiceSetMock,
-  },
-}));
-
-vi.mock('@/renderer/utils/model/agentTypes', () => ({
-  DETECTED_AGENTS_SWR_KEY: 'detected-agents',
-  fetchDetectedAgents: fetchDetectedAgentsMock,
 }));
 
 const buildModelInfo = (currentModelId = 'sonnet-4'): AcpModelInfo => ({
@@ -127,13 +106,10 @@ describe('useAcpModelInfo', () => {
     setModelInvokeMock.mockReset();
     getModeInvokeMock.mockReset();
     setModeInvokeMock.mockReset();
-    configServiceSetMock.mockReset();
     getModelInfoInvokeMock.mockResolvedValue({ model_info: buildModelInfo() });
     getModeInvokeMock.mockResolvedValue({ mode: 'default', initialized: true });
     setModelInvokeMock.mockResolvedValue({ model_info: buildModelInfo('opus-4') });
     setModeInvokeMock.mockResolvedValue({ mode: 'default', initialized: true });
-    configServiceSetMock.mockResolvedValue(undefined);
-    fetchDetectedAgentsMock.mockResolvedValue([]);
   });
 
   it('derives model info from the /model endpoint', async () => {
@@ -152,7 +128,7 @@ describe('useAcpModelInfo', () => {
     expect(result.current.canSwitch).toBe(true);
   });
 
-  it('waits for observed confirmation before updating selected model and saving preference', async () => {
+  it('waits for observed confirmation before updating the selected model', async () => {
     const setModelDeferred = deferred<{ model_info: AcpModelInfo }>();
     const onSelectModelSuccess = vi.fn();
     const onSelectModelFailed = vi.fn();
@@ -193,9 +169,6 @@ describe('useAcpModelInfo', () => {
     });
     expect(onSelectModelSuccess).toHaveBeenCalledWith('opus-4');
     expect(onSelectModelFailed).not.toHaveBeenCalled();
-    await waitFor(() => {
-      expect(configServiceSetMock).toHaveBeenCalledWith('acp.config', { claude: { preferredModelId: 'opus-4' } });
-    });
   });
 
   it('does not update model info when the backend does not observe the requested model', async () => {
@@ -225,7 +198,6 @@ describe('useAcpModelInfo', () => {
     });
     expect(result.current.model_info?.current_model_id).toBe('sonnet-4');
     expect(onSelectModelSuccess).not.toHaveBeenCalled();
-    expect(configServiceSetMock).not.toHaveBeenCalled();
   });
 
   it('shares observed model snapshots across hook instances for the same conversation', async () => {

@@ -34,7 +34,7 @@
 </p>
 
 <p align="center">
-  <strong>💬 Спільнота:</strong> <a href="https://discord.gg/2QAwJn7Egx" target="_blank">Discord (English)</a> | <a href="../../resources/wx-13.png" target="_blank">微信 (中文群)</a> | <a href="https://twitter.com/AionUI" target="_blank">Twitter</a>
+  <strong>💬 Спільнота:</strong> <a href="https://discord.gg/2QAwJn7Egx" target="_blank">Discord (English)</a> | <a href="../../resources/wx-14.png" target="_blank">微信 (中文群)</a> | <a href="https://twitter.com/AionUI" target="_blank">Twitter</a>
 </p>
 
 ---
@@ -406,13 +406,7 @@ brew install aionui
 
 ### Налаштування середовища розробки
 
-Технологічний стек: Electron · Vite · React · Bun
-
-```bash
-bun install        # встановити залежності
-bun run dev        # запустити dev-сервер
-bun run test       # запустити юніт-тести
-```
+Локальна розробка AionUi використовує два репозиторії: AionUi для Electron-фронтенду та AionCore для локального backend. Повні інструкції для macOS, Linux і Windows наведені в [Development Guide](../contributing/development.md).
 
 ---
 

@@ -14,6 +14,7 @@
   "system": "Sistema",
   "about": "Sobre Nós",
   "back": "Voltar ao Chat",
+  "goBack": "Voltar",
   "add": "Adicionar",
   "edit": "Editar",
   "website": "Site",
@@ -90,6 +91,33 @@
     "packageArchitectureMismatch": {
       "title": "AionUi package architecture mismatch",
       "description": "This AionUi package is for {{packageArch}}, but this Mac is {{deviceArch}}. You may have downloaded the wrong package. Please download and install the {{expectedArch}} package."
+    },
+    "dataMigration": {
+      "title": "Local data migration failed",
+      "description": "AionUi opened, but AionCore stopped while initializing local data. Reinstalling AionUi may not fix this. Send a diagnostics report or contact support so the local database migration can be inspected.",
+      "sendDiagnostics": "Send diagnostics",
+      "diagnosticsSent": "Diagnostics sent",
+      "diagnosticsReportSuccess": "Diagnostics report sent",
+      "diagnosticsReportFailed": "Failed to send diagnostics report"
+    },
+    "localDataRepair": {
+      "title": "Local data repair failed",
+      "description": "AionUi opened, but AionCore stopped while repairing local agent cache data. Reinstalling AionUi may not fix this. Send a diagnostics report or contact support so the local database can be inspected.",
+      "sendDiagnostics": "Send diagnostics",
+      "diagnosticsSent": "Diagnostics sent",
+      "diagnosticsReportSuccess": "Diagnostics report sent",
+      "diagnosticsReportFailed": "Failed to send diagnostics report"
+    },
+    "recoverableDatabaseCorruption": {
+      "title": "Os dados locais estão corrompidos",
+      "description": "O AionUi detectou que o banco de dados local está corrompido e não pode continuar a inicialização. Após a confirmação, o banco de dados antigo será salvo como backup e um novo banco de dados local será criado para continuar a inicialização. Os dados locais históricos não serão exibidos por enquanto, e o banco antigo será mantido como backup.",
+      "confirmRebuild": "Fazer backup do DB antigo e criar novo DB",
+      "sendDiagnostics": "Enviar diagnóstico",
+      "diagnosticsHint": "Enviar diagnóstico não modificará o banco de dados local.",
+      "diagnosticsSent": "Diagnóstico enviado",
+      "diagnosticsReportSuccess": "Relatório de diagnóstico enviado",
+      "diagnosticsReportFailed": "Falha ao enviar relatório de diagnóstico",
+      "rebuildFailed": "Falha ao fazer backup do DB antigo e criar novo DB"
     }
   },
   "fileAttach.addFiles": "Adicionar arquivos",

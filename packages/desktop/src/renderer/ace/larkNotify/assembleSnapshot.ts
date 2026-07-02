@@ -26,18 +26,23 @@ import { getBackendKeyFromConversation } from '@/renderer/pages/conversation/Gro
 import { getActivityTime } from '@/renderer/utils/chat/timeline';
 
 const ROW_FETCH_CONCURRENCY = 5;
-/** DESC page size used to locate the most recent user message. */
+/** Latest-page size used to locate the most recent user message. */
 const LAST_MESSAGE_PAGE_SIZE = 20;
 
+type AceCountApi = { messageCounts?: (ids: string[]) => Promise<Record<string, number>> };
+const getAceApi = (): AceCountApi | undefined => (window as unknown as { electronAPI?: AceCountApi }).electronAPI;
+
 /**
- * Pick the most recent user message from a DESC-ordered page and extract
- * bounded plain text. Only plain-string content is accepted — multimodal /
- * structured content is skipped rather than JSON.stringify'd into the summary
- * (rows without usable text yield null and the summary falls back to the name).
+ * Pick the most recent user message from a chronologically ASC page (the
+ * cursor API's latest page) and extract bounded plain text. Only plain-string
+ * content is accepted — multimodal / structured content is skipped rather than
+ * JSON.stringify'd into the summary (rows without usable text yield null and
+ * the summary falls back to the name).
  */
 export const extractLastUserMessage = (items: TMessage[] | undefined): { id: string; text: string } | null => {
   if (!items?.length) return null;
-  for (const message of items) {
+  for (let i = items.length - 1; i >= 0; i--) {
+    const message = items[i];
     if (message.type !== 'text' || message.position !== 'right') continue;
     const raw = (message.content as { content?: unknown } | undefined)?.content;
     if (typeof raw !== 'string') continue;
@@ -52,18 +57,17 @@ export const extractLastUserMessage = (items: TMessage[] | undefined): { id: str
 const buildRow = async (
   conversation: TChatConversation,
   generatingIds: ReadonlySet<string>,
-  terminalStates: ReadonlyMap<string, string>
+  terminalStates: ReadonlyMap<string, string>,
+  totals: Readonly<Record<string, number>>
 ): Promise<LarkNotifyRow> => {
-  let total: number | null = null;
+  const total = typeof totals[conversation.id] === 'number' ? totals[conversation.id] : null;
   let lastUserMessage: { id: string; text: string } | null = null;
   try {
+    // Latest cursor page (no before/after) = newest LAST_MESSAGE_PAGE_SIZE rows.
     const result = await ipcBridge.database.getConversationMessages.invoke({
       conversation_id: conversation.id,
-      page: 0,
-      page_size: LAST_MESSAGE_PAGE_SIZE,
-      order: 'DESC',
+      limit: LAST_MESSAGE_PAGE_SIZE,
     });
-    total = typeof result?.total === 'number' ? result.total : null;
     lastUserMessage = extractLastUserMessage(result?.items);
   } catch {
     // Row-level degradation: keep the row with total '?' and no summary input
@@ -94,8 +98,11 @@ export const assembleSnapshot = async (terminalStates: ReadonlyMap<string, strin
   if (!active.length) return [];
 
   const generatingIds = getGeneratingConversationIds();
+  // One batched main-process DB read for all counts (cursor API has no total).
+  const totals = await (getAceApi()?.messageCounts?.(active.map((c) => c.id)) ??
+    Promise.resolve({} as Record<string, number>));
   const rows = await mapWithConcurrency(active, ROW_FETCH_CONCURRENCY, (c) =>
-    buildRow(c, generatingIds, terminalStates)
+    buildRow(c, generatingIds, terminalStates, totals)
   );
   return sortNotifyRows(rows);
 };

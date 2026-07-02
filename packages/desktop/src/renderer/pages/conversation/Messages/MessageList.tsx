@@ -8,6 +8,8 @@ import type { IConversationArtifact } from '@/common/adapter/ipcBridge';
 import type { IMessageAcpToolCall, IMessageToolCall, IMessageToolGroup, TMessage } from '@/common/chat/chatLib';
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { useConversationRuntimeView } from '@/renderer/pages/conversation/runtime/useConversationRuntimeView';
+import { getChatSurfaceWidthClass } from '@/renderer/pages/conversation/utils/chatSurfaceWidth';
+import { useTeamPermission } from '@/renderer/pages/team/hooks/TeamPermissionContext';
 import { iconColors } from '@/renderer/styles/colors';
 import { CHAT_MESSAGE_JUMP_EVENT, type ChatMessageJumpDetail } from '@/renderer/utils/chat/chatMinimapEvents';
 import { Image } from '@arco-design/web-react';
@@ -16,7 +18,7 @@ import MessageAcpPermission from '@renderer/pages/conversation/Messages/acp/Mess
 import MessagePermission from './components/MessagePermission';
 import MessageAcpToolCall from '@renderer/pages/conversation/Messages/acp/MessageAcpToolCall';
 import classNames from 'classnames';
-import React, { createContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { uuid } from '@renderer/utils/common';
@@ -25,7 +27,13 @@ import HOC from '@renderer/utils/ui/HOC';
 import type { FileChangeInfo } from './MessageFileChanges';
 import MessageFileChanges, { parseDiff } from './MessageFileChanges';
 import { useConversationArtifacts } from './artifacts';
-import { useMessageList, useMessageListLoading } from './hooks';
+import {
+  useLoadAnchorMessageWindow,
+  useLoadPreviousMessagePage,
+  useMessageList,
+  useMessageListLoading,
+  useMessagePaginationState,
+} from './hooks';
 import MessageAgentStatus from './components/MessageAgentStatus';
 import MessagePlan from './components/MessagePlan';
 import MessageTips from './components/MessageTips';
@@ -102,7 +110,7 @@ const getUnhandledMessageType = (_message: never): string => 'unknown';
 // Image preview context
 export const ImagePreviewContext = createContext<{ inPreviewGroup: boolean }>({ inPreviewGroup: false });
 
-const MessageListSkeleton: React.FC = () => {
+const MessageListSkeleton: React.FC<{ rowWidthClass: string }> = ({ rowWidthClass }) => {
   const rows = [
     { align: 'left', bubbleWidth: '100%', lines: [72, 58, 64] },
     { align: 'right', bubbleWidth: '82%', lines: [54, 48] },
@@ -125,13 +133,10 @@ const MessageListSkeleton: React.FC = () => {
         {rows.map((row, index) => (
           <div
             key={index}
-            className={classNames(
-              'w-full min-w-0 flex items-start message-item px-8px m-t-10px max-w-full md:max-w-780px mx-auto',
-              {
-                'justify-start': row.align === 'left',
-                'justify-end': row.align === 'right',
-              }
-            )}
+            className={classNames(`${rowWidthClass} min-w-0 flex items-start message-item px-8px m-t-10px`, {
+              'justify-start': row.align === 'left',
+              'justify-end': row.align === 'right',
+            })}
           >
             <div
               className='flex-none min-w-0 rd-16px p-14px'
@@ -171,9 +176,18 @@ const MessageListSkeleton: React.FC = () => {
   );
 };
 
-const MessageItem: React.FC<{ message: TMessage; highlighted?: boolean; showCopyRow?: boolean }> = React.memo(
+const MessageItem: React.FC<{
+  message: TMessage;
+  highlighted?: boolean;
+  rowWidthClass: string;
+  showCopyRow?: boolean;
+}> = React.memo(
   HOC((props) => {
-    const { message, highlighted } = props as { message: TMessage; highlighted?: boolean };
+    const { message, highlighted, rowWidthClass } = props as {
+      message: TMessage;
+      highlighted?: boolean;
+      rowWidthClass: string;
+    };
     return (
       <div
         id={`message-${message.id}`}
@@ -181,7 +195,7 @@ const MessageItem: React.FC<{ message: TMessage; highlighted?: boolean; showCopy
         data-message-type={message.type}
         data-message-position={message.position}
         className={classNames(
-          'min-w-0 flex items-start message-item [&>div]:max-w-full px-8px m-t-10px max-w-full md:max-w-780px mx-auto',
+          `${rowWidthClass} min-w-0 flex items-start message-item [&>div]:max-w-full px-8px m-t-10px`,
           message.type,
           {
             'justify-center': message.position === 'center',
@@ -194,49 +208,65 @@ const MessageItem: React.FC<{ message: TMessage; highlighted?: boolean; showCopy
         {props.children}
       </div>
     );
-  })(({ message, showCopyRow }: { message: TMessage; highlighted?: boolean; showCopyRow?: boolean }) => {
-    const { t } = useTranslation();
-    switch (message.type) {
-      case 'text':
-        return <MessageText message={message} showCopyRow={showCopyRow}></MessageText>;
-      case 'tips':
-        return <MessageTips message={message}></MessageTips>;
-      case 'tool_call':
-        return <MessageToolCall message={message}></MessageToolCall>;
-      case 'tool_group':
-        return <MessageToolGroup message={message}></MessageToolGroup>;
-      case 'agent_status':
-        return <MessageAgentStatus message={message}></MessageAgentStatus>;
-      case 'permission':
-        return <MessagePermission message={message}></MessagePermission>;
-      case 'acp_permission':
-        return <MessageAcpPermission message={message}></MessageAcpPermission>;
-      case 'acp_tool_call':
-        return <MessageAcpToolCall message={message}></MessageAcpToolCall>;
-      case 'plan':
-        return <MessagePlan message={message}></MessagePlan>;
-      case 'thinking':
-        return <MessageThinking message={message}></MessageThinking>;
-      case 'available_commands':
-        return null;
-      default:
-        return <div>{t('messages.unknownMessageType', { type: getUnhandledMessageType(message) })}</div>;
+  })(
+    ({
+      message,
+      showCopyRow,
+    }: {
+      message: TMessage;
+      highlighted?: boolean;
+      rowWidthClass: string;
+      showCopyRow?: boolean;
+    }) => {
+      const { t } = useTranslation();
+      switch (message.type) {
+        case 'text':
+          return <MessageText message={message} showCopyRow={showCopyRow}></MessageText>;
+        case 'tips':
+          return <MessageTips message={message}></MessageTips>;
+        case 'tool_call':
+          return <MessageToolCall message={message}></MessageToolCall>;
+        case 'tool_group':
+          return <MessageToolGroup message={message}></MessageToolGroup>;
+        case 'agent_status':
+          return <MessageAgentStatus message={message}></MessageAgentStatus>;
+        case 'permission':
+          return <MessagePermission message={message}></MessagePermission>;
+        case 'acp_permission':
+          return <MessageAcpPermission message={message}></MessageAcpPermission>;
+        case 'acp_tool_call':
+          return <MessageAcpToolCall message={message}></MessageAcpToolCall>;
+        case 'plan':
+          return <MessagePlan message={message}></MessagePlan>;
+        case 'thinking':
+          return <MessageThinking message={message}></MessageThinking>;
+        case 'available_commands':
+          return null;
+        default:
+          return <div>{t('messages.unknownMessageType', { type: getUnhandledMessageType(message) })}</div>;
+      }
     }
-  }),
+  ),
   (prev, next) =>
     prev.message.id === next.message.id &&
     prev.message.content === next.message.content &&
     prev.message.position === next.message.position &&
     prev.message.type === next.message.type &&
     prev.highlighted === next.highlighted &&
+    prev.rowWidthClass === next.rowWidthClass &&
     prev.showCopyRow === next.showCopyRow
 );
 
 const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }> = ({ emptySlot }) => {
   const list = useMessageList();
   const isMessageListLoading = useMessageListLoading();
+  const pagination = useMessagePaginationState();
   const artifacts = useConversationArtifacts();
   const conversationContext = useConversationContextSafe();
+  const teamPermission = useTeamPermission();
+  const rowWidthClass = getChatSurfaceWidthClass(Boolean(teamPermission));
+  const loadPreviousMessagePage = useLoadPreviousMessagePage(conversationContext?.conversation_id);
+  const loadAnchorMessageWindow = useLoadAnchorMessageWindow(conversationContext?.conversation_id);
   useAutoPreviewOfficeFiles(conversationContext);
   // While the agent is still streaming, the in-progress turn's last text keeps
   // moving down, so we defer its copy/timestamp row until the turn finishes to
@@ -248,6 +278,9 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
   const targetMessageId = locationState.targetMessageId;
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | undefined>();
   const handledTargetKeyRef = useRef<string>('');
+  const loadingTargetKeyRef = useRef<string>('');
+  const scrollerElementRef = useRef<HTMLDivElement | null>(null);
+  const contentElementRef = useRef<HTMLDivElement | null>(null);
 
   // Pre-process message list to group tool outputs into summary cards
   const processedList = useMemo(() => {
@@ -406,6 +439,42 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
     itemCount: processedList.length,
   });
 
+  const setScrollerRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      scrollerElementRef.current = element;
+      handleScrollerRef(element);
+    },
+    [handleScrollerRef]
+  );
+
+  const setContentRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      contentElementRef.current = element;
+      handleContentRef(element);
+    },
+    [handleContentRef]
+  );
+
+  const handleMessageListScroll = useCallback(
+    (event: React.UIEvent<HTMLDivElement>) => {
+      handleScroll(event);
+      const scroller = event.currentTarget;
+      if (!pagination.hasMoreBefore || pagination.isLoadingBefore || scroller.scrollTop > 160) {
+        return;
+      }
+
+      const previousHeight = contentElementRef.current?.scrollHeight ?? 0;
+      void loadPreviousMessagePage().then((loaded) => {
+        if (!loaded) return;
+        requestAnimationFrame(() => {
+          const nextHeight = contentElementRef.current?.scrollHeight ?? previousHeight;
+          scroller.scrollTop += nextHeight - previousHeight;
+        });
+      });
+    },
+    [handleScroll, loadPreviousMessagePage, pagination.hasMoreBefore, pagination.isLoadingBefore]
+  );
+
   useEffect(() => {
     if (!targetMessageId || processedList.length === 0) {
       return;
@@ -418,10 +487,19 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
 
     const targetIndex = processedList.findIndex((item) => matchesTargetMessage(item, targetMessageId));
     if (targetIndex === -1) {
+      if (loadingTargetKeyRef.current !== targetKey) {
+        loadingTargetKeyRef.current = targetKey;
+        void loadAnchorMessageWindow(targetMessageId).then((loaded) => {
+          if (!loaded) {
+            loadingTargetKeyRef.current = '';
+          }
+        });
+      }
       return;
     }
 
     handledTargetKeyRef.current = targetKey;
+    loadingTargetKeyRef.current = '';
     setHighlightedMessageId(targetMessageId);
     hideScrollButton();
 
@@ -438,7 +516,7 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
     }, 2400);
 
     return () => window.clearTimeout(timer);
-  }, [hideScrollButton, location.key, processedList, scrollElementIntoView, targetMessageId]);
+  }, [hideScrollButton, loadAnchorMessageWindow, location.key, processedList, scrollElementIntoView, targetMessageId]);
 
   useEffect(() => {
     const handleMessageJump = (event: Event) => {
@@ -460,7 +538,24 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
         if (detail.msgId && message.msg_id === detail.msgId) return true;
         return false;
       });
-      if (targetIndex < 0) return;
+      if (targetIndex < 0) {
+        const anchorMessageId = detail.messageId;
+        if (!anchorMessageId) return;
+        void loadAnchorMessageWindow(anchorMessageId).then((loaded) => {
+          if (!loaded) return;
+          setHighlightedMessageId(anchorMessageId);
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              const targetElement = document.getElementById(`message-${anchorMessageId}`);
+              scrollElementIntoView(targetElement, {
+                block: detail.align || 'start',
+                behavior: detail.behavior || 'smooth',
+              });
+            });
+          });
+        });
+        return;
+      }
 
       hideScrollButton();
       requestAnimationFrame(() => {
@@ -478,7 +573,13 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
     return () => {
       window.removeEventListener(CHAT_MESSAGE_JUMP_EVENT, handleMessageJump);
     };
-  }, [conversationContext?.conversation_id, hideScrollButton, processedList, scrollElementIntoView]);
+  }, [
+    conversationContext?.conversation_id,
+    hideScrollButton,
+    loadAnchorMessageWindow,
+    processedList,
+    scrollElementIntoView,
+  ]);
 
   // Click scroll button
   const handleScrollButtonClick = () => {
@@ -495,7 +596,7 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
           id={`message-${getProcessedItemAnchorId(item)}`}
           data-conversation-artifact-kind={item.artifact.kind}
           data-testid={`conversation-artifact-${item.artifact.kind}`}
-          className='min-w-0 message-item px-8px m-t-10px max-w-full md:max-w-780px mx-auto'
+          className={`${rowWidthClass} min-w-0 message-item px-8px m-t-10px`}
           style={highlighted ? highlightStyle : undefined}
         >
           {item.artifact.kind === 'cron_trigger' ? (
@@ -511,7 +612,7 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
         <div
           key={item.id}
           id={`message-${getProcessedItemAnchorId(item)}`}
-          className={'min-w-0 message-item px-8px m-t-10px max-w-full md:max-w-780px mx-auto ' + item.type}
+          className={`${rowWidthClass} min-w-0 message-item px-8px m-t-10px ${item.type}`}
           style={highlighted ? highlightStyle : undefined}
         >
           {item.type === 'file_summary' && <MessageFileChanges diffsChanges={item.diffs} />}
@@ -523,12 +624,18 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
     // User messages keep their own copy row; AI text only shows it at the turn end.
     const showCopyRow = message.position !== 'left' || message.type !== 'text' || aiCopyRowTextIds.has(message.id);
     return (
-      <MessageItem message={message} key={message.id} highlighted={highlighted} showCopyRow={showCopyRow}></MessageItem>
+      <MessageItem
+        message={message}
+        key={message.id}
+        highlighted={highlighted}
+        rowWidthClass={rowWidthClass}
+        showCopyRow={showCopyRow}
+      ></MessageItem>
     );
   };
 
   if (processedList.length === 0 && isMessageListLoading) {
-    return <MessageListSkeleton />;
+    return <MessageListSkeleton rowWidthClass={rowWidthClass} />;
   }
 
   if (processedList.length === 0 && emptySlot) {
@@ -541,17 +648,17 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
       <Image.PreviewGroup actionsLayout={['zoomIn', 'zoomOut', 'originalSize', 'rotateLeft', 'rotateRight']}>
         <ImagePreviewContext.Provider value={{ inPreviewGroup: true }}>
           <div
-            ref={handleScrollerRef}
+            ref={setScrollerRef}
             data-testid='message-list-scroller'
             // Break out of the parent's 20px horizontal padding so the scrollbar hugs the
             // window edge, while re-applying that padding inside to keep message content inset.
             className='flex-1 h-full overflow-y-auto pb-10px box-border -mx-20px px-20px'
             style={{ overflowAnchor: 'none' }}
             onPointerDown={handlePointerDown}
-            onScroll={handleScroll}
+            onScroll={handleMessageListScroll}
             onWheel={handleWheel}
           >
-            <div ref={handleContentRef} data-testid='message-list-content' style={{ overflowAnchor: 'none' }}>
+            <div ref={setContentRef} data-testid='message-list-content' style={{ overflowAnchor: 'none' }}>
               <div className='h-10px' />
               {processedList.map((item, index) => (
                 <React.Fragment key={getProcessedItemAnchorId(item) || index}>{renderItem(index, item)}</React.Fragment>

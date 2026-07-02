@@ -177,6 +177,32 @@ export async function resolveConversationWorkspace(conversationId: string): Prom
 }
 
 /**
+ * Authoritative per-conversation message-row counts, read straight from the
+ * aioncore DB. The HTTP messages API went cursor-based (no `total` field), so
+ * the header badge and the Lark snapshot count come from here instead.
+ * Missing schema / any failure → empty map (callers render nothing / '?').
+ */
+export async function resolveConversationMessageCounts(ids: string[]): Promise<Record<string, number>> {
+  const out: Record<string, number> = {};
+  if (!ids.length) return out;
+  const BetterSqlite3 = (await import('better-sqlite3')).default;
+  const db: Db = new BetterSqlite3(join(getDataPath(), BACKEND_DB));
+  try {
+    db.pragma('busy_timeout = 5000');
+    if (!hasCoupledSchema(db, 'messages')) return out;
+    const stmt = db.prepare('SELECT COUNT(*) AS n FROM messages WHERE conversation_id = ?');
+    for (const id of ids) {
+      out[id] = (stmt.get(id) as { n: number }).n;
+    }
+    return out;
+  } catch {
+    return out;
+  } finally {
+    db.close();
+  }
+}
+
+/**
  * Resolve the terminal resume command (e.g. `claude --resume <id>`) for each
  * conversation id, using the authoritative acp_session row. Covers app-created
  * conversations whose underlying CLI session id only lives in acp_session

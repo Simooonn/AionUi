@@ -55,6 +55,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Feedback: forward diagnostics logs to the main process console
   logFeedbackEvent: (payload: { details?: unknown; level: 'info' | 'warn' | 'error'; message: string }) =>
     ipcRenderer.send('feedback:renderer-log', payload),
+  recoverCorruptedDatabase: () => ipcRenderer.invoke('backend:recover-corrupted-database'),
   // ace:start import local CLI (Claude Code/Codex) sessions
   importCliSessions: () => ipcRenderer.invoke('ace:import-cli-sessions'),
   importConversationMessages: (conversationId: string) =>
@@ -65,6 +66,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   unlinkSessionFiles: (paths: string[]) => ipcRenderer.invoke('ace:unlink-session-files', paths),
   deleteOpencodeSessions: (sessionIds: string[]) => ipcRenderer.invoke('ace:delete-opencode-sessions', sessionIds),
   checkWorkspacesExist: (paths: string[]) => ipcRenderer.invoke('ace:check-workspaces-exist', paths),
+  messageCounts: (ids: string[]) => ipcRenderer.invoke('ace:message-counts', ids),
   larkNotifyGetConfig: () => ipcRenderer.invoke('ace:lark-notify-get-config'),
   larkNotifySaveConfig: (config: unknown) => ipcRenderer.invoke('ace:lark-notify-save-config', config),
   larkNotifyTest: () => ipcRenderer.invoke('ace:lark-notify-test'),

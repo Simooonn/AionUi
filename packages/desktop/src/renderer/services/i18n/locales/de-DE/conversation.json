@@ -71,7 +71,8 @@
     "removeProjectTitle": "Projekt entfernen",
     "removeProject": "Projekt entfernen",
     "removeProjectConfirm": "Projekt \"{{name}}\" entfernen? Die {{count}} zugehörige(n) Unterhaltung(en) werden ebenfalls entfernt.",
-    "newConversationInProject": "Neuer Chat in diesem Projekt"
+    "newConversationInProject": "Neuer Chat in diesem Projekt",
+    "deleting": "Wird gelöscht..."
   },
   "historySearch": {
     "tooltip": "Nachrichten durchsuchen",
@@ -94,6 +95,11 @@
   "createError": {
     "pathVariants": {
       "WORKSPACE_PATH_UNAVAILABLE": "Der ausgewählte Arbeitsbereichspfad ist nicht verfügbar. Stelle sicher, dass der Arbeitsbereichspfad \"{{workspacePath}}\" vorhanden und zugänglich ist."
+    },
+    "codes": {
+      "TEAM_ASSISTANT_ID_REQUIRED": "Please select an assistant before creating the team.",
+      "TEAM_ASSISTANT_NOT_FOUND": "Assistant {{assistantId}} is no longer available. Refresh the assistant list and choose another one.",
+      "TEAM_ASSISTANT_FIELD_UNSUPPORTED": "Use assistant_id instead of {{field}}."
     }
   },
   "agentError": {
@@ -109,7 +115,7 @@
       "reconnect_agent": "Starte den ausgewählten Agent neu oder verbinde ihn erneut, dann versuche es nochmal.",
       "check_agent_login": "Melde dich beim ausgewählten Agent an oder aktualisiere seine Anmeldedaten.",
       "check_agent_installation": "Überprüfe die Agent-Installation und die lokale Befehlskonfiguration.",
-      "check_agent_version": "Aktualisiere den Agent oder behebe die Inkompatibilität der Protokollversion.",
+      "check_agent_version": "Prüfe die Protokoll- und Versionskompatibilität des Agenten.",
       "check_local_command": "Installiere den fehlenden Befehl oder stelle sicher, dass er zu PATH hinzugefügt wurde.",
       "check_provider_credentials": "Überprüfe den API-Schlüssel des Modellanbieters oder die Kontoanmeldedaten in den Einstellungen.",
       "check_provider_billing": "Überprüfe das Guthaben, die Credits oder das Kontingent des Modellanbieters.",
@@ -167,15 +173,15 @@
       },
       "USER_AGENT_SESSION_NOT_FOUND": {
         "title": "Die Agent-Sitzung ging verloren",
-        "body": "Der Agent erkennt diese Sitzung nicht mehr. Starten einen neuen Chat oder verbinde den Agenten neu."
+        "body": "Der Agent meldete, dass diese Sitzung nicht gefunden wurde oder ihm nicht mehr bekannt ist."
       },
       "USER_AGENT_UNSUPPORTED_METHOD": {
         "title": "Der ausgewählte Agent unterstützt diese Aktion nicht",
-        "body": "Dieser Agent kann die angeforderte Operation nicht ausführen. Versuche einen anderen Agenten oder aktualisiere den aktuellen."
+        "body": "Der Agent meldete, dass die angeforderte ACP-Methode nicht unterstützt wird oder nicht verfügbar ist."
       },
       "USER_AGENT_INVALID_PARAMS": {
         "title": "Der ausgewählte Agent lehnte die Anfrage ab",
-        "body": "Der Agent meldete, dass das Anforderungsformat ungültig ist. Versuche, die Nachricht zu vereinfachen oder wechsle Agenten."
+        "body": "Der Agent meldete, dass die Anfrageparameter ungültig sind."
       },
       "USER_AGENT_HANDSHAKE_FAILED": {
         "title": "Agent-Handshake fehlgeschlagen",
@@ -187,11 +193,27 @@
       },
       "USER_AGENT_ACP_INIT_FAILED": {
         "title": "Agent-Protokoll-Initialisierung fehlgeschlagen",
-        "body": "Die App konnte die Agent Client Protocol-Sitzung mit diesem Agenten nicht initialisieren. Überprüfe die Agent-Version und verbinde dich neu."
+        "body": "Die App konnte mit diesem Agenten keine Agent Client Protocol-Sitzung initialisieren."
+      },
+      "USER_AGENT_PROTOCOL_PARSE_ERROR": {
+        "title": "Agent meldete einen Protokoll-Parse-Fehler",
+        "body": "Der ausgewählte Agent meldete, dass eine ACP/JSON-RPC-Nachricht nicht geparst werden konnte."
+      },
+      "USER_AGENT_INVALID_REQUEST": {
+        "title": "Agent meldete eine ungültige Protokollanfrage",
+        "body": "Der ausgewählte Agent meldete, dass das ACP/JSON-RPC-Anfrageobjekt ungültig ist."
+      },
+      "USER_AGENT_RESOURCE_NOT_FOUND": {
+        "title": "Agent konnte eine benötigte Ressource nicht finden",
+        "body": "Der ausgewählte Agent meldete, dass eine benötigte Ressource, z. B. eine Datei, nicht gefunden wurde."
+      },
+      "USER_AGENT_PROTOCOL_ERROR": {
+        "title": "Agent hat einen Protokollfehler zurückgegeben",
+        "body": "Der ausgewählte Agent hat einen nicht standardmäßigen ACP-Fehlercode zurückgegeben."
       },
       "USER_AGENT_PROTOCOL_MISMATCH": {
         "title": "Agent-Protokollversionen sind inkompatibel",
-        "body": "Der ausgewählte Agent verwendet eine inkompatible Protokollversion. Aktualisiere den Agenten oder wechsle zu einem kompatiblen."
+        "body": "Die App und der ausgewählte Agent konnten keine kompatible ACP-Protokollversion verwenden."
       },
       "USER_AGENT_NO_PREVIOUS_SESSION": {
         "title": "Vorherige Agent-Sitzung nicht verfügbar",
@@ -208,6 +230,10 @@
       "USER_LLM_PROVIDER_AUTH_FAILED": {
         "title": "Authentifizierung des Modellanbieters fehlgeschlagen",
         "body": "Der ausgewählte Anbieter lehnte den API-Schlüssel oder die Kontoanmeldedaten ab. Überprüfe die Anbietereinstellungen und versuche es erneut."
+      },
+      "USER_LLM_PROVIDER_AWS_SSO_EXPIRED": {
+        "title": "AWS-SSO-Sitzung abgelaufen",
+        "body": "Deine AWS-SSO-Sitzung ist abgelaufen. Führe 'aws sso login' für das passende profile aus und sende die Nachricht anschließend erneut."
       },
       "USER_LLM_PROVIDER_CONFIG_ERROR": {
         "title": "Konfiguration des Modellanbieters ist ungültig",
@@ -272,7 +298,39 @@
       },
       "UNKNOWN_UPSTREAM_ERROR": {
         "title": "Der Upstream-Agent oder Provider ist fehlgeschlagen",
-        "body": "Die App hat einen Upstream-Fehler erhalten, konnte ihn aber nicht zuverlässig klassifizieren. Überprüfe die Details unten oder sende Feedback."
+        "body": "Die App hat einen Upstream-Fehler erhalten, konnte aber nicht sicher bestimmen, ob er vom Agenten, Provider, Netzwerk oder der lokalen Umgebung kam."
+      },
+      "MCP_HTTP_RESPONSE_READ_FAILED": {
+        "title": "Failed to read the team helper response",
+        "body": "AionUi could not read the local team helper response. Retry once, and if it keeps happening, restart the app."
+      },
+      "MCP_TOOL_REMOTE_ERROR": {
+        "title": "The local team helper rejected the request",
+        "body": "The local team helper returned an error while processing this request. Review the details below and retry after adjusting the team action."
+      },
+      "MCP_TOOL_RESPONSE_UNEXPECTED": {
+        "title": "The team helper returned an unexpected response",
+        "body": "AionUi received an unexpected response from the local team helper. Retry once, and report it if the problem persists."
+      },
+      "MCP_TCP_READ_FAILED": {
+        "title": "Failed to read from the local team helper",
+        "body": "AionUi could not read the local team helper TCP response. Retry once, and restart the app if it keeps failing."
+      },
+      "TEAM_SERVICE_UNAVAILABLE": {
+        "title": "Team service is not ready yet",
+        "body": "The local team session is still starting or has been interrupted. Wait a moment and retry."
+      },
+      "TEAM_ASSISTANT_ID_REQUIRED": {
+        "title": "A teammate assistant must be selected",
+        "body": "Choose a real assistant from the available assistant catalog before creating or spawning a teammate."
+      },
+      "TEAM_ASSISTANT_NOT_FOUND": {
+        "title": "The selected assistant is no longer available",
+        "body": "Refresh the assistant catalog, then choose another assistant for this teammate."
+      },
+      "TEAM_ASSISTANT_FIELD_UNSUPPORTED": {
+        "title": "The request used a legacy team identity field",
+        "body": "This team action must use assistant_id instead of legacy backend or agent fields."
       }
     }
   },
@@ -466,7 +524,8 @@
     "label": "Wird gedacht..."
   },
   "skills": {
-    "loaded": "Geladene Skills"
+    "loaded": "Geladene Skills",
+    "slashHint": "Skill"
   },
   "mcp": {
     "loaded": "MCP geladen",

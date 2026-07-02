@@ -34,7 +34,7 @@
 </p>
 
 <p align="center">
-  <strong>💬 社群：</strong> <a href="https://discord.gg/2QAwJn7Egx" target="_blank">Discord (English)</a> | <a href="../../resources/wx-13.png" target="_blank">微信 (中文群)</a> | <a href="https://twitter.com/AionUI" target="_blank">Twitter</a>
+  <strong>💬 社群：</strong> <a href="https://discord.gg/2QAwJn7Egx" target="_blank">Discord (English)</a> | <a href="../../resources/wx-14.png" target="_blank">微信 (中文群)</a> | <a href="https://twitter.com/AionUI" target="_blank">Twitter</a>
 </p>
 
 ---
@@ -669,7 +669,7 @@ brew install aionui
 - [報告問題](https://github.com/iOfficeAI/AionUi/issues) — 遇到 bug 或有新功能想法？告訴我們
 - [發布更新](https://github.com/iOfficeAI/AionUi/releases) — 取得最新版本
 - [Discord 社群](https://discord.gg/2QAwJn7Egx) — 英語社群
-- [微信群](../../resources/wx-13.png) — 中文社群
+- [微信群](../../resources/wx-14.png) — 中文社群
 
 ### 貢獻
 
@@ -683,13 +683,7 @@ brew install aionui
 
 ### 開發環境設定
 
-技術棧：Electron · Vite · React · Bun
-
-```bash
-bun install        # 安裝相依套件
-bun run dev        # 啟動開發伺服器
-bun run test       # 執行單元測試
-```
+AionUi 本機開發涉及兩個倉庫：AionUi 負責 Electron 前端，AionCore 負責本機後端。完整的 macOS、Linux 和 Windows 設定流程請見 [開發指南](../contributing/development.md)。
 
 ---
 

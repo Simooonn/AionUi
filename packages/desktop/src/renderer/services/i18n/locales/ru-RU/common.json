@@ -14,6 +14,7 @@
   "system": "Система",
   "about": "О программе",
   "back": "Назад к чату",
+  "goBack": "Назад",
   "add": "Добавить",
   "edit": "Редактировать",
   "website": "Сайт",
@@ -89,6 +90,33 @@
     "packageArchitectureMismatch": {
       "title": "AionUi package architecture mismatch",
       "description": "This AionUi package is for {{packageArch}}, but this Mac is {{deviceArch}}. You may have downloaded the wrong package. Please download and install the {{expectedArch}} package."
+    },
+    "dataMigration": {
+      "title": "Local data migration failed",
+      "description": "AionUi opened, but AionCore stopped while initializing local data. Reinstalling AionUi may not fix this. Send a diagnostics report or contact support so the local database migration can be inspected.",
+      "sendDiagnostics": "Send diagnostics",
+      "diagnosticsSent": "Diagnostics sent",
+      "diagnosticsReportSuccess": "Diagnostics report sent",
+      "diagnosticsReportFailed": "Failed to send diagnostics report"
+    },
+    "localDataRepair": {
+      "title": "Local data repair failed",
+      "description": "AionUi opened, but AionCore stopped while repairing local agent cache data. Reinstalling AionUi may not fix this. Send a diagnostics report or contact support so the local database can be inspected.",
+      "sendDiagnostics": "Send diagnostics",
+      "diagnosticsSent": "Diagnostics sent",
+      "diagnosticsReportSuccess": "Diagnostics report sent",
+      "diagnosticsReportFailed": "Failed to send diagnostics report"
+    },
+    "recoverableDatabaseCorruption": {
+      "title": "Локальные данные повреждены",
+      "description": "AionUi обнаружил повреждение локальной базы данных и не может продолжить запуск. После подтверждения старая база данных будет сохранена как резервная копия, а для продолжения запуска будет создана новая локальная база данных. Исторические локальные данные пока не будут отображаться, старая база данных будет сохранена как резервная копия.",
+      "confirmRebuild": "Сохранить старую БД и создать новую",
+      "sendDiagnostics": "Отправить диагностику",
+      "diagnosticsHint": "Отправка диагностики не изменит локальную базу данных.",
+      "diagnosticsSent": "Диагностика отправлена",
+      "diagnosticsReportSuccess": "Диагностический отчет отправлен",
+      "diagnosticsReportFailed": "Не удалось отправить диагностический отчет",
+      "rebuildFailed": "Не удалось сохранить старую БД и создать новую"
     }
   },
   "fileAttach.addFiles": "Добавить файлы",

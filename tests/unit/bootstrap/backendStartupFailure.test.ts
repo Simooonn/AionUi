@@ -54,6 +54,117 @@ describe('classifyBackendStartupFailure', () => {
     });
   });
 
+  it('classifies database migration boundary failures as local data migration failures', () => {
+    const error = new Error('aioncore exited before health check passed') as Error & {
+      details?: Record<string, unknown>;
+    };
+    error.details = {
+      stage: 'early_exit',
+      backendBoundaryCode: 'BOOTSTRAP_DATA_INIT_FAILED',
+      backendBoundaryStage: 'database.migration',
+      stderrTail:
+        'BOOTSTRAP_DATA_INIT_FAILED stage=database.migration databasePath=/db/aionui-backend.db: failed to initialize application data',
+    };
+
+    expect(classifyBackendStartupFailure(error)).toEqual({
+      reason: 'backend_data_migration_failed',
+      backendBoundaryCode: 'BOOTSTRAP_DATA_INIT_FAILED',
+      backendBoundaryStage: 'database.migration',
+    });
+  });
+
+  it('classifies recoverable database corruption boundary failures separately from data migration failures', () => {
+    const error = new Error('aioncore exited before health check passed') as Error & {
+      details?: Record<string, unknown>;
+    };
+    error.details = {
+      stage: 'early_exit',
+      backendBoundaryCode: 'BOOTSTRAP_DATA_INIT_FAILED',
+      backendBoundaryStage: 'database.recoverable_corruption',
+      stderrTail:
+        'BOOTSTRAP_DATA_INIT_FAILED stage=database.recoverable_corruption databasePath=/db/aionui-backend.db: failed to initialize application data',
+    };
+
+    expect(classifyBackendStartupFailure(error)).toEqual({
+      reason: 'backend_recoverable_database_corruption',
+      backendBoundaryCode: 'BOOTSTRAP_DATA_INIT_FAILED',
+      backendBoundaryStage: 'database.recoverable_corruption',
+    });
+  });
+
+  it('classifies database schema repair boundary failures as local data migration failures', () => {
+    const error = new Error('aioncore exited before health check passed') as Error & {
+      details?: Record<string, unknown>;
+    };
+    error.details = {
+      stage: 'early_exit',
+      backendBoundaryCode: 'BOOTSTRAP_DATA_INIT_FAILED',
+      backendBoundaryStage: 'database.schema_repair',
+    };
+
+    expect(classifyBackendStartupFailure(error)).toEqual({
+      reason: 'backend_data_migration_failed',
+      backendBoundaryCode: 'BOOTSTRAP_DATA_INIT_FAILED',
+      backendBoundaryStage: 'database.schema_repair',
+    });
+  });
+
+  it('classifies agent metadata invalid utf8 during services init as local data repair failure', () => {
+    const error = new Error('aioncore exited before health check passed') as Error & {
+      details?: Record<string, unknown>;
+    };
+    error.details = {
+      stage: 'early_exit',
+      backendBoundaryCode: 'BOOTSTRAP_SERVICE_INIT_FAILED',
+      backendBoundaryStage: 'services.init',
+      stderrTail:
+        'Failed to hydrate agent registry: Internal error: load agent_metadata: Database query failed: error occurred while decoding column "config_options": invalid utf-8 sequence of 1 bytes from index 793',
+    };
+
+    expect(classifyBackendStartupFailure(error)).toEqual({
+      reason: 'backend_local_data_repair_failed',
+      backendBoundaryCode: 'BOOTSTRAP_SERVICE_INIT_FAILED',
+      backendBoundaryStage: 'services.init',
+      localDataIssueKind: 'agent_metadata_invalid_utf8',
+    });
+  });
+
+  it('keeps unrelated services init failures in the generic bucket', () => {
+    const error = new Error('aioncore exited before health check passed') as Error & {
+      details?: Record<string, unknown>;
+    };
+    error.details = {
+      stage: 'early_exit',
+      backendBoundaryCode: 'BOOTSTRAP_SERVICE_INIT_FAILED',
+      backendBoundaryStage: 'services.init',
+      stderrTail: 'Failed to initialize provider registry: database is locked',
+    };
+
+    expect(classifyBackendStartupFailure(error)).toEqual({
+      reason: 'backend_startup_failed',
+      backendBoundaryCode: 'BOOTSTRAP_SERVICE_INIT_FAILED',
+      backendBoundaryStage: 'services.init',
+    });
+  });
+
+  it('does not classify vague invalid utf8 text without the agent metadata database-query signature', () => {
+    const error = new Error('aioncore exited before health check passed') as Error & {
+      details?: Record<string, unknown>;
+    };
+    error.details = {
+      stage: 'early_exit',
+      backendBoundaryCode: 'BOOTSTRAP_SERVICE_INIT_FAILED',
+      backendBoundaryStage: 'services.init',
+      stderrTail: 'agent_metadata config_options invalid utf-8 while validating an unrelated diagnostic payload',
+    };
+
+    expect(classifyBackendStartupFailure(error)).toEqual({
+      reason: 'backend_startup_failed',
+      backendBoundaryCode: 'BOOTSTRAP_SERVICE_INIT_FAILED',
+      backendBoundaryStage: 'services.init',
+    });
+  });
+
   it('classifies packaged app resources missing from installation as incomplete installation', () => {
     const error = new Error('aioncore startup failed while resolving backend binary') as Error & {
       details?: Record<string, unknown>;
@@ -219,5 +330,66 @@ describe('getInstallationIntegrityModalActions', () => {
 
     actions.onReportDiagnostics();
     expect(onReportDiagnostics).toHaveBeenCalledOnce();
+  });
+
+  it('uses data migration copy and diagnostics-only actions for local data migration failures', () => {
+    const t = vi.fn((key: string) => key) as any;
+    const failure = {
+      reason: 'backend_data_migration_failed',
+      backendBoundaryCode: 'BOOTSTRAP_DATA_INIT_FAILED',
+      backendBoundaryStage: 'database.migration',
+    };
+
+    const actions = getInstallationIntegrityModalActions(t, {
+      diagnosticsKind: 'data_migration',
+    } as any);
+
+    expect(actions.reportText).toBe('common.backendStartup.dataMigration.sendDiagnostics');
+    expect(actions.downloadText).toBeUndefined();
+    expect(failure.backendBoundaryStage).toBe('database.migration');
+  });
+
+  it('uses local data repair copy and diagnostics-only actions for local cache corruption', () => {
+    const t = vi.fn((key: string) => key) as any;
+
+    const actions = getInstallationIntegrityModalActions(t, {
+      diagnosticsKind: 'local_data_repair',
+    } as any);
+
+    expect(actions.reportText).toBe('common.backendStartup.localDataRepair.sendDiagnostics');
+    expect(actions.downloadText).toBeUndefined();
+  });
+
+  it('uses recoverable database corruption copy and rebuild action', () => {
+    const t = vi.fn((key: string) => key) as any;
+    const onRecoverCorruptedDatabase = vi.fn();
+
+    const actions = getInstallationIntegrityModalActions(t, {
+      diagnosticsKind: 'recoverable_database_corruption',
+      onRecoverCorruptedDatabase,
+    } as any);
+
+    expect(actions.reportText).toBe('common.backendStartup.recoverableDatabaseCorruption.sendDiagnostics');
+    expect(actions.downloadText).toBeUndefined();
+    expect((actions as any).recoverText).toBe('common.backendStartup.recoverableDatabaseCorruption.confirmRebuild');
+    (actions as any).onRecoverCorruptedDatabase();
+    expect(onRecoverCorruptedDatabase).toHaveBeenCalledOnce();
+  });
+
+  it('does not invoke recover corrupted database action from diagnostics reporting', async () => {
+    const t = vi.fn((key: string) => key) as any;
+    const onReportDiagnostics = vi.fn();
+    const onRecoverCorruptedDatabase = vi.fn();
+
+    const actions = getInstallationIntegrityModalActions(t, {
+      diagnosticsKind: 'recoverable_database_corruption',
+      onRecoverCorruptedDatabase,
+      onReportDiagnostics,
+    } as any);
+
+    await actions.onReportDiagnostics();
+
+    expect(onReportDiagnostics).toHaveBeenCalledOnce();
+    expect(onRecoverCorruptedDatabase).not.toHaveBeenCalled();
   });
 });

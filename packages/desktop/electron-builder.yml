@@ -185,7 +185,7 @@ linux:
     entry:
       Name: AionUi
       Comment: ${description}
-      Icon: aionui
+      Icon: AionUi
       Categories: Office;Utility;
       MimeType: x-scheme-handler/aionui;
 
@@ -219,7 +219,6 @@ asarUnpack:
   # Builtin MCP server scripts must be unpacked so external node processes can execute them
   - 'out/main/builtin-mcp-image-gen.js'
   - 'out/main/team-mcp-stdio.js'
-  - 'out/main/team-guide-mcp-stdio.js'
 
 # Compression level: normal for faster builds, maximum for smallest size
 # Note: electron-builder doesn't support YAML template syntax for env vars

@@ -125,13 +125,13 @@ export async function ensureCliSessionResumable(conversationId: string): Promise
 
     let row = getAcpSessionRow(db, conversationId);
     if (!row) {
-      // Never warmed up: let aioncore create the row with its own agent_id
-      // (warmup is a 202-async HTTP adapter, callable from main; spike 1
-      // verified warmup alone never creates a new CLI session file).
+      // Never warmed up: let aioncore create the row with its own agent_id.
+      // Upstream replaced the 202-async `warmup` adapter with `ensureRuntime`
+      // (POST runtime/ensure), likewise callable from the main process.
       try {
-        await ipcBridge.conversation.warmup.invoke({ conversation_id: conversationId });
+        await ipcBridge.conversation.ensureRuntime.invoke({ conversation_id: conversationId });
       } catch {
-        /* fall through to polling — warmup may already be in flight */
+        /* fall through to polling — the runtime may already be warming */
       }
       const deadline = Date.now() + ROW_POLL_TOTAL_MS;
       while (!row && Date.now() < deadline) {

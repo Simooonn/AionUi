@@ -10,12 +10,16 @@ import { useEffect, useState } from 'react';
 /** Debounce window for post-turn refetches (turnCompleted can fire in bursts). */
 const REFETCH_DEBOUNCE_MS = 500;
 
+type AceCountApi = { messageCounts?: (ids: string[]) => Promise<Record<string, number>> };
+const getAceApi = (): AceCountApi | undefined => (window as unknown as { electronAPI?: AceCountApi }).electronAPI;
+
 /**
  * Authoritative message-row count for a conversation.
  *
- * Reads `PaginatedResult.total` (DB row count) with a minimal `page_size: 1`
- * request on conversation open, then refetches (debounced) whenever the
- * backend-agnostic `turnCompleted` event fires for this conversation.
+ * The cursor-based messages HTTP API exposes no total, so the count comes from
+ * the main process reading the aioncore DB directly (`ace:message-counts`) on
+ * conversation open, then refetches (debounced) whenever the backend-agnostic
+ * `turnCompleted` event fires for this conversation.
  *
  * Returns `undefined` while loading or when the fetch fails — the badge is a
  * best-effort decoration and callers should render nothing in that case.
@@ -33,11 +37,13 @@ export const useConversationMessageCount = (conversation_id: string | undefined)
     setCount(undefined);
 
     const fetchTotal = () => {
-      ipcBridge.database.getConversationMessages
-        .invoke({ conversation_id, page: 0, page_size: 1 })
-        .then((result) => {
-          if (!disposed && typeof result?.total === 'number') {
-            setCount(result.total);
+      const api = getAceApi();
+      if (!api?.messageCounts) return;
+      api
+        .messageCounts([conversation_id])
+        .then((counts) => {
+          if (!disposed && typeof counts?.[conversation_id] === 'number') {
+            setCount(counts[conversation_id]);
           }
         })
         .catch(() => {

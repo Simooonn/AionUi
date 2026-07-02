@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { TConversationRuntimeSummary } from '@/common/config/storage';
+
 /**
  * Advanced overrides exposed through the JSON panel of the custom agent
  * editor. These map directly onto backend `AgentMetadata` columns that
@@ -172,6 +174,7 @@ export interface AcpConfigSelectOption {
   value: string;
   name?: string;
   label?: string; // Some agents may use label instead of name
+  description?: string;
 }
 
 /** A configuration option returned by session/new */
@@ -210,8 +213,10 @@ export type AcpConfigOptionDto = {
   options: AcpConfigSelectOptionDto[];
 };
 
-export type GetConfigOptionsResponse = {
+export type EnsureConversationRuntimeResponse = {
+  recovered: boolean;
   config_options: AcpConfigOptionDto[];
+  runtime: TConversationRuntimeSummary;
 };
 
 export type SetConfigOptionRequest = {
@@ -246,7 +251,7 @@ export interface AcpModelInfo {
   /** Display label for the current model */
   current_model_label: string | null;
   /** Available models for switching */
-  available_models: Array<{ id: string; label: string }>;
+  available_models: Array<{ id: string; label: string; description?: string }>;
 }
 
 // ===== Permission request (session/request_permission) =====

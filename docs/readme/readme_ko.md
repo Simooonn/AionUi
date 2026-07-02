@@ -34,7 +34,7 @@
 </p>
 
 <p align="center">
-  <strong>💬 커뮤니티:</strong> <a href="https://discord.gg/2QAwJn7Egx" target="_blank">Discord (English)</a> | <a href="../../resources/wx-13.png" target="_blank">微信 (中文群)</a> | <a href="https://twitter.com/AionUI" target="_blank">Twitter</a>
+  <strong>💬 커뮤니티:</strong> <a href="https://discord.gg/2QAwJn7Egx" target="_blank">Discord (English)</a> | <a href="../../resources/wx-14.png" target="_blank">微信 (中文群)</a> | <a href="https://twitter.com/AionUI" target="_blank">Twitter</a>
 </p>
 
 ---
@@ -615,7 +615,7 @@ brew install aionui
 - [문제 보고](https://github.com/iOfficeAI/AionUi/issues) — 버그 및 기능 요청
 - [릴리스 업데이트](https://github.com/iOfficeAI/AionUi/releases) — 최신 버전 받기
 - [Discord 커뮤니티](https://discord.gg/2QAwJn7Egx) — 영어 커뮤니티
-- [WeChat 그룹](../../resources/wx-13.png) — 중국어 커뮤니티
+- [WeChat 그룹](../../resources/wx-14.png) — 중국어 커뮤니티
 
 ### 기여하기
 
@@ -629,13 +629,7 @@ PR을 열기 전에 [CONTRIBUTING.md](../../CONTRIBUTING.md)를 읽어주세요.
 
 ### 개발 환경 설정
 
-기술 스택: Electron · Vite · React · Bun
-
-```bash
-bun install        # 의존성 설치
-bun run dev        # 개발 서버 시작
-bun run test       # 단위 테스트 실행
-```
+AionUi 로컬 개발은 Electron 프런트엔드용 AionUi와 로컬 백엔드용 AionCore 두 저장소를 사용합니다. macOS, Linux, Windows 전체 설정 절차는 [Development Guide](../contributing/development.md)를 참고하세요.
 
 ---
 

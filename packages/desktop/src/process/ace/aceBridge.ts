@@ -24,6 +24,7 @@ import {
   checkWorkspacesExist,
   deleteOpencodeSessions,
   resolveConversationFiles,
+  resolveConversationMessageCounts,
   resolveResumeCommands,
   unlinkSessionFiles,
 } from './sessionFiles';
@@ -122,6 +123,16 @@ ipcMain.handle('ace:delete-opencode-sessions', async (_event, sessionIds: string
   } catch {
     // Per-id failure (not {}) so the renderer's fileDeleteFailed flag still fires.
     return Object.fromEntries(ids.map((id) => [String(id), { deleted: false, reason: 'delete-failed' }]));
+  }
+});
+
+// Authoritative message counts (the cursor-based messages API has no total).
+ipcMain.handle('ace:message-counts', async (_event, ids: unknown) => {
+  try {
+    const safe = Array.isArray(ids) ? ids.filter((id): id is string => typeof id === 'string' && id.length > 0) : [];
+    return await resolveConversationMessageCounts(safe);
+  } catch {
+    return {};
   }
 });
 

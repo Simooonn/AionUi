@@ -19,6 +19,12 @@ vi.mock('@/renderer/hooks/context/LayoutContext', () => ({
   useLayoutContext: () => ({ isMobile: false }),
 }));
 
+// HudStatusBar fetches the LIVE model id (aioncore /model) before each refresh.
+const getModelInfoMock = vi.hoisted(() => vi.fn<() => Promise<unknown>>(async () => null));
+vi.mock('@/common', () => ({
+  ipcBridge: { acpConversation: { getModelInfo: { invoke: getModelInfoMock } } },
+}));
+
 const ESC = '\x1b';
 
 describe('parseAnsiLine', () => {
@@ -219,6 +225,8 @@ describe('HudStatusBar', () => {
   afterEach(() => {
     cleanup();
     delete (window as unknown as { electronAPI?: unknown }).electronAPI;
+    getModelInfoMock.mockReset();
+    getModelInfoMock.mockResolvedValue(null);
   });
 
   it('renders nothing when the ace API is unavailable', () => {
@@ -250,6 +258,25 @@ describe('HudStatusBar', () => {
       workspace: '/tmp/ws',
       conversationId: 'c1',
       modelId: 'claude-fable-5',
+      modelLabel: undefined,
+    });
+  });
+
+  it('prefers the live aioncore model id over the persisted one', async () => {
+    getModelInfoMock.mockResolvedValue({
+      model_info: { current_model_id: 'claude-fable-5[1m]/high', current_model_label: 'claude-fable-5[1m] (high)' },
+    });
+    const hudStatusline = vi.fn().mockResolvedValue({ text: 'line' });
+    (window as unknown as { electronAPI: unknown }).electronAPI = { hudStatusline };
+    render(<HudStatusBar conversation_id='c1' workspace='/tmp/ws' current_model_id='claude-fable-5' />);
+
+    await waitFor(() => {
+      expect(hudStatusline).toHaveBeenCalledWith({
+        workspace: '/tmp/ws',
+        conversationId: 'c1',
+        modelId: 'claude-fable-5[1m]/high',
+        modelLabel: 'claude-fable-5[1m] (high)',
+      });
     });
   });
 });

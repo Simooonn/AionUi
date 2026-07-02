@@ -7,11 +7,13 @@
   font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
   font-size: 11px;
   line-height: 1.7;
-  overflow-x: auto;
 }
 
 .line {
-  white-space: pre;
+  /* Wrap long statusline output instead of horizontal scrolling; pre-wrap
+     keeps the script's spacing, overflow-wrap breaks unbroken runs. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   color: var(--color-text-3);
 }
 

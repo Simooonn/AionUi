@@ -5,8 +5,17 @@
  * conversation column (left sidebar, right workspace panel and the header
  * toolbar stay visible), and that clicking the toggle again closes it.
  */
+import fs from 'node:fs';
+import path from 'node:path';
 import { test, expect } from '../fixtures';
-import { goToGuid, selectAgent, sendMessageFromGuid, deleteConversation, agentPillByBackend, AGENT_PILL } from '../helpers';
+import {
+  goToGuid,
+  selectAgent,
+  sendMessageFromGuid,
+  deleteConversation,
+  agentPillByBackend,
+  AGENT_PILL,
+} from '../helpers';
 
 const TOGGLE = '[data-testid="terminal-chat-toggle"]';
 const OVERLAY = '[data-testid="terminal-chat-overlay"]';
@@ -53,7 +62,8 @@ test.describe('Terminal chat view overlay', () => {
 
     // Overlay must not span the full window width — sidebars remain visible.
     const overlayBox = await overlay.boundingBox();
-    const viewport = page.viewportSize() ?? (await page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight })));
+    const viewport =
+      page.viewportSize() ?? (await page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight })));
     expect(overlayBox).not.toBeNull();
     if (overlayBox) {
       expect(overlayBox.width).toBeLessThan(viewport.width - 100);
@@ -70,5 +80,30 @@ test.describe('Terminal chat view overlay', () => {
 
     // Cleanup: remove the smoke-test conversation
     await deleteConversation(page, conversationId).catch(() => {});
+  });
+
+  test('hudStatusline IPC replays the OMC cache through the statusLine command', async ({ page }) => {
+    // End-to-end check of preload → main → /bin/sh statusline replay, using
+    // this repo's own OMC HUD cache. Skips where the cache or a statusLine
+    // command is absent (e.g. CI).
+    const projectRoot = path.resolve(__dirname, '../../..');
+    const cachePath = path.join(projectRoot, '.omc', 'state', 'hud-stdin-cache.json');
+    if (!fs.existsSync(cachePath)) {
+      test.skip(true, 'no OMC HUD cache in this checkout');
+      return;
+    }
+
+    const result = await page.evaluate(async (ws) => {
+      const api = (
+        window as unknown as { electronAPI?: { hudStatusline?: (w: string) => Promise<{ text: string } | null> } }
+      ).electronAPI;
+      return (await api?.hudStatusline?.(ws)) ?? null;
+    }, projectRoot);
+
+    if (result === null) {
+      test.skip(true, 'no statusLine command configured on this machine');
+      return;
+    }
+    expect(result.text.length).toBeGreaterThan(0);
   });
 });

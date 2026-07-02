@@ -1,0 +1,67 @@
+.statusBar {
+  flex-shrink: 0;
+  padding: 6px 16px;
+  border-top: 1px solid var(--color-border-1);
+  background-color: var(--color-bg-2);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-x: auto;
+}
+
+.line {
+  white-space: pre;
+  color: var(--color-text-2);
+}
+
+.bold {
+  font-weight: 700;
+}
+
+.dim {
+  opacity: 0.55;
+}
+
+.italic {
+  font-style: italic;
+}
+
+.underline {
+  text-decoration: underline;
+}
+
+.fgBlack {
+  color: var(--color-text-1);
+}
+
+.fgRed {
+  color: rgb(var(--red-6));
+}
+
+.fgGreen {
+  color: rgb(var(--green-6));
+}
+
+.fgYellow {
+  color: rgb(var(--gold-6));
+}
+
+.fgBlue {
+  color: rgb(var(--arcoblue-6));
+}
+
+.fgMagenta {
+  color: rgb(var(--magenta-6));
+}
+
+.fgCyan {
+  color: rgb(var(--cyan-6));
+}
+
+.fgWhite {
+  color: var(--color-text-1);
+}
+
+.fgGray {
+  color: var(--color-text-3);
+}

@@ -123,6 +123,77 @@ describe('readHudStatusline', () => {
     expect(payload.model).toEqual({ id: 'claude-fable-5', display_name: 'Fable 5' });
   });
 
+  it('synthesizes context_window from the last main-chain assistant usage', async () => {
+    writeSettings({ type: 'command', command: 'cat' });
+    const transcript = path.join(workspace, 'session.jsonl');
+    const lines = [
+      JSON.stringify({ type: 'user', message: { role: 'user' } }),
+      JSON.stringify({
+        type: 'assistant',
+        isSidechain: false,
+        message: {
+          usage: {
+            input_tokens: 2,
+            cache_creation_input_tokens: 1000,
+            cache_read_input_tokens: 53_998,
+            output_tokens: 50,
+          },
+        },
+      }),
+      // A later SIDECHAIN turn must not override the main-chain usage.
+      JSON.stringify({
+        type: 'assistant',
+        isSidechain: true,
+        message: { usage: { input_tokens: 5, cache_creation_input_tokens: 0, cache_read_input_tokens: 999_999 } },
+      }),
+    ];
+    fs.writeFileSync(transcript, lines.join('\n') + '\n');
+
+    const result = await readHudStatusline(
+      { workspace, conversationId: 'conv-1', modelId: 'claude-fable-5' },
+      { resolveTranscript: async () => transcript }
+    );
+
+    const payload = JSON.parse(result!.text) as {
+      context_window: { context_window_size: number; current_usage: Record<string, number> };
+    };
+    expect(payload.context_window).toEqual({
+      context_window_size: 200_000,
+      current_usage: { input_tokens: 2, cache_creation_input_tokens: 1000, cache_read_input_tokens: 53_998 },
+    });
+  });
+
+  it('uses the 1M context window size for [1m] model ids', async () => {
+    writeSettings({ type: 'command', command: 'cat' });
+    const transcript = path.join(workspace, 'session.jsonl');
+    fs.writeFileSync(
+      transcript,
+      JSON.stringify({ type: 'assistant', message: { usage: { input_tokens: 10, cache_read_input_tokens: 90 } } }) +
+        '\n'
+    );
+
+    const result = await readHudStatusline(
+      { workspace, conversationId: 'conv-1', modelId: 'claude-opus-4-8[1m]' },
+      { resolveTranscript: async () => transcript }
+    );
+
+    const payload = JSON.parse(result!.text) as { context_window: { context_window_size: number } };
+    expect(payload.context_window.context_window_size).toBe(1_000_000);
+  });
+
+  it('omits context_window when the transcript has no usable usage', async () => {
+    writeSettings({ type: 'command', command: 'cat' });
+    const transcript = path.join(workspace, 'session.jsonl');
+    fs.writeFileSync(transcript, '{}\nnot-json\n');
+
+    const result = await readHudStatusline(
+      { workspace, conversationId: 'conv-1' },
+      { resolveTranscript: async () => transcript }
+    );
+
+    expect(JSON.parse(result!.text)).not.toHaveProperty('context_window');
+  });
+
   it('falls back to the cache when the transcript resolver returns null', async () => {
     writeCache('{"from":"cache"}');
     writeSettings({ type: 'command', command: 'cat' });

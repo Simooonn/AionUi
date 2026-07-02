@@ -42,6 +42,11 @@ export type HudStatuslineDeps = {
 
 const EXEC_TIMEOUT_MS = 3_000;
 const MAX_OUTPUT_BYTES = 64 * 1024;
+// Usage entries appear on nearly every assistant turn, so the last one is
+// always within a modest tail window even for very large transcripts.
+const TRANSCRIPT_TAIL_BYTES = 256 * 1024;
+const CONTEXT_WINDOW_1M = 1_000_000;
+const CONTEXT_WINDOW_DEFAULT = 200_000;
 
 // Session-identity env vars that could leak from a parent CLI session (e.g.
 // `bun run dev` launched inside a claude session) and would make the HUD
@@ -77,6 +82,72 @@ async function resolveTranscriptFromDb(conversationId: string): Promise<string |
   return null;
 }
 
+type ContextUsage = {
+  input_tokens: number;
+  cache_creation_input_tokens: number;
+  cache_read_input_tokens: number;
+};
+
+type TranscriptEntry = {
+  type?: string;
+  isSidechain?: boolean;
+  message?: { usage?: Partial<ContextUsage> };
+};
+
+const asTokens = (value: unknown): number => (typeof value === 'number' && Number.isFinite(value) ? value : 0);
+
+/**
+ * Extract the last main-chain assistant `message.usage` from the transcript
+ * tail and shape it as the statusline `context_window` block. Native CLI
+ * sessions get this from Claude Code itself; the HUD derives ctx% as
+ * current_usage tokens ÷ context_window_size, so without this block the
+ * synthesized payload always renders ctx 0%.
+ */
+function readContextWindow(
+  transcriptPath: string,
+  modelId?: string
+): { context_window_size: number; current_usage: ContextUsage } | undefined {
+  try {
+    const size = fs.statSync(transcriptPath).size;
+    const start = Math.max(0, size - TRANSCRIPT_TAIL_BYTES);
+    const fd = fs.openSync(transcriptPath, 'r');
+    let tail: string;
+    try {
+      const buf = Buffer.alloc(size - start);
+      fs.readSync(fd, buf, 0, buf.length, start);
+      tail = buf.toString('utf8');
+    } finally {
+      fs.closeSync(fd);
+    }
+    const lines = tail.split('\n');
+    for (let i = lines.length - 1; i >= 0; i--) {
+      let entry: TranscriptEntry;
+      try {
+        entry = JSON.parse(lines[i]) as TranscriptEntry;
+      } catch {
+        continue; // blank or tail-truncated line
+      }
+      // Sidechain (subagent) turns carry the SUBAGENT's context, not this
+      // conversation's — only the main chain reflects the visible session.
+      if (entry.type !== 'assistant' || entry.isSidechain === true || !entry.message?.usage) continue;
+      const usage = entry.message.usage;
+      const current_usage: ContextUsage = {
+        input_tokens: asTokens(usage.input_tokens),
+        cache_creation_input_tokens: asTokens(usage.cache_creation_input_tokens),
+        cache_read_input_tokens: asTokens(usage.cache_read_input_tokens),
+      };
+      const total =
+        current_usage.input_tokens + current_usage.cache_creation_input_tokens + current_usage.cache_read_input_tokens;
+      if (total <= 0) continue;
+      const context_window_size = modelId?.includes('[1m]') ? CONTEXT_WINDOW_1M : CONTEXT_WINDOW_DEFAULT;
+      return { context_window_size, current_usage };
+    }
+  } catch {
+    /* unreadable transcript → no context block */
+  }
+  return undefined;
+}
+
 /** Build the statusline stdin payload for a conversation, or null. */
 async function buildStdinPayload(params: HudStatuslineParams, deps: HudStatuslineDeps): Promise<string | null> {
   if (!params.conversationId) return null;
@@ -92,6 +163,7 @@ async function buildStdinPayload(params: HudStatuslineParams, deps: HudStatuslin
         params.modelId || params.modelLabel
           ? { id: params.modelId, display_name: params.modelLabel || params.modelId }
           : undefined,
+      context_window: readContextWindow(transcriptPath, params.modelId),
     });
   } catch {
     return null;

@@ -10,9 +10,9 @@
 // statusLine command against a per-conversation synthesized stdin payload
 // (see process/ace/hudStatusline.ts) and renders the ANSI output. Hidden
 // entirely (returns null) when no data is available — no toggle, no state.
-import { ipcBridge } from '@/common';
+import { type AcpDerivedOption, useAcpConfigOptions } from '@/renderer/hooks/agent/useAcpConfigOptions';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { parseAnsiLine } from './ansiText';
 import styles from './HudStatusBar.module.css';
 
@@ -23,21 +23,25 @@ type AceApi = { hudStatusline?: (params: HudParams) => Promise<{ text: string } 
 
 const getAceApi = (): AceApi | undefined => (window as unknown as { electronAPI?: AceApi }).electronAPI;
 
+/** "(1M context)" in the option text, or an explicit `[1m]` id marker. */
+const ONE_MILLION_HINT = /\[1m\]|1m context/i;
+
 /**
  * The persisted `extra.current_model_id` is null until the user switches
- * models, while aioncore's live `/model` id carries the context-window
- * marker (`claude-fable-5[1m]/high`) the statusline needs to size ctx%.
- * Returns null while the runtime is idle (pre-warmup 404) or unreachable.
+ * models, so the live model comes from the shared config-options snapshot.
+ * Its current_value may be an alias ('sonnet') without the `[1m]` marker the
+ * statusline sizes ctx% with — recover it from the selected option's
+ * label/description before handing the id to hudStatusline.
  */
-const fetchLiveModel = async (conversation_id: string): Promise<{ id?: string; label?: string } | null> => {
-  try {
-    const response = await ipcBridge.acpConversation.getModelInfo.invoke({ conversation_id });
-    const info = response?.model_info;
-    if (!info?.current_model_id) return null;
-    return { id: info.current_model_id, label: info.current_model_label ?? undefined };
-  } catch {
-    return null;
-  }
+const liveModelFromOption = (model: AcpDerivedOption | null): { id: string; label?: string } | null => {
+  const id = model?.currentValue;
+  if (!id) return null;
+  const choice = model.options.find((item) => item.value === id);
+  const oneMillion = ONE_MILLION_HINT.test(`${id} ${choice?.label ?? ''} ${choice?.description ?? ''}`);
+  return {
+    id: oneMillion && !id.includes('[1m]') ? `${id}[1m]` : id,
+    label: choice?.label,
+  };
 };
 
 const HudStatusBar: React.FC<{
@@ -48,6 +52,12 @@ const HudStatusBar: React.FC<{
   const layout = useLayoutContext();
   const isMobile = Boolean(layout?.isMobile);
   const [text, setText] = useState<string | null>(null);
+  // Shares the SWR snapshot with the sendbox pills, so model switches made
+  // there reach the statusline without an extra request.
+  const { model } = useAcpConfigOptions({ conversation_id, enabled: !isMobile && Boolean(workspace) });
+  const liveModel = useMemo(() => liveModelFromOption(model), [model]);
+  const modelId = liveModel?.id ?? current_model_id;
+  const modelLabel = liveModel?.label;
 
   useEffect(() => {
     const api = getAceApi();
@@ -55,12 +65,11 @@ const HudStatusBar: React.FC<{
     let disposed = false;
     const refresh = async () => {
       try {
-        const liveModel = await fetchLiveModel(conversation_id);
         const result = await api.hudStatusline!({
           workspace,
           conversationId: conversation_id,
-          modelId: liveModel?.id ?? current_model_id,
-          modelLabel: liveModel?.label,
+          modelId,
+          modelLabel,
         });
         if (!disposed) setText(result?.text ?? null);
       } catch {
@@ -73,7 +82,7 @@ const HudStatusBar: React.FC<{
       disposed = true;
       clearInterval(timer);
     };
-  }, [isMobile, workspace, conversation_id, current_model_id]);
+  }, [isMobile, workspace, conversation_id, modelId, modelLabel]);
 
   if (isMobile || !text) return null;
 

@@ -36,7 +36,6 @@ import type {
 } from '../types/agent/assistantTypes';
 import type { PreviewHistoryTarget, PreviewSnapshotInfo } from '../types/office/preview';
 import type {
-  AcpModelInfo,
   EnsureConversationRuntimeResponse,
   SetConfigOptionRequest,
   SetConfigOptionResponse,
@@ -896,28 +895,6 @@ export const acpConversation = {
     (p) => `/api/conversations/${p.conversation_id}/config-options/${encodeURIComponent(p.option_id)}`,
     (p): SetConfigOptionRequest => ({ value: p.value })
   ),
-  // ace:start ACP runtime model/mode are served as discrete endpoints by aioncore
-  // (`/model`, `/mode`). `useAcpConfigOptions` adapts them into the unified
-  // config-option shape the selectors consume. Reasoning effort is encoded into
-  // the model id (`<model>/<effort>`), so there is no separate thought-level
-  // endpoint. GETs 404 before the ACP session is warmed — silenced.
-  getModelInfo: httpGet<{ model_info: AcpModelInfo | null }, { conversation_id: string }>(
-    (p) => `/api/conversations/${p.conversation_id}/model`,
-    { silentStatuses: [404] }
-  ),
-  setModel: httpPut<{ model_info: AcpModelInfo | null }, { conversation_id: string; model_id: string }>(
-    (p) => `/api/conversations/${p.conversation_id}/model`,
-    (p) => ({ model_id: p.model_id })
-  ),
-  getMode: httpGet<{ mode: string; initialized: boolean } | null, { conversation_id: string }>(
-    (p) => `/api/conversations/${p.conversation_id}/mode`,
-    { silentStatuses: [404] }
-  ),
-  setMode: httpPut<{ mode: string; initialized: boolean }, { conversation_id: string; mode: string }>(
-    (p) => `/api/conversations/${p.conversation_id}/mode`,
-    (p) => ({ mode: p.mode })
-  ),
-  // ace:end
 };
 
 // ---------------------------------------------------------------------------

@@ -19,10 +19,11 @@ vi.mock('@/renderer/hooks/context/LayoutContext', () => ({
   useLayoutContext: () => ({ isMobile: false }),
 }));
 
-// HudStatusBar fetches the LIVE model id (aioncore /model) before each refresh.
-const getModelInfoMock = vi.hoisted(() => vi.fn<() => Promise<unknown>>(async () => null));
-vi.mock('@/common', () => ({
-  ipcBridge: { acpConversation: { getModelInfo: { invoke: getModelInfoMock } } },
+// HudStatusBar reads the LIVE model from the shared config-options snapshot
+// (v0.1.41 removed the discrete /model endpoint).
+const useAcpConfigOptionsMock = vi.hoisted(() => vi.fn(() => ({ model: null })));
+vi.mock('@/renderer/hooks/agent/useAcpConfigOptions', () => ({
+  useAcpConfigOptions: useAcpConfigOptionsMock,
 }));
 
 const ESC = '\x1b';
@@ -225,8 +226,8 @@ describe('HudStatusBar', () => {
   afterEach(() => {
     cleanup();
     delete (window as unknown as { electronAPI?: unknown }).electronAPI;
-    getModelInfoMock.mockReset();
-    getModelInfoMock.mockResolvedValue(null);
+    useAcpConfigOptionsMock.mockReset();
+    useAcpConfigOptionsMock.mockReturnValue({ model: null });
   });
 
   it('renders nothing when the ace API is unavailable', () => {
@@ -262,9 +263,14 @@ describe('HudStatusBar', () => {
     });
   });
 
-  it('prefers the live aioncore model id over the persisted one', async () => {
-    getModelInfoMock.mockResolvedValue({
-      model_info: { current_model_id: 'claude-fable-5[1m]/high', current_model_label: 'claude-fable-5[1m] (high)' },
+  it('prefers the live config-options model and recovers the [1m] marker from the option text', async () => {
+    useAcpConfigOptionsMock.mockReturnValue({
+      model: {
+        id: 'model',
+        category: 'model',
+        currentValue: 'sonnet',
+        options: [{ value: 'sonnet', label: 'claude-sonnet-5', description: 'Custom Sonnet model (1M context)' }],
+      },
     });
     const hudStatusline = vi.fn().mockResolvedValue({ text: 'line' });
     (window as unknown as { electronAPI: unknown }).electronAPI = { hudStatusline };
@@ -274,8 +280,31 @@ describe('HudStatusBar', () => {
       expect(hudStatusline).toHaveBeenCalledWith({
         workspace: '/tmp/ws',
         conversationId: 'c1',
-        modelId: 'claude-fable-5[1m]/high',
-        modelLabel: 'claude-fable-5[1m] (high)',
+        modelId: 'sonnet[1m]',
+        modelLabel: 'claude-sonnet-5',
+      });
+    });
+  });
+
+  it('keeps the plain model id when the option text has no 1M hint', async () => {
+    useAcpConfigOptionsMock.mockReturnValue({
+      model: {
+        id: 'model',
+        category: 'model',
+        currentValue: 'haiku',
+        options: [{ value: 'haiku', label: 'claude-haiku-4-5', description: 'Custom Haiku model' }],
+      },
+    });
+    const hudStatusline = vi.fn().mockResolvedValue({ text: 'line' });
+    (window as unknown as { electronAPI: unknown }).electronAPI = { hudStatusline };
+    render(<HudStatusBar conversation_id='c1' workspace='/tmp/ws' />);
+
+    await waitFor(() => {
+      expect(hudStatusline).toHaveBeenCalledWith({
+        workspace: '/tmp/ws',
+        conversationId: 'c1',
+        modelId: 'haiku',
+        modelLabel: 'claude-haiku-4-5',
       });
     });
   });

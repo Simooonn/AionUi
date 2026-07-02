@@ -116,6 +116,11 @@ const TerminalTabs: React.FC<TerminalTabsProps> = ({ conversationId, workspace, 
     <div className='size-full flex flex-col'>
       <Tabs
         editable
+        // `justify` activates Arco's .arco-tabs-justify height:100% rules for the
+        // internal .arco-tabs-content-inner / .arco-tabs-content-item wrappers.
+        // Without it those two stay height:auto and the whole pane chain collapses
+        // to xterm's natural size, leaving a blank band under the terminal.
+        justify
         type='card-gutter'
         size='small'
         activeTab={activeId ?? undefined}

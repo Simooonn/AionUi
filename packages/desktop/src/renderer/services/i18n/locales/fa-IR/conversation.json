@@ -102,6 +102,7 @@
       "TEAM_ASSISTANT_FIELD_UNSUPPORTED": "به‌جای {{field}} از assistant_id استفاده کنید."
     }
   },
+  "runtimeStartFailed": "Failed to start the session runtime; model and mode settings are unavailable: {{reason}}",
   "agentError": {
     "fallbackTitle": "ایجنت نتوانست پاسخ دهد",
     "errorCode": "کد خطا",

@@ -1,5 +1,10 @@
+import { BackendHttpError } from '@/common/adapter/httpBridge';
 import type { AcpConfigOptionDto, SetConfigOptionResponse } from '@/common/types/platform/acpTypes';
-import { deriveSelectOption, hasObservedValue } from '@/renderer/hooks/agent/useAcpConfigOptions';
+import {
+  deriveSelectOption,
+  describeConfigLoadError,
+  hasObservedValue,
+} from '@/renderer/hooks/agent/useAcpConfigOptions';
 import { describe, expect, it } from 'vitest';
 
 const options: AcpConfigOptionDto[] = [
@@ -73,5 +78,24 @@ describe('ACP config option derivation', () => {
     };
 
     expect(hasObservedValue(response, 'model', 'gpt-5.5')).toBe(false);
+  });
+});
+
+describe('describeConfigLoadError', () => {
+  it('prefers the backend-provided human message on HTTP errors', () => {
+    // Shape of a runtime/ensure 502 (e.g. codex-acp failing to load a rollout file).
+    const error = new BackendHttpError({
+      method: 'POST',
+      path: '/api/conversations/x/runtime/ensure',
+      status: 502,
+      body: { error: 'Upstream service unavailable.', code: 'BAD_GATEWAY' },
+    });
+
+    expect(describeConfigLoadError(error)).toBe('Upstream service unavailable.');
+  });
+
+  it('falls back to Error.message and String() for other failures', () => {
+    expect(describeConfigLoadError(new Error('spawn failed'))).toBe('spawn failed');
+    expect(describeConfigLoadError('boom')).toBe('boom');
   });
 });

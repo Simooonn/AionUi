@@ -16,7 +16,11 @@ import ThoughtDisplay from '@/renderer/components/chat/ThoughtDisplay';
 import FileAttachButton from '@/renderer/components/media/FileAttachButton';
 import FilePreview from '@/renderer/components/media/FilePreview';
 import HorizontalFileList from '@/renderer/components/media/HorizontalFileList';
-import { classifyConfigSetError, useAcpConfigOptions } from '@/renderer/hooks/agent/useAcpConfigOptions';
+import {
+  classifyConfigSetError,
+  describeConfigLoadError,
+  useAcpConfigOptions,
+} from '@/renderer/hooks/agent/useAcpConfigOptions';
 import { useAcpModelInfo } from '@/renderer/hooks/agent/useAcpModelInfo';
 import { useAutoTitle } from '@/renderer/hooks/chat/useAutoTitle';
 import { getSendBoxDraftHook, type FileOrFolderItem } from '@/renderer/hooks/chat/useSendBoxDraft';
@@ -159,6 +163,17 @@ const AcpSendBox: React.FC<{
   });
   const runtimeMode = runtimeConfig.mode;
   const runtimeThoughtLevel = runtimeConfig.thoughtLevel;
+  // Surface runtime startup failures (e.g. a resumed CLI session whose rollout
+  // the bundled agent cannot parse) instead of letting the toolbar pills vanish
+  // silently: the ensure error used to die in a `.catch(() => {})`.
+  const runtimeLoadError = runtimeConfig.loadError;
+  useEffect(() => {
+    if (!runtimeLoadError) return;
+    Message.error({
+      id: `acp-runtime-load-error-${conversation_id}`,
+      content: t('conversation.runtimeStartFailed', { reason: describeConfigLoadError(runtimeLoadError) }),
+    });
+  }, [conversation_id, runtimeLoadError, t]);
   const handleThoughtLevelSetOption = useCallback(
     async (optionId: string, value: string) => runtimeConfig.setConfigOption(optionId, value),
     [runtimeConfig]

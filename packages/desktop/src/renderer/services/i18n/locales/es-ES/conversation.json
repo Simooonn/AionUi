@@ -102,6 +102,7 @@
       "TEAM_ASSISTANT_FIELD_UNSUPPORTED": "Use assistant_id instead of {{field}}."
     }
   },
+  "runtimeStartFailed": "Failed to start the session runtime; model and mode settings are unavailable: {{reason}}",
   "agentError": {
     "fallbackTitle": "El agente no pudo responder",
     "errorCode": "Código de error",

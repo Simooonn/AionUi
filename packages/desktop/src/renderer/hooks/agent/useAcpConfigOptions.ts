@@ -86,6 +86,13 @@ export function hasObservedValue(
   return getOptionCurrentValue(option) === requestedValue;
 }
 
+/** Human-readable reason for a failed config-options load (runtime ensure 5xx, spawn failure, …). */
+export function describeConfigLoadError(error: unknown): string {
+  if (isBackendHttpError(error)) return error.backendMessage || error.code || error.message;
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
 export function classifyConfigSetError(error: unknown): AcpConfigSetErrorKind {
   if (error instanceof Error) {
     if (error.message.includes('command_ack')) return 'command_ack';
@@ -158,6 +165,10 @@ export function useAcpConfigOptions({
   enabled?: boolean;
 }) {
   const [setStatus, setSetStatus] = useState<AcpConfigSetStatus>(() => getConversationSetStatus(conversation_id));
+  // Last config-options load failure (runtime ensure error). Cleared on any
+  // successful load so consumers can surface "runtime failed to start" instead
+  // of silently rendering an empty toolbar.
+  const [loadError, setLoadError] = useState<unknown>(null);
   const optionsRef = useRef<AcpConfigOptionDto[] | null>(null);
   const key = useMemo(() => getRuntimeConfigOptionsKey(conversation_id), [conversation_id]);
   const {
@@ -187,10 +198,16 @@ export function useAcpConfigOptions({
   );
 
   const reload = useCallback(async () => {
-    await prepareRuntime?.();
-    const next = await fetchConfigOptionsOnce(key);
-    replaceSnapshot(next);
-    return next;
+    try {
+      await prepareRuntime?.();
+      const next = await fetchConfigOptionsOnce(key);
+      setLoadError(null);
+      replaceSnapshot(next);
+      return next;
+    } catch (error) {
+      setLoadError(error);
+      throw error;
+    }
   }, [key, prepareRuntime, replaceSnapshot]);
 
   const setConfigOption = useCallback(
@@ -245,6 +262,7 @@ export function useAcpConfigOptions({
   return {
     configOptions,
     isLoading,
+    loadError,
     setStatus,
     mode: deriveSelectOption(configOptions, 'mode', ['mode']),
     model: deriveSelectOption(configOptions, 'model', ['model']),

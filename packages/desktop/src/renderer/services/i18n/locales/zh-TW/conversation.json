@@ -107,6 +107,7 @@
       "TEAM_ASSISTANT_FIELD_UNSUPPORTED": "請使用 assistant_id，不要再傳 {{field}}。"
     }
   },
+  "runtimeStartFailed": "會話執行時啟動失敗，模型/模式設定不可用：{{reason}}",
   "agentError": {
     "fallbackTitle": "Agent 未能回覆",
     "errorCode": "錯誤碼",

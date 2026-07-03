@@ -571,6 +571,7 @@ export type I18nKey =
   | 'conversation.resumeCommand.copy'
   | 'conversation.resumeCommand.copyFailed'
   | 'conversation.runtimePreparing.sendboxHint'
+  | 'conversation.runtimeStartFailed'
   | 'conversation.sendbox.hint'
   | 'conversation.sideQuestion.alreadyRunning'
   | 'conversation.sideQuestion.answered'

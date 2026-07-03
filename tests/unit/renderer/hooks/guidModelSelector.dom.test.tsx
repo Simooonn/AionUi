@@ -122,4 +122,44 @@ describe('GuidModelSelector', () => {
       within(screen.getByTestId('guid-model-menu')).getByText('Default').closest('[data-tooltip-content]')
     ).toHaveAttribute('data-tooltip-content', 'Use the default model currently configured by the CLI');
   });
+
+  const acpModels = [
+    { id: 'gpt-5.5', label: 'GPT-5.5' },
+    { id: 'gpt-5.4-mini', label: 'GPT-5.4-Mini' },
+  ];
+
+  const renderAcpSelector = (selectedAcpModel: string | null) =>
+    render(
+      <GuidModelSelector
+        isGeminiMode={false}
+        modelList={[]}
+        current_model={undefined}
+        setCurrentModel={vi.fn()}
+        currentAcpCachedModelInfo={{
+          current_model_id: 'gpt-5.5',
+          current_model_label: 'GPT-5.5',
+          available_models: acpModels,
+        }}
+        selectedAcpModel={selectedAcpModel}
+        setSelectedAcpModel={vi.fn()}
+      />
+    );
+
+  // Scope to the menu: the toolbar pill repeats the current model's label.
+  const menuItemOf = (label: string) =>
+    within(screen.getByTestId('guid-model-menu')).getByText(label).closest('[role="menuitem"]') as HTMLElement;
+
+  it('marks the runtime current model with a check when nothing is explicitly selected', () => {
+    renderAcpSelector(null);
+
+    expect(within(menuItemOf('GPT-5.5')).getByText('✓')).toBeInTheDocument();
+    expect(within(menuItemOf('GPT-5.4-Mini')).queryByText('✓')).not.toBeInTheDocument();
+  });
+
+  it('moves the check to the explicitly selected model', () => {
+    renderAcpSelector('gpt-5.4-mini');
+
+    expect(within(menuItemOf('GPT-5.4-Mini')).getByText('✓')).toBeInTheDocument();
+    expect(within(menuItemOf('GPT-5.5')).queryByText('✓')).not.toBeInTheDocument();
+  });
 });

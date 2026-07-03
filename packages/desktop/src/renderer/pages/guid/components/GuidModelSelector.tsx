@@ -5,6 +5,7 @@
  */
 
 import type { IProvider, TProviderWithModel } from '@/common/config/storage';
+import { RuntimeSelectorCheckedItem } from '@/renderer/components/agent/runtimeSelectorOptions';
 import { iconColors } from '@/renderer/styles/colors';
 import { getModelDisplayLabel } from '@/renderer/utils/model/agentLogo';
 import type { AcpModelInfo } from '../types';
@@ -185,72 +186,47 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
 
   // ACP cached model selector
   if (currentAcpCachedModelInfo && currentAcpCachedModelInfo.available_models?.length > 0) {
-    if (currentAcpCachedModelInfo.available_models.length > 0) {
-      return (
-        <Dropdown
-          trigger='click'
-          droplist={
-            <Menu selectedKeys={selectedAcpModel ? [selectedAcpModel] : []}>
-              {currentAcpCachedModelInfo.available_models.map((model) => {
-                // 获取模型健康状态
-                const providerConfig = modelConfig?.find((p) => p.platform?.includes(''));
-                const healthStatus = providerConfig?.model_health?.[model.id]?.status || 'unknown';
-                const healthColor =
-                  healthStatus === 'healthy'
-                    ? 'bg-green-500'
-                    : healthStatus === 'unhealthy'
-                      ? 'bg-red-500'
-                      : 'bg-gray-400';
-
-                return (
-                  <Menu.Item
-                    key={model.id}
-                    className={model.id === selectedAcpModel ? '!bg-2' : ''}
-                    onClick={() => setSelectedAcpModel(model.id)}
-                  >
-                    <div className='flex items-center gap-8px w-full'>
-                      {healthStatus !== 'unknown' && (
-                        <div className={`w-6px h-6px rounded-full shrink-0 ${healthColor}`} />
-                      )}
-                      {model.description ? (
-                        <Tooltip content={model.description} position='right'>
-                          <span className='min-w-0 truncate'>{model.label}</span>
-                        </Tooltip>
-                      ) : (
-                        <span className='min-w-0 truncate'>{model.label}</span>
-                      )}
-                    </div>
-                  </Menu.Item>
-                );
-              })}
-            </Menu>
-          }
-        >
-          <Button className={'sendbox-model-btn guid-config-btn'} shape='round' size='small'>
-            <span className='flex items-center gap-6px min-w-0'>
-              <Brain theme='outline' size='14' fill={iconColors.secondary} className='shrink-0' />
-              <span>{acpButtonLabel}</span>
-              <Down theme='outline' size='12' fill={iconColors.secondary} className='shrink-0' />
-            </span>
-          </Button>
-        </Dropdown>
-      );
-    }
-
+    // The model a new conversation will actually use: explicit pick first, then
+    // the runtime-reported current model. Marked with a check like the in-chat
+    // toolbar; per-model health dots were misleading here (they came from an
+    // unrelated provider lookup and never tracked the ACP backend's model).
+    const effectiveAcpModelId = selectedAcpModel || currentAcpCachedModelInfo.current_model_id || null;
     return (
-      <Tooltip content={t('conversation.welcome.modelSwitchNotSupported')} position='top'>
-        <Button
-          className={'sendbox-model-btn guid-config-btn'}
-          shape='round'
-          size='small'
-          style={{ cursor: 'default' }}
-        >
+      <Dropdown
+        trigger='click'
+        droplist={
+          <Menu selectedKeys={effectiveAcpModelId ? [effectiveAcpModelId] : []}>
+            {currentAcpCachedModelInfo.available_models.map((model) => {
+              const selected = model.id === effectiveAcpModelId;
+              return (
+                <Menu.Item
+                  key={model.id}
+                  className={selected ? '!bg-2' : ''}
+                  onClick={() => setSelectedAcpModel(model.id)}
+                >
+                  <RuntimeSelectorCheckedItem selected={selected}>
+                    {model.description ? (
+                      <Tooltip content={model.description} position='right'>
+                        <span className='min-w-0 truncate'>{model.label}</span>
+                      </Tooltip>
+                    ) : (
+                      <span className='min-w-0 truncate'>{model.label}</span>
+                    )}
+                  </RuntimeSelectorCheckedItem>
+                </Menu.Item>
+              );
+            })}
+          </Menu>
+        }
+      >
+        <Button className={'sendbox-model-btn guid-config-btn'} shape='round' size='small'>
           <span className='flex items-center gap-6px min-w-0'>
             <Brain theme='outline' size='14' fill={iconColors.secondary} className='shrink-0' />
             <span>{acpButtonLabel}</span>
+            <Down theme='outline' size='12' fill={iconColors.secondary} className='shrink-0' />
           </span>
         </Button>
-      </Tooltip>
+      </Dropdown>
     );
   }
 

@@ -590,5 +590,11 @@
     "monthsAgo": "{{count}}ヶ月前",
     "yearsAgo": "{{count}} 年前",
     "messageCount": "{{count}} 件"
+  },
+  "importCli": {
+    "confirmTitle": "Import CLI sessions",
+    "confirmContent": "Found {{count}} new sessions to import. Import them all?",
+    "nothingNew": "No new CLI sessions found",
+    "scanFailed": "Failed to scan local CLI sessions, please retry later"
   }
 }

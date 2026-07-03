@@ -18,7 +18,7 @@ import { LARK_NOTIFY_STATUS_WEIGHT } from '@/common/ace/types';
 import { LARK_NOTIFY_SUMMARY_INPUT_CAP } from '@/common/ace/larkNotify';
 import { ProcessConfig } from '@process/utils/initStorage';
 import { getTenantToken, resetLarkTokenCache, sendLarkNotification, sendLarkText } from './larkNotifySender';
-import { importCliSessions } from './importCliSessions';
+import { importCliSessions, scanCliSessions } from './importCliSessions';
 import { importConversationMessages } from './messageImporter';
 import {
   checkWorkspacesExist,
@@ -54,6 +54,15 @@ ipcMain.handle('ace:import-cli-sessions', async (): Promise<ImportCliSessionsRes
     return await importCliSessions();
   } catch (e) {
     return { imported: 0, skipped: 0, failed: 0, errors: [e instanceof Error ? e.message : String(e)] };
+  }
+});
+
+// Dry-run scan behind the pre-import confirmation dialog; null → scan failed.
+ipcMain.handle('ace:scan-cli-sessions', async () => {
+  try {
+    return await scanCliSessions();
+  } catch {
+    return null;
   }
 });
 

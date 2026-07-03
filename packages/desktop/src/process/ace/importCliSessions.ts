@@ -15,7 +15,12 @@ import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { ipcBridge } from '@/common';
-import type { CliSessionMeta, ImportCliSessionsResult, ImportedConversationExtra } from '@/common/ace/types';
+import type {
+  CliSessionMeta,
+  ImportCliSessionsResult,
+  ImportedConversationExtra,
+  ScanCliSessionsResult,
+} from '@/common/ace/types';
 import { getDataPath } from '@process/utils';
 import { backfillImportedConversationActivity } from './aioncoreSchema';
 import { parseClaudeCodeSessions } from './parsers/claudeParser';
@@ -68,15 +73,34 @@ function buildCreateParams(meta: CliSessionMeta): CreateParams {
   return { type: 'acp', name: meta.title, extra } as unknown as CreateParams;
 }
 
+function parseAllCliSessions(): CliSessionMeta[] {
+  return [...parseClaudeCodeSessions(), ...parseCodexSessions(), ...parseGeminiSessions(), ...parseOpencodeSessions()];
+}
+
+/**
+ * Dry-run scan for the pre-import confirmation dialog: how many NEW sessions
+ * an import would create, per source. Returns null when the existing-set
+ * listing failed (same abort condition as the import itself).
+ */
+export async function scanCliSessions(): Promise<ScanCliSessionsResult | null> {
+  const existing = await fetchExistingCliSessionIds();
+  if (existing === null) return null;
+  const result: ScanCliSessionsResult = {
+    total: 0,
+    bySource: { 'claude-code': 0, codex: 0, gemini: 0, opencode: 0 },
+  };
+  for (const meta of parseAllCliSessions()) {
+    if (existing.has(meta.sessionId)) continue;
+    result.total++;
+    result.bySource[meta.source]++;
+  }
+  return result;
+}
+
 /** Import all local CLI sessions (Claude Code + Codex); idempotent across repeated runs. */
 export async function importCliSessions(): Promise<ImportCliSessionsResult> {
   const result: ImportCliSessionsResult = { imported: 0, skipped: 0, failed: 0, errors: [] };
-  const sessions = [
-    ...parseClaudeCodeSessions(),
-    ...parseCodexSessions(),
-    ...parseGeminiSessions(),
-    ...parseOpencodeSessions(),
-  ];
+  const sessions = parseAllCliSessions();
   const existing = await fetchExistingCliSessionIds();
   if (existing === null) {
     // Without the dedup baseline every create would be a duplicate — refuse.

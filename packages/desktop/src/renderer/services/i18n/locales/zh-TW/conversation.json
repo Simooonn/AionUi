@@ -590,5 +590,11 @@
     "monthsAgo": "{{count}} 個月前",
     "yearsAgo": "{{count}} 年前",
     "messageCount": "{{count}} 則"
+  },
+  "importCli": {
+    "confirmTitle": "匯入 CLI 會話",
+    "confirmContent": "發現 {{count}} 條可匯入的新會話，確定全部匯入？",
+    "nothingNew": "沒有發現新的 CLI 會話",
+    "scanFailed": "掃描本地 CLI 會話失敗，請稍後重試"
   }
 }

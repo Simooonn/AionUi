@@ -10,11 +10,21 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import type { CliSessionMeta } from '@/common/ace/types';
-import { extractTextItems, pickTitle } from './sessionTitle';
+import { extractTextItems, isUsableTitle, pickTitle } from './sessionTitle';
 
 const CLAUDE_PROJECTS_DIR = join(homedir(), '.claude', 'projects');
 
-function parseSessionFile(filePath: string): CliSessionMeta | null {
+// AionUi's own ACP conversations write their transcripts under ~/.claude/projects
+// too (cwd = the app-support temp workspace or the .aionui work dir). Importing
+// those would feed the app's own output back into it as "CLI history".
+const AIONUI_INTERNAL_DIR_MARKERS = ['-Library-Application-Support-AionUi', '--aionui'];
+
+/** True for project dirs produced by AionUi itself (excluded from import). */
+export function isAionUiInternalProjectDir(dirName: string): boolean {
+  return AIONUI_INTERNAL_DIR_MARKERS.some((marker) => dirName.includes(marker));
+}
+
+export function parseSessionFile(filePath: string): CliSessionMeta | null {
   let raw: string;
   try {
     raw = readFileSync(filePath, 'utf-8');
@@ -26,6 +36,8 @@ function parseSessionFile(filePath: string): CliSessionMeta | null {
   let cwd: string | undefined;
   let firstTs: number | undefined;
   let lastTs: number | undefined;
+  let hasAssistantTurn = false;
+  let hasRealUserPrompt = false;
   const titleCandidates: string[] = [];
 
   for (const line of raw.split('\n')) {
@@ -44,13 +56,20 @@ function parseSessionFile(filePath: string): CliSessionMeta | null {
         lastTs = t;
       }
     }
+    if (o.type === 'assistant') hasAssistantTurn = true;
     if (o.type === 'user' && o.message && typeof o.message === 'object') {
-      titleCandidates.push(...extractTextItems((o.message as { content?: unknown }).content));
+      const items = extractTextItems((o.message as { content?: unknown }).content);
+      titleCandidates.push(...items);
+      // Slash-command records ("<local-command-caveat>…", "<command-name>…") and
+      // injected context all start with markers isUsableTitle rejects.
+      if (!hasRealUserPrompt && items.some(isUsableTitle)) hasRealUserPrompt = true;
     }
   }
 
-  // A file with no parseable record at all is not a session.
-  if (firstTs === undefined && !titleCandidates.length && !cwd) return null;
+  // Only real interactive exchanges qualify. A `/clear` loop once left 42k
+  // command-only session files in one project dir; importing those (or files
+  // with no assistant reply at all) floods the conversation list with noise.
+  if (!hasAssistantTurn || !hasRealUserPrompt) return null;
 
   const title = pickTitle(titleCandidates, cwd ? basename(cwd) : sessionId);
   return {
@@ -76,6 +95,7 @@ export function parseClaudeCodeSessions(): CliSessionMeta[] {
 
   const out: CliSessionMeta[] = [];
   for (const proj of projectDirs) {
+    if (isAionUiInternalProjectDir(proj)) continue;
     const projPath = join(CLAUDE_PROJECTS_DIR, proj);
     let files: string[];
     try {

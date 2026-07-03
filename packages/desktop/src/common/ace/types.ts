@@ -72,6 +72,12 @@ export type ImportCliSessionsResult = {
   errors: string[];
 };
 
+/** Pre-import scan: how many NEW sessions an import would create, per source. */
+export type ScanCliSessionsResult = {
+  total: number;
+  bySource: Record<CliSource, number>;
+};
+
 /** One renderable item parsed from a CLI message turn. */
 export type ParsedCliItem =
   | { kind: 'text'; text: string }

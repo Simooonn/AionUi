@@ -58,6 +58,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   recoverCorruptedDatabase: () => ipcRenderer.invoke('backend:recover-corrupted-database'),
   // ace:start import local CLI (Claude Code/Codex) sessions
   importCliSessions: () => ipcRenderer.invoke('ace:import-cli-sessions'),
+  scanCliSessions: () => ipcRenderer.invoke('ace:scan-cli-sessions'),
   importConversationMessages: (conversationId: string) =>
     ipcRenderer.invoke('ace:import-conversation-messages', conversationId),
   ensureCliResume: (conversationId: string) => ipcRenderer.invoke('ace:ensure-cli-resume', conversationId),

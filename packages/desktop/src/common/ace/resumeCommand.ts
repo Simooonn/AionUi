@@ -52,3 +52,11 @@ export function buildResumeCommand(
   const build = CLI_RESUME_BUILDERS[source];
   return build ? build(sessionId) : null;
 }
+
+/**
+ * Whether a resolved resume command may enable the "Restore session" terminal menu item.
+ * Empty strings and null/undefined are unavailable (including native resolve still pending).
+ */
+export function isRestoreEnabled(resumeCommand: string | null | undefined): resumeCommand is string {
+  return typeof resumeCommand === 'string' && resumeCommand.length > 0;
+}

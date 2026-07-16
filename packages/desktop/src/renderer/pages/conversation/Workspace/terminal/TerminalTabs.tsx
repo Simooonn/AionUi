@@ -5,8 +5,9 @@
  */
 
 import { ipcBridge } from '@/common';
-import { Message, Tabs } from '@arco-design/web-react';
-import { Terminal as TerminalIcon } from '@icon-park/react';
+import { isRestoreEnabled } from '@/common/ace/resumeCommand';
+import { Button, Dropdown, Menu, Message, Tabs, Tooltip } from '@arco-design/web-react';
+import { Plus, Terminal as TerminalIcon } from '@icon-park/react';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { terminalStore, useTerminalStore } from './useTerminalStore';
@@ -24,27 +25,42 @@ interface TerminalTabsProps {
   workspace: string;
   /** True when the Workspace "terminal" tab is the active tab. */
   visible: boolean;
+  /**
+   * CLI resume command for the current left-sidebar conversation
+   * (`buildCliResumeCommand` / `useNativeResumeCommand`), or null when
+   * unavailable / still resolving.
+   */
+  resumeCommand?: string | null;
 }
 
 /**
  * Inner tab strip managing multiple terminals for one conversation. Rehydrates
  * the live PTY list from the main process on mount, creates/closes/restarts
  * terminals, and renders one {@link XtermView} per tab.
+ *
+ * The add control is a dropdown: New tab (plain PTY) or Restore session
+ * (create PTY + inject the app-built CLI resume command).
  */
-const TerminalTabs: React.FC<TerminalTabsProps> = ({ conversationId, workspace, visible }) => {
+const TerminalTabs: React.FC<TerminalTabsProps> = ({
+  conversationId,
+  workspace,
+  visible,
+  resumeCommand = null,
+}) => {
   const { t } = useTranslation();
   const { ids, activeId } = useTerminalStore(conversationId);
+  const canRestore = isRestoreEnabled(resumeCommand);
 
-  const createTerminal = useCallback(async () => {
+  const createTerminalInternal = useCallback(async (): Promise<string | null> => {
     if (!workspace) {
       // Workspace not ready yet — creating now would spawn the PTY in the main
       // process cwd. The auto-create effect refires once `workspace` arrives.
       console.warn('[Terminal] create skipped: workspace not ready');
-      return;
+      return null;
     }
     if (terminalStore.getState(conversationId).ids.length >= TERMINAL_SOFT_CAP) {
       Message.warning(t('conversation.workspace.terminal.capReached', { max: TERMINAL_SOFT_CAP }));
-      return;
+      return null;
     }
     try {
       const { terminalId } = await ipcBridge.terminal.create.invoke({
@@ -54,11 +70,31 @@ const TerminalTabs: React.FC<TerminalTabsProps> = ({ conversationId, workspace, 
         rows: DEFAULT_ROWS,
       });
       terminalStore.add(conversationId, terminalId);
+      return terminalId;
     } catch (error) {
       console.error('[Terminal] create failed:', error);
       Message.error(t('conversation.workspace.terminal.createFailed'));
+      return null;
     }
   }, [conversationId, workspace, t]);
+
+  const createTerminal = useCallback(async () => {
+    await createTerminalInternal();
+  }, [createTerminalInternal]);
+
+  const restoreSession = useCallback(
+    async (cmd: string) => {
+      const terminalId = await createTerminalInternal();
+      if (!terminalId) return;
+      const api = window.terminalAPI;
+      if (!api?.input) {
+        Message.error(t('conversation.workspace.terminal.createFailed'));
+        return;
+      }
+      api.input(terminalId, `${cmd}\n`);
+    },
+    [createTerminalInternal, t]
+  );
 
   const closeTerminal = useCallback(
     (terminalId: string) => {
@@ -120,38 +156,72 @@ const TerminalTabs: React.FC<TerminalTabsProps> = ({ conversationId, workspace, 
     [conversationId]
   );
 
+  const addMenu = (
+    <Menu>
+      <Menu.Item key='new' onClick={() => void createTerminal()}>
+        {t('conversation.workspace.terminal.newTab')}
+      </Menu.Item>
+      <Tooltip content={t('conversation.workspace.terminal.restoreUnavailable')} disabled={canRestore}>
+        <span className='block'>
+          <Menu.Item
+            key='restore'
+            disabled={!canRestore}
+            onClick={() => {
+              if (!canRestore) return;
+              void restoreSession(resumeCommand);
+            }}
+          >
+            {t('conversation.workspace.terminal.restoreSession')}
+          </Menu.Item>
+        </span>
+      </Tooltip>
+    </Menu>
+  );
+
   return (
     <div className='size-full flex flex-col'>
-      <Tabs
-        editable
-        // `justify` activates Arco's .arco-tabs-justify height:100% rules for the
-        // internal .arco-tabs-content-inner / .arco-tabs-content-item wrappers.
-        // Without it those two stay height:auto and the whole pane chain collapses
-        // to xterm's natural size, leaving a blank band under the terminal.
-        justify
-        type='card-gutter'
-        size='small'
-        activeTab={activeId ?? undefined}
-        onChange={onTabChange}
-        onAddTab={() => void createTerminal()}
-        onDeleteTab={closeTerminal}
-        showAddButton={ids.length < TERMINAL_SOFT_CAP}
-        className='terminal-tabs size-full flex flex-col [&_.arco-tabs-content]:flex-1 [&_.arco-tabs-content]:min-h-0 [&_.arco-tabs-pane]:size-full'
-      >
-        {ids.map((id, index) => (
-          <Tabs.TabPane
-            key={id}
-            title={
-              <span className='flex items-center gap-4px'>
-                <TerminalIcon size={14} />
-                {t('conversation.workspace.terminal.tabLabel', { index: index + 1 })}
-              </span>
-            }
-          >
-            <XtermView terminalId={id} active={visible && id === activeId} onRestart={restartTerminal} />
-          </Tabs.TabPane>
-        ))}
-      </Tabs>
+      <div className='relative size-full flex flex-col min-h-0'>
+        <Tabs
+          editable
+          // `justify` activates Arco's .arco-tabs-justify height:100% rules for the
+          // internal .arco-tabs-content-inner / .arco-tabs-content-item wrappers.
+          // Without it those two stay height:auto and the whole pane chain collapses
+          // to xterm's natural size, leaving a blank band under the terminal.
+          justify
+          type='card-gutter'
+          size='small'
+          activeTab={activeId ?? undefined}
+          onChange={onTabChange}
+          onDeleteTab={closeTerminal}
+          showAddButton={false}
+          className='terminal-tabs size-full flex flex-col [&_.arco-tabs-content]:flex-1 [&_.arco-tabs-content]:min-h-0 [&_.arco-tabs-pane]:size-full'
+        >
+          {ids.map((id, index) => (
+            <Tabs.TabPane
+              key={id}
+              title={
+                <span className='flex items-center gap-4px'>
+                  <TerminalIcon size={14} />
+                  {t('conversation.workspace.terminal.tabLabel', { index: index + 1 })}
+                </span>
+              }
+            >
+              <XtermView terminalId={id} active={visible && id === activeId} onRestart={restartTerminal} />
+            </Tabs.TabPane>
+          ))}
+        </Tabs>
+        <div className='absolute top-0 right-4px z-10 flex items-center h-32px'>
+          <Dropdown droplist={addMenu} trigger='click' position='br'>
+            <Button
+              type='text'
+              size='mini'
+              icon={<Plus size={14} />}
+              aria-label={t('conversation.workspace.terminal.newTab')}
+              className='!px-4px'
+            />
+          </Dropdown>
+        </div>
+      </div>
     </div>
   );
 };

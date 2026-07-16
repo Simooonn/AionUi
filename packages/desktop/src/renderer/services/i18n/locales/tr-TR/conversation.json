@@ -412,7 +412,10 @@
       "exited": "İşlem sonlandı (kod {{code}})",
       "restart": "Yeniden başlat",
       "capReached": "En fazla {{max}} terminal açılabilir",
-      "createFailed": "Terminal açılamadı"
+      "createFailed": "Terminal açılamadı",
+      "newTab": "Yeni sekme",
+      "restoreSession": "Oturumu geri yükle",
+      "restoreUnavailable": "Geçerli sohbet terminalde geri yüklenemez"
     }
   },
   "resumeCommand": {

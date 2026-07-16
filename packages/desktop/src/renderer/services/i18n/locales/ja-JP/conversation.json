@@ -428,7 +428,10 @@
       "exited": "プロセスが終了しました（コード {{code}}）",
       "restart": "再起動",
       "capReached": "ターミナルは最大 {{max}} 個までです",
-      "createFailed": "ターミナルを開けませんでした"
+      "createFailed": "ターミナルを開けませんでした",
+      "newTab": "新しいタブ",
+      "restoreSession": "セッションを復元",
+      "restoreUnavailable": "現在の会話はターミナルで復元できません"
     }
   },
   "resumeCommand": {

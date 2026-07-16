@@ -416,6 +416,11 @@
       "vscode": "VS Code",
       "terminal": "Terminal",
       "explorer": "Datei-Explorer"
+    },
+    "terminal": {
+      "newTab": "Neuer Tab",
+      "restoreSession": "Sitzung wiederherstellen",
+      "restoreUnavailable": "Aktuelle Unterhaltung kann im Terminal nicht wiederhergestellt werden"
     }
   },
   "minimap": {

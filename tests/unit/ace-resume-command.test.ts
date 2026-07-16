@@ -9,7 +9,7 @@
  */
 
 import type { TChatConversation } from '@/common/config/storage';
-import { backendToCliSource, buildResumeCommand } from '@/common/ace/resumeCommand';
+import { backendToCliSource, buildResumeCommand, isRestoreEnabled } from '@/common/ace/resumeCommand';
 import { resumeCommandForConversation } from '@/process/ace/sessionFiles';
 import { buildCliResumeCommand } from '@/renderer/ace/readonly';
 import { DatabaseSync } from 'node:sqlite';
@@ -75,6 +75,18 @@ describe('backendToCliSource', () => {
     expect(backendToCliSource('')).toBeNull();
     expect(backendToCliSource(null)).toBeNull();
     expect(backendToCliSource(undefined)).toBeNull();
+  });
+});
+
+describe('isRestoreEnabled', () => {
+  it('is true for a non-empty resume command string', () => {
+    expect(isRestoreEnabled('claude --resume abc')).toBe(true);
+  });
+
+  it('is false for null, undefined, or empty string', () => {
+    expect(isRestoreEnabled(null)).toBe(false);
+    expect(isRestoreEnabled(undefined)).toBe(false);
+    expect(isRestoreEnabled('')).toBe(false);
   });
 });
 

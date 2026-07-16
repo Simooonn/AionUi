@@ -26,6 +26,11 @@ export interface WorkspaceProps {
   isTemporaryWorkspace?: boolean;
   eventPrefix?: 'acp' | 'codex' | 'aionrs';
   messageApi?: MessageApi;
+  /**
+   * CLI resume command for the current conversation (imported extra or native
+   * ACP resolve). Null when unavailable / still resolving — disables Restore.
+   */
+  resumeCommand?: string | null;
 }
 
 /**

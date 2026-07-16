@@ -428,7 +428,10 @@
       "exited": "프로세스가 종료되었습니다 (코드 {{code}})",
       "restart": "다시 시작",
       "capReached": "터미널은 최대 {{max}}개까지 열 수 있습니다",
-      "createFailed": "터미널을 열지 못했습니다"
+      "createFailed": "터미널을 열지 못했습니다",
+      "newTab": "새 탭",
+      "restoreSession": "세션 복원",
+      "restoreUnavailable": "현재 대화는 터미널에서 복원할 수 없습니다"
     }
   },
   "resumeCommand": {

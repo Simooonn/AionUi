@@ -428,7 +428,10 @@
       "exited": "Process exited (code {{code}})",
       "restart": "Restart",
       "capReached": "Maximum of {{max}} terminals reached",
-      "createFailed": "Failed to open terminal"
+      "createFailed": "Failed to open terminal",
+      "newTab": "New tab",
+      "restoreSession": "Restore session",
+      "restoreUnavailable": "Current conversation cannot be restored in the terminal"
     }
   },
   "resumeCommand": {

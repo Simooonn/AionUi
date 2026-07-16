@@ -434,7 +434,10 @@
       "exited": "Processo encerrado (código {{code}})",
       "restart": "Reiniciar",
       "capReached": "Máximo de {{max}} terminais atingido",
-      "createFailed": "Falha ao abrir o terminal"
+      "createFailed": "Falha ao abrir o terminal",
+      "newTab": "Nova aba",
+      "restoreSession": "Restaurar sessão",
+      "restoreUnavailable": "A conversa atual não pode ser restaurada no terminal"
     }
   },
   "resumeCommand": {

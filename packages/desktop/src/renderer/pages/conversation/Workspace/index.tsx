@@ -48,6 +48,7 @@ const ChatWorkspace: React.FC<WorkspaceProps> = ({
   isTemporaryWorkspace: isTemporaryWorkspaceProp,
   eventPrefix = 'acp',
   messageApi: externalMessageApi,
+  resumeCommand = null,
 }) => {
   const { t } = useTranslation();
   const layout = useLayoutContext();
@@ -531,7 +532,12 @@ const ChatWorkspace: React.FC<WorkspaceProps> = ({
             survive switching back to files/changes. */}
         {terminalOpened && (
           <div className='flex-1 min-h-0' style={{ display: activeTab === 'terminal' ? 'flex' : 'none' }}>
-            <TerminalTabs conversationId={conversation_id} workspace={workspace} visible={activeTab === 'terminal'} />
+            <TerminalTabs
+              conversationId={conversation_id}
+              workspace={workspace}
+              visible={activeTab === 'terminal'}
+              resumeCommand={resumeCommand}
+            />
           </div>
         )}
       </div>

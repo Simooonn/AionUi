@@ -428,7 +428,10 @@
       "exited": "處理程序已結束（代碼 {{code}}）",
       "restart": "重新啟動",
       "capReached": "最多只能開啟 {{max}} 個終端機",
-      "createFailed": "開啟終端機失敗"
+      "createFailed": "開啟終端機失敗",
+      "newTab": "新標籤",
+      "restoreSession": "恢復會話",
+      "restoreUnavailable": "目前會話無法在終端中恢復"
     }
   },
   "resumeCommand": {

@@ -416,6 +416,11 @@
       "vscode": "VS Code",
       "terminal": "ترمینال",
       "explorer": "فایل اکسپلورر"
+    },
+    "terminal": {
+      "newTab": "زبانه جدید",
+      "restoreSession": "بازیابی نشست",
+      "restoreUnavailable": "گفتگوی فعلی در ترمینال قابل بازیابی نیست"
     }
   },
   "minimap": {

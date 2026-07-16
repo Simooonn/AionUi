@@ -35,6 +35,8 @@
   "select": "Seleccionar",
   "expandMore": "Ver más",
   "collapse": "Contraer",
+  "collapseChat": "Contraer conversación",
+  "expandChat": "Expandir conversación",
   "viewMoreLines": "Ver más ({{count}} líneas)",
   "success": "Éxito",
   "error": "Error",

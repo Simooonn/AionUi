@@ -36,6 +36,8 @@
   "select": "Выбрать",
   "expandMore": "Показать больше",
   "collapse": "Свернуть",
+  "collapseChat": "Свернуть беседу",
+  "expandChat": "Развернуть беседу",
   "viewMoreLines": "Показать ещё ({{count}} строк)",
   "success": "Успешно",
   "error": "Ошибка",

@@ -1,11 +1,11 @@
 import { blurActiveElement } from '@/renderer/utils/ui/focus';
 import {
   WORKSPACE_HAS_FILES_EVENT,
-  WORKSPACE_TOGGLE_EVENT,
   dispatchWorkspaceStateEvent,
   type WorkspaceHasFilesDetail,
 } from '@/renderer/utils/workspace/workspaceEvents';
-import { useEffect, useRef, useState } from 'react';
+import { readWorkspaceCollapsePreference } from '@/renderer/utils/workspace/mainContentPanels';
+import { useEffect, useRef } from 'react';
 
 type UseWorkspaceCollapseParams = {
   workspaceEnabled: boolean;
@@ -27,30 +27,24 @@ type UseWorkspaceCollapseParams = {
    * that "send 你好 without picking a folder" leaves the panel collapsed.
    */
   isTemporaryWorkspace?: boolean;
+  /** Controlled right-collapsed state owned by ChatLayout coordinator. */
+  rightSiderCollapsed: boolean;
+  /**
+   * All right-panel mutations go through the ChatLayout coordinator so the
+   * main-content invariant (middle vs right) cannot be bypassed.
+   */
+  applyRightCollapsed: (collapsed: boolean, reason: string) => void;
 };
 
 type UseWorkspaceCollapseReturn = {
   rightSiderCollapsed: boolean;
-  setRightSiderCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 /**
- * Manages workspace panel collapse/expand state.
+ * Workspace panel collapse policy (hasFiles / mobile / enabled).
  *
- * Default: collapsed. Auto-expand fires when WORKSPACE_HAS_FILES_EVENT arrives
- * and either:
- *   - the workspace is user-picked (folder chosen at creation), or
- *   - files appear mid-session in a temporary workspace (e.g. agent writes a
- *     file while the user is here).
- *
- * Manual toggle is persisted under `workspace-preference-${preferenceKey}` and
- * overrides auto-expand. The caller decides what `preferenceKey` is — single
- * chats use `conversation_id`, teams use `team_id`.
- *
- * Known limitation: leaving and re-entering a temporary workspace remounts the
- * workspace tree, so files added while away report as initial load. They will
- * not trigger auto-expand on return — the user must open the panel manually
- * that one time.
+ * Manual toggle is owned by ChatLayout (listens WORKSPACE_TOGGLE_EVENT).
+ * This hook never free-flips right state.
  */
 export function useWorkspaceCollapse({
   workspaceEnabled,
@@ -58,45 +52,14 @@ export function useWorkspaceCollapse({
   conversation_id,
   preferenceKey,
   isTemporaryWorkspace,
+  rightSiderCollapsed,
+  applyRightCollapsed,
 }: UseWorkspaceCollapseParams): UseWorkspaceCollapseReturn {
-  // Workspace panel always starts collapsed; preference and hasFiles events
-  // drive expand. See WORKSPACE_HAS_FILES_EVENT handler below.
-  const [rightSiderCollapsed, setRightSiderCollapsed] = useState(true);
-
-  // Mirror ref for collapse state
   const rightCollapsedRef = useRef(rightSiderCollapsed);
 
-  // Keep ref in sync
   useEffect(() => {
     rightCollapsedRef.current = rightSiderCollapsed;
   }, [rightSiderCollapsed]);
-
-  // Listen for workspace toggle events
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return undefined;
-    }
-    const handleWorkspaceToggle = () => {
-      if (!workspaceEnabled) {
-        return;
-      }
-      setRightSiderCollapsed((prev) => {
-        const newState = !prev;
-        if (preferenceKey) {
-          try {
-            localStorage.setItem(`workspace-preference-${preferenceKey}`, newState ? 'collapsed' : 'expanded');
-          } catch {
-            // ignore errors
-          }
-        }
-        return newState;
-      });
-    };
-    window.addEventListener(WORKSPACE_TOGGLE_EVENT, handleWorkspaceToggle);
-    return () => {
-      window.removeEventListener(WORKSPACE_TOGGLE_EVENT, handleWorkspaceToggle);
-    };
-  }, [workspaceEnabled, preferenceKey]);
 
   // Auto expand/collapse workspace panel based on files state (user preference takes priority)
   useEffect(() => {
@@ -109,44 +72,27 @@ export function useWorkspaceCollapse({
       // Mobile: always keep workspace collapsed to avoid covering main chat area
       if (isMobile) {
         if (!rightCollapsedRef.current) {
-          setRightSiderCollapsed(true);
+          applyRightCollapsed(true, 'hasFiles-mobile');
         }
         return;
       }
 
-      // Check if user has manual preference
-      let userPreference: 'expanded' | 'collapsed' | null = null;
-      if (preferenceKey) {
-        try {
-          const stored = localStorage.getItem(`workspace-preference-${preferenceKey}`);
-          if (stored === 'expanded' || stored === 'collapsed') {
-            userPreference = stored;
-          }
-        } catch {
-          // ignore errors
-        }
-      }
+      const userPreference = readWorkspaceCollapsePreference(preferenceKey);
 
-      // If user has preference, use it; otherwise decide by file state
       if (userPreference) {
         const shouldCollapse = userPreference === 'collapsed';
-        if (shouldCollapse !== rightSiderCollapsed) {
-          setRightSiderCollapsed(shouldCollapse);
+        if (shouldCollapse !== rightCollapsedRef.current) {
+          applyRightCollapsed(shouldCollapse, 'hasFiles-userPreference');
         }
       } else {
         // No user preference: decide by workspace kind + when the files appeared.
-        // - User-picked workspace: expand on any hasFiles (initial seed is the
-        //   user's own files, worth showing).
-        // - Temporary workspace: ignore the initial seed (backend may inject
-        //   rules/skills the user never asked for) and only expand when files
-        //   show up mid-session.
         const isUserPicked = !isTemporaryWorkspace;
         const isMidSession = !detail.isInitial;
         const allowAutoExpand = isUserPicked || isMidSession;
-        if (allowAutoExpand && detail.hasFiles && rightSiderCollapsed) {
-          setRightSiderCollapsed(false);
-        } else if (!detail.hasFiles && !rightSiderCollapsed) {
-          setRightSiderCollapsed(true);
+        if (allowAutoExpand && detail.hasFiles && rightCollapsedRef.current) {
+          applyRightCollapsed(false, 'hasFiles-autoExpand');
+        } else if (!detail.hasFiles && !rightCollapsedRef.current) {
+          applyRightCollapsed(true, 'hasFiles-autoCollapse');
         }
       }
     };
@@ -154,7 +100,7 @@ export function useWorkspaceCollapse({
     return () => {
       window.removeEventListener(WORKSPACE_HAS_FILES_EVENT, handleHasFiles);
     };
-  }, [isMobile, workspaceEnabled, rightSiderCollapsed, isTemporaryWorkspace, preferenceKey]);
+  }, [isMobile, workspaceEnabled, isTemporaryWorkspace, preferenceKey, applyRightCollapsed]);
 
   // Broadcast workspace state event
   useEffect(() => {
@@ -167,26 +113,26 @@ export function useWorkspaceCollapse({
 
   // Force collapse when workspace is disabled
   useEffect(() => {
-    if (!workspaceEnabled) {
-      setRightSiderCollapsed(true);
+    if (!workspaceEnabled && !rightCollapsedRef.current) {
+      applyRightCollapsed(true, 'workspace-disabled');
     }
-  }, [workspaceEnabled]);
+  }, [workspaceEnabled, applyRightCollapsed]);
 
   // Mobile: force collapse when entering mobile mode
   useEffect(() => {
     if (!workspaceEnabled || !isMobile || rightCollapsedRef.current) {
       return;
     }
-    setRightSiderCollapsed(true);
-  }, [isMobile, workspaceEnabled]);
+    applyRightCollapsed(true, 'mobile-enter');
+  }, [isMobile, workspaceEnabled, applyRightCollapsed]);
 
   // Mobile: force collapse workspace on conversation switch to prevent overlay
   useEffect(() => {
     if (!workspaceEnabled || !isMobile) {
       return;
     }
-    setRightSiderCollapsed(true);
-  }, [conversation_id, isMobile, workspaceEnabled]);
+    applyRightCollapsed(true, 'mobile-conversation-switch');
+  }, [conversation_id, isMobile, workspaceEnabled, applyRightCollapsed]);
 
   // Mobile: blur active element on conversation switch to prevent soft keyboard
   useEffect(() => {
@@ -199,5 +145,5 @@ export function useWorkspaceCollapse({
     return () => cancelAnimationFrame(rafId);
   }, [conversation_id, isMobile]);
 
-  return { rightSiderCollapsed, setRightSiderCollapsed };
+  return { rightSiderCollapsed };
 }

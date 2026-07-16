@@ -35,6 +35,8 @@
   "select": "Auswählen",
   "expandMore": "Mehr anzeigen",
   "collapse": "Einklappen",
+  "collapseChat": "Unterhaltung einklappen",
+  "expandChat": "Unterhaltung ausklappen",
   "viewMoreLines": "Mehr anzeigen ({{count}} Zeilen)",
   "success": "Erfolgreich",
   "error": "Fehler",

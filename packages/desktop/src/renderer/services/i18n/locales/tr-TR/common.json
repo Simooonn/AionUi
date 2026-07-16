@@ -36,6 +36,8 @@
   "select": "Seç",
   "expandMore": "Daha Fazla",
   "collapse": "Daralt",
+  "collapseChat": "Sohbeti daralt",
+  "expandChat": "Sohbeti genişlet",
   "viewMoreLines": "Daha Fazla Göster ({{count}} satır)",
   "success": "Başarılı",
   "error": "Hata",

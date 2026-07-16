@@ -12,7 +12,9 @@ type UseLayoutConstraintsParams = {
   isDesktop: boolean;
   isPreviewOpen: boolean;
   rightSiderCollapsed: boolean;
-  setRightSiderCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  /** Coordinator-gated right collapse (never bypasses main-content invariant). */
+  applyRightCollapsed: (collapsed: boolean, reason: string) => void;
+  chatCollapsed: boolean;
   workspaceWidthPx: number;
   setWorkspaceWidthPx: (px: number) => void;
   chatSplitRatio: number;
@@ -32,7 +34,8 @@ export function useLayoutConstraints({
   isDesktop,
   isPreviewOpen,
   rightSiderCollapsed,
-  setRightSiderCollapsed,
+  applyRightCollapsed,
+  chatCollapsed,
   workspaceWidthPx,
   setWorkspaceWidthPx,
   chatSplitRatio,
@@ -42,7 +45,7 @@ export function useLayoutConstraints({
 }: UseLayoutConstraintsParams): void {
   // Constrain workspace width when preview is open
   useEffect(() => {
-    if (!workspaceEnabled || !isPreviewOpen || !isDesktop || rightSiderCollapsed) {
+    if (!workspaceEnabled || !isPreviewOpen || !isDesktop || rightSiderCollapsed || chatCollapsed) {
       return;
     }
     const safeContainerWidth = Math.max(containerWidth || 0, 1);
@@ -54,16 +57,18 @@ export function useLayoutConstraints({
     if (workspaceWidthPx > maxWorkspace) {
       setWorkspaceWidthPx(maxWorkspace);
     }
-    // Auto-collapse workspace when container is too narrow for all three panels
+    // Auto-collapse workspace when container is too narrow for all three panels.
+    // Suppressed while middle chat is collapsed (right is filling the main area).
     if (safeContainerWidth < MIN_CHAT_PANEL_PX + MIN_PREVIEW_PANEL_PX + MIN_WORKSPACE_PANEL_PX) {
-      setRightSiderCollapsed(true);
+      applyRightCollapsed(true, 'layout-narrow');
     }
   }, [
+    applyRightCollapsed,
+    chatCollapsed,
     containerWidth,
     isDesktop,
     isPreviewOpen,
     rightSiderCollapsed,
-    setRightSiderCollapsed,
     setWorkspaceWidthPx,
     workspaceEnabled,
     workspaceWidthPx,
@@ -71,7 +76,7 @@ export function useLayoutConstraints({
 
   // Clamp chat split ratio within dynamic bounds
   useEffect(() => {
-    if (!workspaceEnabled || !isPreviewOpen || !isDesktop) {
+    if (!workspaceEnabled || !isPreviewOpen || !isDesktop || chatCollapsed) {
       return;
     }
     const clampedChat = Math.max(dynamicChatMinRatio, Math.min(dynamicChatMaxRatio, chatSplitRatio));
@@ -79,6 +84,7 @@ export function useLayoutConstraints({
       setChatSplitRatio(clampedChat);
     }
   }, [
+    chatCollapsed,
     chatSplitRatio,
     dynamicChatMaxRatio,
     dynamicChatMinRatio,

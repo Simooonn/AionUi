@@ -36,6 +36,8 @@
   "select": "انتخاب",
   "expandMore": "نمایش بیشتر",
   "collapse": "جمع کردن",
+  "collapseChat": "جمع‌کردن گفتگو",
+  "expandChat": "بازکردن گفتگو",
   "viewMoreLines": "نمایش بیشتر ({{count}} خط)",
   "success": "موفقیت",
   "error": "خطا",

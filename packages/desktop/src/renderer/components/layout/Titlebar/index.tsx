@@ -10,6 +10,11 @@ import MobileConversationBrand from './MobileConversationBrand';
 import WindowControls from '../WindowControls';
 import { WORKSPACE_STATE_EVENT, dispatchWorkspaceToggleEvent } from '@renderer/utils/workspace/workspaceEvents';
 import type { WorkspaceStateDetail } from '@renderer/utils/workspace/workspaceEvents';
+import {
+  CHAT_STATE_EVENT,
+  dispatchChatToggleEvent,
+  type ChatStateDetail,
+} from '@/renderer/utils/workspace/chatPanelEvents';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useNavigationHistory } from '@/renderer/hooks/context/NavigationHistoryContext';
 import { useFeedback } from '@/renderer/hooks/context/FeedbackContext';
@@ -106,6 +111,8 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
   const { t } = useTranslation();
   const appTitle = useMemo(() => 'AionUi', []);
   const [workspaceCollapsed, setWorkspaceCollapsed] = useState(true);
+  const [chatCollapsed, setChatCollapsed] = useState(false);
+  const [chatControlAvailable, setChatControlAvailable] = useState(false);
   const [mobileCenterTitle, setMobileCenterTitle] = useState(appTitle);
   const [mobileCenterOffset, setMobileCenterOffset] = useState(0);
   const layout = useLayoutContext();
@@ -135,16 +142,49 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
     };
   }, []);
 
+  // Sync middle-chat collapse state + control availability from ChatLayout.
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+    const handler = (event: Event) => {
+      const customEvent = event as CustomEvent<ChatStateDetail>;
+      if (typeof customEvent.detail?.collapsed === 'boolean') {
+        setChatCollapsed(customEvent.detail.collapsed);
+      }
+      if (typeof customEvent.detail?.controlAvailable === 'boolean') {
+        setChatControlAvailable(customEvent.detail.controlAvailable);
+      }
+    };
+    window.addEventListener(CHAT_STATE_EVENT, handler as EventListener);
+    return () => {
+      window.removeEventListener(CHAT_STATE_EVENT, handler as EventListener);
+    };
+  }, []);
+
+  // Leave conversation routes → hide chat-collapse control until ChatLayout remounts.
+  useEffect(() => {
+    if (!workspaceAvailable || layout?.isMobile) {
+      setChatControlAvailable(false);
+    }
+  }, [workspaceAvailable, layout?.isMobile]);
+
   const isDesktopRuntime = isElectronDesktop();
   const isMacRuntime = isDesktopRuntime && isMacOS();
   // Windows/Linux 显示自定义窗口按钮；macOS 在标题栏给工作区一个切换入口
   const showWindowControls = isDesktopRuntime && !isMacRuntime;
   // WebUI 和 macOS 桌面都需要在标题栏放工作区开关
   const showWorkspaceButton = workspaceAvailable && (!isDesktopRuntime || isMacRuntime);
+  // Middle-chat collapse: all desktop platforms when ChatLayout reports controlAvailable.
+  // Must not reuse showWorkspaceButton's mac/WebUI-only gate.
+  const showChatCollapseButton = Boolean(workspaceAvailable && !layout?.isMobile && chatControlAvailable);
 
   const workspaceTooltip = workspaceCollapsed
     ? t('common.expandMore', { defaultValue: 'Expand workspace' })
     : t('common.collapse', { defaultValue: 'Collapse workspace' });
+  const chatCollapseTooltip = chatCollapsed
+    ? t('common.expandChat', { defaultValue: 'Expand conversation' })
+    : t('common.collapseChat', { defaultValue: 'Collapse conversation' });
   const backToChatTooltip = t('common.back', { defaultValue: 'Back to Chat' });
   const feedbackTooltip = t('conversation.welcome.quickActionFeedback', { defaultValue: 'Report Issue' });
   const isSettingsRoute = location.pathname.startsWith('/settings');
@@ -174,6 +214,13 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
       return;
     }
     dispatchWorkspaceToggleEvent();
+  };
+
+  const handleChatToggle = () => {
+    if (!showChatCollapseButton) {
+      return;
+    }
+    dispatchChatToggleEvent();
   };
 
   const handleBackToChat = () => {
@@ -397,6 +444,21 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
         >
           <FeedbackIcon size={iconSize} strokeWidth={desktopIconStroke} />
         </button>
+        {showChatCollapseButton && (
+          <button
+            type='button'
+            className={classNames('app-titlebar__button', layout?.isMobile && 'app-titlebar__button--mobile')}
+            onClick={handleChatToggle}
+            aria-label={chatCollapseTooltip}
+            title={chatCollapseTooltip}
+          >
+            {chatCollapsed ? (
+              <ExpandLeft theme='outline' size={iconSize} fill='currentColor' />
+            ) : (
+              <ExpandRight theme='outline' size={iconSize} fill='currentColor' />
+            )}
+          </button>
+        )}
         {showWorkspaceButton && (
           <button
             type='button'

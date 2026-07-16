@@ -36,6 +36,8 @@
   "select": "選擇",
   "expandMore": "展開更多",
   "collapse": "收起",
+  "collapseChat": "收起會話",
+  "expandChat": "展開會話",
   "viewMoreLines": "檢視更多 ({{count}} 行)",
   "success": "Success",
   "error": "Error",

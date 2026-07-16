@@ -36,6 +36,8 @@
   "select": "선택",
   "expandMore": "더 보기",
   "collapse": "접기",
+  "collapseChat": "대화 접기",
+  "expandChat": "대화 펼치기",
   "viewMoreLines": "더 보기 ({{count}}줄)",
   "success": "성공",
   "error": "오류",

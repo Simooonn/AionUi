@@ -1,7 +1,7 @@
-import { assistantRuntimeKey } from '@/common/types/agent/assistantTypes';
 import { resolveExtensionAssetUrl } from '@/renderer/utils/platform';
 import { isBackendRelativeAssetPath, isLikelyLocalFilePath } from '@/renderer/utils/model/assistantAvatar';
 import type { AssistantListItem, AvailableBackend } from './types';
+import type { ManagedAgent } from '@/renderer/utils/model/agentTypes';
 
 export type AssistantListFilter = 'all' | 'enabled' | 'disabled' | 'builtin' | 'user';
 export const ASSISTANT_SORT_ORDER_GAP = 1000;
@@ -144,31 +144,77 @@ export const groupAssistantsByEnabled = (assistants: AssistantListItem[]) => ({
   disabledAssistants: assistants.filter((assistant) => assistant.enabled === false),
 });
 
-export const buildAssistantEditorBackends = (
+export type AssistantEnabledFilter = 'all' | 'enabled' | 'disabled';
+
+/** Apply the enabled/disabled dropdown filter used by the "My Assistants" tab. */
+export const filterByEnabled = (
   assistants: AssistantListItem[],
-  localeKey: string
+  filter: AssistantEnabledFilter
+): AssistantListItem[] => {
+  switch (filter) {
+    case 'enabled':
+      return assistants.filter((assistant) => assistant.enabled !== false);
+    case 'disabled':
+      return assistants.filter((assistant) => assistant.enabled === false);
+    default:
+      return assistants;
+  }
+};
+
+const byAssistantSortOrder = (a: AssistantListItem, b: AssistantListItem) => a.sort_order - b.sort_order;
+const ASSISTANT_EDITOR_AGENT_TYPES = new Set(['acp', 'aionrs']);
+
+const isAssistantEditorAgent = (agent: ManagedAgent): boolean => ASSISTANT_EDITOR_AGENT_TYPES.has(agent.agent_type);
+
+/**
+ * Split the user's own assistants into the two "My Assistants" groups, each
+ * sorted by sort_order. Bare CLI assistants come first (fixed), then
+ * user-created. Official (builtin) assistants live in the other tab and are
+ * excluded here.
+ */
+export const groupMyAssistants = (assistants: AssistantListItem[]) => {
+  return {
+    // 'generated' == a bare CLI assistant auto-created from a local CLI tool.
+    cliAssistants: assistants.filter((a) => a.source === 'generated').toSorted(byAssistantSortOrder),
+    createdAssistants: assistants.filter((a) => a.source === 'user').toSorted(byAssistantSortOrder),
+  };
+};
+
+export const buildAssistantEditorBackends = (
+  agents: ManagedAgent[],
+  localeKey: string,
+  currentAgentId?: string
 ): AvailableBackend[] => {
   const backendMap = new Map<string, AvailableBackend>();
 
-  for (const assistant of assistants) {
-    if (assistant.source !== 'generated') {
+  for (const agent of agents) {
+    if (!isAssistantEditorAgent(agent)) {
       continue;
     }
 
-    const runtimeKey = assistantRuntimeKey(assistant).trim();
-    const agentId = assistant.agent_id?.trim() || '';
-    if (!agentId || backendMap.has(agentId)) {
+    const agentId = agent.id?.trim() || '';
+    const status = agent.status;
+    const isCurrent = Boolean(currentAgentId && agentId === currentAgentId);
+    const isSelectable = agent.enabled !== false && (status === 'online' || status === 'unchecked');
+    if (!agentId || backendMap.has(agentId) || (!isSelectable && !isCurrent)) {
       continue;
     }
 
-    const models = Array.isArray(assistant.models) ? assistant.models : [];
-    const modelOptions = models.map((model) => ({ value: model, label: model }));
+    const runtimeKey = (agent.backend || agent.agent_type || '').trim();
+    if (!runtimeKey) {
+      continue;
+    }
 
     backendMap.set(agentId, {
       id: agentId,
-      name: assistant.name_i18n?.[localeKey] || assistant.name,
+      name: agent.name_i18n?.[localeKey] || agent.name,
       runtimeKey,
-      modelOptions,
+      isExtension: agent.isExtension,
+      // Prefer the agent's own avatar/icon; the dropdown falls back to the logo
+      // catalog (keyed by runtimeKey) when this is empty.
+      icon: agent.avatar || agent.icon,
+      customAgentId: agent.custom_agent_id,
+      modelOptions: [],
     });
   }
 

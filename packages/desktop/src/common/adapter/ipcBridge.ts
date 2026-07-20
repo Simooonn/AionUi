@@ -14,7 +14,7 @@
 
 import type { IConfirmation } from '@/common/chat/chatLib';
 import type { AcpSlashCommandApiItem } from '@/common/chat/slash/types';
-import { bridge } from '@office-ai/platform';
+import { bridge } from '@/common/platform/bridge';
 import type { OpenDialogOptions } from 'electron';
 import type {
   ICssTheme,
@@ -37,6 +37,7 @@ import type {
 import type { PreviewHistoryTarget, PreviewSnapshotInfo } from '../types/office/preview';
 import type {
   EnsureConversationRuntimeResponse,
+  GetConfigOptionsResponse,
   SetConfigOptionRequest,
   SetConfigOptionResponse,
 } from '../types/platform/acpTypes';
@@ -51,18 +52,19 @@ import type {
 import type {
   ITeamAgentRemovedEvent,
   ITeamAgentRenamedEvent,
+  ITeamAgentRuntimeStatusEvent,
   ITeamAgentSpawnedEvent,
   ITeamAgentStatusEvent,
   ITeamChildTurnEvent,
   ITeamCreatedEvent,
   ITeamListChangedEvent,
-  ITeamMcpStatusEvent,
   ITeamRemovedEvent,
   ITeamRenamedEvent,
   ITeamRunAck,
   ITeamRunEvent,
   ITeamRunStateResponse,
   ITeamSessionChangedEvent,
+  ITeamSessionStatusChangedEvent,
   ITeamTaskChangedEvent,
   ICancelTeamChildTurnParams,
   ICancelTeamRunParams,
@@ -76,6 +78,7 @@ import type {
 import type {
   AutoUpdateReadyResult,
   AutoUpdateStatus,
+  InstallerLastFailureMarker,
   UpdateCheckRequest,
   UpdateCheckResult,
   UpdateDownloadCancelRequest,
@@ -507,6 +510,9 @@ export const application = {
 export const update = {
   open: bridge.buildEmitter<{ source?: 'menu' | 'about' | 'tray' }>('update.open'),
   check: bridge.buildProvider<IBridgeResponse<UpdateCheckResult>, UpdateCheckRequest>('update.check'),
+  consumeInstallerLastFailure: bridge.buildProvider<IBridgeResponse<InstallerLastFailureMarker | null>, void>(
+    'update.installer-last-failure.consume'
+  ),
   download: bridge.buildProvider<IBridgeResponse<UpdateDownloadResult>, UpdateDownloadRequest>('update.download'),
   cancelDownload: bridge.buildProvider<IBridgeResponse, UpdateDownloadCancelRequest>('update.download.cancel'),
   downloadProgress: bridge.buildEmitter<UpdateDownloadProgressEvent>('update.download.progress'),
@@ -1436,6 +1442,7 @@ export const cron = {
       agent_config: p.updates.metadata?.agent_config,
       conversation_title: p.updates.metadata?.conversation_title,
       max_retries: p.updates.state?.max_retries,
+      queue_enabled: p.updates.state?.queue_enabled,
     })
   ),
   removeJob: httpDelete<void, { job_id: string }>((p) => `/api/cron/jobs/${p.job_id}`),
@@ -1493,6 +1500,7 @@ export interface ICronJob {
     run_count: number;
     retry_count: number;
     max_retries: number;
+    queue_enabled: boolean;
   };
 }
 
@@ -1536,6 +1544,7 @@ export interface ICreateCronJobParams {
   conversation_title?: string;
   created_by: 'user' | 'agent';
   execution_mode?: 'existing' | 'new_conversation';
+  queue_enabled?: boolean;
   agent_config?: ICronAgentConfigWrite;
 }
 
@@ -1554,6 +1563,7 @@ export interface ICronJobUpdateParams {
   };
   state?: {
     max_retries?: number;
+    queue_enabled?: boolean;
   };
 }
 
@@ -2022,7 +2032,7 @@ export const team = {
   create: withResponseMap(
     httpPost<TTeam, ICreateTeamParams>('/api/teams', (p) => ({
       name: p.name,
-      assistants: p.assistants.map(toBackendAssistant),
+      agents: p.agents.map(toBackendAssistant),
       ...(p.workspace ? { workspace: p.workspace } : {}),
     })),
     fromBackendTeam
@@ -2048,6 +2058,9 @@ export const team = {
   ),
   stop: httpDelete<void, { team_id: string }>((p) => `/api/teams/${p.team_id}/session`),
   ensureSession: httpPost<void, { team_id: string }>((p) => `/api/teams/${p.team_id}/session`),
+  getConfigOptions: httpGet<GetConfigOptionsResponse, { team_id: string; conversation_id: string }>(
+    (p) => `/api/teams/${p.team_id}/conversations/${encodeURIComponent(p.conversation_id)}/config-options`
+  ),
   activeLease: httpPost<void, { team_id: string }>(
     (p) => `/api/teams/${p.team_id}/active-lease`,
     () => undefined
@@ -2102,12 +2115,13 @@ export const team = {
   agentSpawned: wsEmitter<ITeamAgentSpawnedEvent>('team.agentSpawned'),
   agentRemoved: wsEmitter<ITeamAgentRemovedEvent>('team.agentRemoved'),
   agentRenamed: wsEmitter<ITeamAgentRenamedEvent>('team.agentRenamed'),
+  agentRuntimeStatusChanged: wsEmitter<ITeamAgentRuntimeStatusEvent>('team.agentRuntimeStatusChanged'),
   listChanged: wsEmitter<ITeamListChangedEvent>('team.listChanged'),
   created: wsEmitter<ITeamCreatedEvent>('team.created'),
   removed: wsEmitter<ITeamRemovedEvent>('team.removed'),
   renamed: wsEmitter<ITeamRenamedEvent>('team.renamed'),
   teammateMessage: wsEmitter<ITeamTeammateMessageEvent>('team.teammateMessage'),
-  mcpStatus: wsEmitter<ITeamMcpStatusEvent>('team.mcpStatus'),
+  sessionStatusChanged: wsEmitter<ITeamSessionStatusChangedEvent>('team.sessionStatusChanged'),
   taskChanged: wsEmitter<ITeamTaskChangedEvent>('team.taskChanged'),
   sessionChanged: wsEmitter<ITeamSessionChangedEvent>('team.sessionChanged'),
   runAccepted: wsEmitter<ITeamRunEvent>('team.runAccepted'),

@@ -14,7 +14,7 @@ export interface ThoughtData {
   description: string;
 }
 
-interface ThoughtDisplayProps {
+type ThoughtDisplayProps = {
   thought?: ThoughtData;
   style?: 'default' | 'compact';
   running?: boolean;
@@ -24,8 +24,13 @@ interface ThoughtDisplayProps {
    * restarting from zero. Falls back to mount time when omitted.
    */
   startTime?: number | null;
+  statusText?: string;
   onStop?: () => void;
-}
+  // Absolute start timestamp (ms) supplied by an external source (e.g. team slot work).
+  startedAtMs?: number | null;
+  // Explicit flag declaring elapsed time is driven by an external timestamp (team chain).
+  externalElapsedSource?: boolean;
+};
 
 // Background gradient constants
 const GRADIENT_DARK = 'linear-gradient(135deg, #464767 0%, #323232 100%)';
@@ -36,7 +41,10 @@ const ThoughtDisplay: React.FC<ThoughtDisplayProps> = ({
   style = 'default',
   running = false,
   startTime,
+  statusText,
   onStop: _onStop,
+  startedAtMs,
+  externalElapsedSource,
 }) => {
   const { theme } = useThemeContext();
   const { t } = useTranslation();
@@ -57,8 +65,42 @@ const ThoughtDisplay: React.FC<ThoughtDisplayProps> = ({
   const [elapsedTime, setElapsedTime] = useState(0);
   const mountTimeRef = useRef<number>(Date.now());
 
+  // External mode with a valid absolute start timestamp → derive elapsed from it (state A).
+  const hasValidStartedAt =
+    externalElapsedSource === true &&
+    typeof startedAtMs === 'number' &&
+    Number.isFinite(startedAtMs) &&
+    startedAtMs > 0;
+  // External mode but timestamp invalid → suppress the elapsed number (state B).
+  const suppressElapsed = externalElapsedSource === true && !hasValidStartedAt;
+  // Show the elapsed number only while running and not suppressed; the spinner stays gated on `running`.
+  const showElapsed = running && !suppressElapsed;
+
   // Timer for elapsed time
   useEffect(() => {
+    // Branch A: external timestamp mode with a valid start. Base the elapsed time on the
+    // absolute `startedAtMs`, so remount or effect re-runs recompute from the same origin
+    // instead of resetting to zero. The inline predicate narrows `startedAtMs` to a number.
+    if (
+      externalElapsedSource === true &&
+      typeof startedAtMs === 'number' &&
+      Number.isFinite(startedAtMs) &&
+      startedAtMs > 0
+    ) {
+      const tick = () => setElapsedTime(Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000)));
+      tick();
+      const timer = setInterval(tick, 1000);
+      return () => clearInterval(timer);
+    }
+
+    // Branch B: external timestamp mode without a valid start. Do not start a timer; the
+    // render layer suppresses the number and only shows the status text and spinner.
+    if (externalElapsedSource === true) {
+      setElapsedTime(0);
+      return;
+    }
+
+    // Branch C: non-external mode (non-team). Preserve the original local timer behavior.
     if (!running && !thought?.subject) {
       setElapsedTime(0);
       return;
@@ -74,7 +116,7 @@ const ThoughtDisplay: React.FC<ThoughtDisplayProps> = ({
     const timer = setInterval(tick, 1000);
 
     return () => clearInterval(timer);
-  }, [running, thought?.subject, startTime]);
+  }, [externalElapsedSource, startedAtMs, running, thought?.subject, startTime]);
 
   // Calculate final style based on theme and style prop
   const containerStyle = useMemo(() => {
@@ -95,21 +137,21 @@ const ThoughtDisplay: React.FC<ThoughtDisplayProps> = ({
   }, [theme, style]);
 
   // Hide when not running and no thought data
-  if (!thought?.subject && !running) {
+  if (!thought?.subject && !running && !statusText) {
     return null;
   }
 
   // Loading-only mode: running without thought data (used by ACP when thinking is inline)
-  if (running && !thought?.subject) {
+  if (!thought?.subject && (running || statusText)) {
     return (
       <div
         className='relative z-1 mb--20px pb-30px px-10px py-10px rd-t-20px text-14px lh-20px text-t-primary flex items-center gap-8px'
         style={containerStyle}
       >
-        <Spin size={14} />
+        {running && <Spin size={14} />}
         <span className='text-t-secondary'>
-          {t('conversation.chat.processing')}
-          <span className='ml-8px opacity-60'>({formatElapsedTime(elapsedTime)})</span>
+          {statusText ?? t('conversation.chat.processing')}
+          {showElapsed && <span className='ml-8px opacity-60'>({formatElapsedTime(elapsedTime)})</span>}
         </span>
       </div>
     );
@@ -129,7 +171,7 @@ const ThoughtDisplay: React.FC<ThoughtDisplayProps> = ({
           {thought?.subject}
         </Tag>
         {showDescription && <span className='flex-1 truncate'>{thought?.description}</span>}
-        {running && (
+        {showElapsed && (
           <span className='text-t-tertiary text-12px whitespace-nowrap'>({formatElapsedTime(elapsedTime)})</span>
         )}
       </div>

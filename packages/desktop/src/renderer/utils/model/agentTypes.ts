@@ -22,7 +22,7 @@ export type AgentType = 'acp' | 'remote' | 'aionrs' | 'openclaw-gateway' | 'nano
 /** Source tier of an agent row, mirroring backend `agent_source` enum. */
 export type AgentSource = 'internal' | 'builtin' | 'extension' | 'custom';
 
-export type AgentManagementStatus = 'online' | 'offline' | 'missing';
+export type AgentManagementStatus = 'online' | 'offline' | 'missing' | 'unchecked';
 export type AgentSnapshotCheckStatus = 'online' | 'offline';
 export type AgentSnapshotCheckKind = 'startup' | 'scheduled' | 'manual' | 'session';
 export type AgentManagementErrorDetails = {
@@ -154,14 +154,16 @@ export type ManagedAgent = Omit<AgentMetadata, 'available' | 'handshake'> & {
   config_options?: unknown;
   available_modes?: unknown;
   available_models?: unknown;
+  available_commands?: unknown;
+  handshake?: AgentHandshake;
 };
 
 /**
  * Fetcher for MANAGED_AGENTS_SWR_KEY — the Agent settings management view.
  * Hits `/api/agents/management` so user-disabled and missing rows remain
- * visible for diagnostics and re-enable/test-connection actions. Must only be
- * used by the settings surface; user-facing business pickers must not depend
- * on `/api/agents`.
+ * visible for diagnostics and re-enable/test-connection actions. Engine
+ * selectors also use this catalog so `online` / `unchecked` / `missing` /
+ * `offline` semantics stay consistent with the Agent settings page.
  */
 export async function fetchManagedAgents(): Promise<ManagedAgent[]> {
   try {

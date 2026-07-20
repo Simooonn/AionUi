@@ -7,7 +7,7 @@ import { useAuth } from '@renderer/hooks/context/AuthContext';
 import { useLayoutContext } from '@renderer/hooks/context/LayoutContext';
 import { blurActiveElement } from '@renderer/utils/ui/focus';
 import { useThemeContext } from '@renderer/hooks/context/ThemeContext';
-import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry } from './SiderNav';
+import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry, SiderAssistantEntry } from './SiderNav';
 import SiderFooter from './SiderFooter';
 import TeamSiderSection from './TeamSiderSection';
 import siderStyles from './Sider.module.css';
@@ -64,7 +64,7 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
         console.error('Navigation failed:', error);
       });
     } else {
-      Promise.resolve(navigate('/settings/model')).catch((error) => {
+      Promise.resolve(navigate('/settings/agent')).catch((error) => {
         console.error('Navigation failed:', error);
       });
     }
@@ -86,6 +86,19 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
     closePreview();
     setIsBatchMode(false);
     Promise.resolve(navigate('/scheduled')).catch((error) => {
+      console.error('Navigation failed:', error);
+    });
+    if (onSessionClick) {
+      onSessionClick();
+    }
+  };
+
+  const handleAssistantClick = () => {
+    cleanupSiderTooltips();
+    blurActiveElement();
+    closePreview();
+    setIsBatchMode(false);
+    Promise.resolve(navigate('/assistants')).catch((error) => {
       console.error('Navigation failed:', error);
     });
     if (onSessionClick) {
@@ -157,13 +170,24 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
               onNewChat={handleNewChat}
               onToggleBatchMode={() => setIsBatchMode((prev) => !prev)}
             />
-            {/* Search entry */}
-            <SiderSearchEntry
+            {/* Search entry — desktop moves this into the titlebar toolbar;
+                mobile keeps it here in the sidebar. */}
+            {isMobile && (
+              <SiderSearchEntry
+                isMobile={isMobile}
+                collapsed={collapsed}
+                siderTooltipProps={siderTooltipProps}
+                onConversationSelect={handleConversationSelect}
+                onSessionClick={onSessionClick}
+              />
+            )}
+            {/* Assistant nav entry - fixed above Scheduled */}
+            <SiderAssistantEntry
               isMobile={isMobile}
+              isActive={pathname.startsWith('/assistants')}
               collapsed={collapsed}
               siderTooltipProps={siderTooltipProps}
-              onConversationSelect={handleConversationSelect}
-              onSessionClick={onSessionClick}
+              onClick={handleAssistantClick}
             />
             {/* Scheduled tasks nav entry - fixed above scroll */}
             <SiderScheduledEntry

@@ -8,7 +8,10 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Assistant } from '@/common/types/agent/assistantTypes';
-import AssistantSelectionArea from '@/renderer/pages/guid/components/AssistantSelectionArea';
+import AssistantSelectionArea, {
+  hasTruncatedAssistantLabels,
+  resolveAssistantVisibleLimit,
+} from '@/renderer/pages/guid/components/AssistantSelectionArea';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -31,6 +34,28 @@ vi.mock('@arco-design/web-react', async () => {
 });
 
 describe('AssistantSelectionArea', () => {
+  it('maps available width to 4, 3, 2, then 1 visible assistant slots', () => {
+    expect(resolveAssistantVisibleLimit(800)).toBe(4);
+    expect(resolveAssistantVisibleLimit(680)).toBe(3);
+    expect(resolveAssistantVisibleLimit(520)).toBe(2);
+    expect(resolveAssistantVisibleLimit(390)).toBe(1);
+  });
+
+  it('detects labels that are visually truncated', () => {
+    const root = document.createElement('div');
+    const label = document.createElement('span');
+    label.setAttribute('data-assistant-label', 'true');
+    Object.defineProperty(label, 'clientWidth', { configurable: true, value: 80 });
+    Object.defineProperty(label, 'scrollWidth', { configurable: true, value: 120 });
+    root.appendChild(label);
+
+    expect(hasTruncatedAssistantLabels(root)).toBe(true);
+
+    Object.defineProperty(label, 'scrollWidth', { configurable: true, value: 80 });
+
+    expect(hasTruncatedAssistantLabels(root)).toBe(false);
+  });
+
   it('keeps the assistant picker visible after an assistant is selected', () => {
     render(
       <AssistantSelectionArea
@@ -58,18 +83,42 @@ describe('AssistantSelectionArea', () => {
       />
     );
 
+    // Selection lists group by source: CLI (generated) → user → official
+    // (builtin). So the top row is [bare-aionrs, user-research, user-review,
+    // user-translate] and the official Writer + trailing user-finance overflow.
     expect(screen.getByTestId('preset-pill-bare-aionrs')).toBeInTheDocument();
-    expect(screen.getByTestId('preset-pill-builtin-writer')).toBeInTheDocument();
     expect(screen.getByTestId('preset-pill-user-research')).toBeInTheDocument();
     expect(screen.getByTestId('preset-pill-user-review')).toBeInTheDocument();
-    expect(screen.queryByTestId('preset-pill-user-translate')).not.toBeInTheDocument();
+    expect(screen.getByTestId('preset-pill-user-translate')).toBeInTheDocument();
+    expect(screen.queryByTestId('preset-pill-builtin-writer')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('assistant-more-btn'));
 
-    expect(await screen.findByTestId('assistant-overflow-user-translate')).toBeInTheDocument();
-    expect(screen.getByTestId('assistant-overflow-user-finance')).toBeInTheDocument();
+    expect(await screen.findByTestId('assistant-overflow-user-finance')).toBeInTheDocument();
+    expect(screen.getByTestId('assistant-overflow-builtin-writer')).toBeInTheDocument();
     expect(screen.queryByTestId('assistant-overflow-bare-aionrs')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('assistant-overflow-builtin-writer')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('assistant-overflow-user-research')).not.toBeInTheDocument();
+  });
+
+  it('limits the top assistant row when a smaller visible count is provided', async () => {
+    render(
+      <AssistantSelectionArea
+        selectedAssistantId='bare-aionrs'
+        assistants={manyAssistants()}
+        localeKey='en-US'
+        maxVisibleAssistants={1}
+        onSelectAssistant={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('preset-pill-bare-aionrs')).toBeInTheDocument();
+    expect(screen.queryByTestId('preset-pill-user-research')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('preset-pill-user-review')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('assistant-more-btn'));
+
+    expect(await screen.findByTestId('assistant-overflow-user-research')).toBeInTheDocument();
+    expect(screen.getByTestId('assistant-overflow-user-review')).toBeInTheDocument();
   });
 
   it('reports the real assistant id when a pill is selected', () => {
@@ -89,7 +138,7 @@ describe('AssistantSelectionArea', () => {
     expect(onSelectAssistant).toHaveBeenCalledWith('builtin-writer');
   });
 
-  it('orders assistant pills by sort_order before applying overflow', () => {
+  it('orders assistant pills by group then sort_order before applying overflow', () => {
     render(
       <AssistantSelectionArea
         selectedAssistantId='bare-aionrs'
@@ -104,12 +153,14 @@ describe('AssistantSelectionArea', () => {
       />
     );
 
+    // CLI (generated) first, then user-created by sort_order (Early 5, Mid 15,
+    // Late 90); the official Writer sinks to the bottom group and overflows.
     expect(
       screen
         .getAllByRole('button')
         .slice(0, 4)
         .map((node) => node.textContent?.trim())
-    ).toEqual(['Early', 'Aion CLI', 'Mid', 'Writer']);
+    ).toEqual(['Aion CLI', 'Early', 'Mid', 'Late']);
   });
 
   it('keeps a selected overflow assistant visible in the top pill row', () => {
@@ -122,8 +173,28 @@ describe('AssistantSelectionArea', () => {
       />
     );
 
+    // The selected overflow assistant (finance) is pulled into the top row;
+    // translate (the last of the visible-4 before pull-in) drops to overflow.
     expect(screen.getByTestId('preset-pill-user-finance')).toBeInTheDocument();
-    expect(screen.queryByTestId('preset-pill-user-review')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('preset-pill-user-translate')).not.toBeInTheDocument();
+  });
+
+  it('uses the last visible slot for an overflow selection at smaller visible counts', () => {
+    render(
+      <AssistantSelectionArea
+        selectedAssistantId='user-finance'
+        assistants={manyAssistants()}
+        localeKey='en-US'
+        maxVisibleAssistants={2}
+        onSelectAssistant={vi.fn()}
+      />
+    );
+
+    expect(screen.getAllByTestId(/^preset-pill-/).map((node) => node.getAttribute('data-assistant-id'))).toEqual([
+      'bare-aionrs',
+      'user-finance',
+    ]);
+    expect(screen.queryByTestId('preset-pill-user-research')).not.toBeInTheDocument();
   });
 
   it('can re-render from an empty assistant catalog without breaking hook order', () => {

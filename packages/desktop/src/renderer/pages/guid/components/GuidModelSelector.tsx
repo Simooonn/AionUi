@@ -8,6 +8,7 @@ import type { IProvider, TProviderWithModel } from '@/common/config/storage';
 import { RuntimeSelectorCheckedItem } from '@/renderer/components/agent/runtimeSelectorOptions';
 import { iconColors } from '@/renderer/styles/colors';
 import { getModelDisplayLabel } from '@/renderer/utils/model/agentLogo';
+import type { AgentRuntimeDerivedOption } from '@/renderer/utils/model/agentRuntimeCatalog';
 import type { AcpModelInfo } from '../types';
 import { getAvailableModels } from '../utils/modelUtils';
 import { Button, Dropdown, Menu, Tooltip } from '@arco-design/web-react';
@@ -15,7 +16,15 @@ import { Brain, Down, Plus } from '@icon-park/react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { useProvidersQuery } from '@/renderer/hooks/agent/useModelProviderList';
+import {
+  composeRuntimeSelectorLabel,
+  getCurrentThoughtLevelLabel,
+  RUNTIME_SUBMENU_TRIGGER_PROPS,
+  RuntimeSelectorCheckedItem,
+  RuntimeSelectorModelList,
+  type RuntimeSelectorModelGroup,
+  RuntimeSelectorSubMenuTitle,
+} from '@/renderer/components/agent/runtimeSelectorOptions';
 
 type GuidModelSelectorProps = {
   // Gemini model state
@@ -28,7 +37,12 @@ type GuidModelSelectorProps = {
   currentAcpCachedModelInfo: AcpModelInfo | null;
   selectedAcpModel: string | null;
   setSelectedAcpModel: React.Dispatch<React.SetStateAction<string | null>>;
+  thoughtLevelOption?: AgentRuntimeDerivedOption | null;
+  onThoughtLevelSelect?: (value: string) => void;
 };
+
+/** Composite id for a provider+model pair, so the shared flat model list can track selection. */
+const providerCompositeId = (providerId: string, modelName: string) => `${providerId}::${modelName}`;
 
 const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
   isGeminiMode,
@@ -38,13 +52,12 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
   currentAcpCachedModelInfo,
   selectedAcpModel,
   setSelectedAcpModel,
+  thoughtLevelOption,
+  onThoughtLevelSelect,
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const defaultModelLabel = t('common.defaultModel');
-
-  // 获取模型配置数据（包含健康状态）
-  const { data: modelConfig } = useProvidersQuery();
 
   // 过滤掉被禁用的 provider
   const enabledModelList = React.useMemo(() => {
@@ -87,17 +100,53 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
       fallbackLabel: defaultModelLabel,
     });
   }, [acpSelectedLabel, currentAcpCachedModelInfo?.current_model_id, defaultModelLabel, selectedAcpModel]);
+  const selectedThoughtLevelValue = thoughtLevelOption?.currentValue || thoughtLevelOption?.options[0]?.value || '';
+  const normalizedThoughtLevelOption =
+    thoughtLevelOption && thoughtLevelOption.options.length > 0
+      ? {
+          ...thoughtLevelOption,
+          currentValue: selectedThoughtLevelValue || null,
+        }
+      : null;
+  const combinedAcpButtonLabel = composeRuntimeSelectorLabel({
+    modelLabel: acpButtonLabel,
+    thoughtLevel: normalizedThoughtLevelOption,
+  });
 
   if (isGeminiMode) {
+    // Provider-grouped models (e.g. aionrs). Build groups + a composite-id lookup
+    // so the shared model list can search across providers and map back on select.
+    const providerModelGroups: RuntimeSelectorModelGroup[] = [];
+    const providerModelLookup = new Map<string, { provider: IProvider; modelName: string }>();
+    for (const provider of enabledModelList) {
+      const available_models = getAvailableModels(provider);
+      if (available_models.length === 0) continue;
+      providerModelGroups.push({
+        key: provider.id,
+        title: provider.name,
+        models: available_models.map((modelName) => {
+          const id = providerCompositeId(provider.id, modelName);
+          providerModelLookup.set(id, { provider, modelName });
+          return { id, label: modelName };
+        }),
+      });
+    }
+    const currentProviderModelId = current_model
+      ? providerCompositeId(current_model.id, current_model.use_model || '')
+      : null;
+    const addModelItem = (
+      <Menu.Item key='add-model' className='text-12px text-t-secondary' onClick={() => navigate('/settings/model')}>
+        <Plus theme='outline' size='12' />
+        {t('settings.addModel')}
+      </Menu.Item>
+    );
+
     return (
       <Dropdown
         trigger='hover'
         droplist={
-          <Menu
-            className='aion-model-menu--sticky-group'
-            selectedKeys={current_model ? [current_model.id + current_model.use_model] : []}
-          >
-            {!enabledModelList || enabledModelList.length === 0
+          <Menu selectedKeys={currentProviderModelId ? [currentProviderModelId] : []}>
+            {providerModelGroups.length === 0
               ? [
                   <Menu.Item
                     key='no-models'
@@ -106,64 +155,24 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
                   >
                     {t('settings.noAvailableModels')}
                   </Menu.Item>,
-                  <Menu.Item
-                    key='add-model'
-                    className='text-12px text-t-secondary'
-                    onClick={() => navigate('/settings/model')}
-                  >
-                    <Plus theme='outline' size='12' />
-                    {t('settings.addModel')}
-                  </Menu.Item>,
+                  addModelItem,
                 ]
               : [
-                  ...(enabledModelList || []).map((provider) => {
-                    const available_models = getAvailableModels(provider);
-                    if (available_models.length === 0) return null;
-                    return (
-                      <Menu.ItemGroup title={provider.name} key={provider.id}>
-                        {available_models.map((modelName) => {
-                          // 获取模型健康状态
-                          const matchedProvider = modelConfig?.find((p) => p.id === provider.id);
-                          const healthStatus = matchedProvider?.model_health?.[modelName]?.status || 'unknown';
-                          const healthColor =
-                            healthStatus === 'healthy'
-                              ? 'bg-green-500'
-                              : healthStatus === 'unhealthy'
-                                ? 'bg-red-500'
-                                : 'bg-gray-400';
-
-                          return (
-                            <Menu.Item
-                              key={provider.id + modelName}
-                              className={
-                                current_model?.id + current_model?.use_model === provider.id + modelName ? '!bg-2' : ''
-                              }
-                              onClick={() => {
-                                setCurrentModel({ ...provider, use_model: modelName }).catch((error) => {
-                                  console.error('Failed to set current model:', error);
-                                });
-                              }}
-                            >
-                              <div className='flex items-center gap-8px w-full'>
-                                {healthStatus !== 'unknown' && (
-                                  <div className={`w-6px h-6px rounded-full shrink-0 ${healthColor}`} />
-                                )}
-                                <span>{modelName}</span>
-                              </div>
-                            </Menu.Item>
-                          );
-                        })}
-                      </Menu.ItemGroup>
-                    );
-                  }),
-                  <Menu.Item
-                    key='add-model'
-                    className='text-12px text-t-secondary'
-                    onClick={() => navigate('/settings/model')}
-                  >
-                    <Plus theme='outline' size='12' />
-                    {t('settings.addModel')}
-                  </Menu.Item>,
+                  <RuntimeSelectorModelList
+                    key='model-list'
+                    groups={providerModelGroups}
+                    currentModelId={currentProviderModelId}
+                    onSelect={(id) => {
+                      const entry = providerModelLookup.get(id);
+                      if (!entry) return;
+                      setCurrentModel({ ...entry.provider, use_model: entry.modelName } as TProviderWithModel).catch(
+                        (error) => {
+                          console.error('Failed to set current model:', error);
+                        }
+                      );
+                    }}
+                  />,
+                  addModelItem,
                 ]}
           </Menu>
         }
@@ -176,7 +185,7 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
         >
           <span className='flex items-center gap-6px min-w-0'>
             <Brain theme='outline' size='14' fill={iconColors.secondary} className='shrink-0' />
-            <span>{geminiButtonLabel}</span>
+            <span className='guid-model-label'>{geminiButtonLabel}</span>
             <Down theme='outline' size='12' fill={iconColors.secondary} className='shrink-0' />
           </span>
         </Button>
@@ -191,38 +200,71 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
     // toolbar; per-model health dots were misleading here (they came from an
     // unrelated provider lookup and never tracked the ACP backend's model).
     const effectiveAcpModelId = selectedAcpModel || currentAcpCachedModelInfo.current_model_id || null;
+    const modelListNode = (
+      <RuntimeSelectorModelList
+        models={currentAcpCachedModelInfo.available_models}
+        currentModelId={effectiveAcpModelId}
+        onSelect={(modelId) => setSelectedAcpModel(modelId)}
+      />
+    );
+
     return (
       <Dropdown
         trigger='click'
         droplist={
           <Menu selectedKeys={effectiveAcpModelId ? [effectiveAcpModelId] : []}>
-            {currentAcpCachedModelInfo.available_models.map((model) => {
-              const selected = model.id === effectiveAcpModelId;
-              return (
-                <Menu.Item
-                  key={model.id}
-                  className={selected ? '!bg-2' : ''}
-                  onClick={() => setSelectedAcpModel(model.id)}
+            {normalizedThoughtLevelOption ? (
+              <>
+                {/* Two-level layout: model row on top, thought-level row below;
+                    each expands into a left-side submenu. */}
+                <Menu.SubMenu
+                  key='model'
+                  triggerProps={RUNTIME_SUBMENU_TRIGGER_PROPS}
+                  title={
+                    <RuntimeSelectorSubMenuTitle
+                      label={t('common.model', { defaultValue: 'Model' })}
+                      value={acpButtonLabel}
+                    />
+                  }
                 >
-                  <RuntimeSelectorCheckedItem selected={selected}>
-                    {model.description ? (
-                      <Tooltip content={model.description} position='right'>
-                        <span className='min-w-0 truncate'>{model.label}</span>
-                      </Tooltip>
-                    ) : (
-                      <span className='min-w-0 truncate'>{model.label}</span>
-                    )}
-                  </RuntimeSelectorCheckedItem>
-                </Menu.Item>
-              );
-            })}
+                  {modelListNode}
+                </Menu.SubMenu>
+                <Menu.SubMenu
+                  key='thought-level'
+                  triggerProps={RUNTIME_SUBMENU_TRIGGER_PROPS}
+                  title={
+                    <RuntimeSelectorSubMenuTitle
+                      label={t('agent.thoughtLevel.label')}
+                      value={getCurrentThoughtLevelLabel(normalizedThoughtLevelOption)}
+                    />
+                  }
+                >
+                  {normalizedThoughtLevelOption.options.map((item) => (
+                    <Menu.Item
+                      key={item.value}
+                      className={item.value === normalizedThoughtLevelOption.currentValue ? '!bg-2' : ''}
+                      onClick={() => onThoughtLevelSelect?.(item.value)}
+                    >
+                      <RuntimeSelectorCheckedItem
+                        selected={item.value === normalizedThoughtLevelOption.currentValue}
+                        description={item.description}
+                      >
+                        {item.label}
+                      </RuntimeSelectorCheckedItem>
+                    </Menu.Item>
+                  ))}
+                </Menu.SubMenu>
+              </>
+            ) : (
+              modelListNode
+            )}
           </Menu>
         }
       >
         <Button className={'sendbox-model-btn guid-config-btn'} shape='round' size='small'>
           <span className='flex items-center gap-6px min-w-0'>
             <Brain theme='outline' size='14' fill={iconColors.secondary} className='shrink-0' />
-            <span>{acpButtonLabel}</span>
+            <span className='guid-model-label'>{combinedAcpButtonLabel}</span>
             <Down theme='outline' size='12' fill={iconColors.secondary} className='shrink-0' />
           </span>
         </Button>
@@ -236,7 +278,7 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
       <Button className={'sendbox-model-btn guid-config-btn'} shape='round' size='small' style={{ cursor: 'default' }}>
         <span className='flex items-center gap-6px min-w-0'>
           <Brain theme='outline' size='14' fill={iconColors.secondary} className='shrink-0' />
-          <span>{defaultModelLabel}</span>
+          <span className='guid-model-label'>{defaultModelLabel}</span>
         </span>
       </Button>
     </Tooltip>

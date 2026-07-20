@@ -53,6 +53,7 @@ import { Message, Tag } from '@arco-design/web-react';
 import { Brain, MagicHat, Shield } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { classifyConversationBusyError } from '../conversationBusyError';
 import { buildSendFailureError } from './buildSendFailureError';
 import { useAcpInitialMessage } from './useAcpInitialMessage';
 import type { UseAcpMessageReturn } from './useAcpMessage';
@@ -129,8 +130,7 @@ const AcpSendBox: React.FC<{
   teamSendMessage,
   teamRuntime,
 }) => {
-  const { aiProcessing, setAiProcessing, resetState, hasThinkingMessage, slashCommands, fetchSlashCommands } =
-    messageState;
+  const { aiProcessing, setAiProcessing, resetState, hasThinkingMessage, slashCommands } = messageState;
   const { t } = useTranslation();
   const teamPermission = useTeamPermission();
   // In team mode, all agents show the permission mode selector (members don't propagate)
@@ -152,13 +152,13 @@ const AcpSendBox: React.FC<{
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
   const [currentMode, setCurrentMode] = useState<string | undefined>(session_mode);
   const prepareRuntimeConfig = useCallback(async () => {
-    if (teamPermission) {
-      await teamPermission.warmupSession();
-    }
+    if (teamPermission) return;
   }, [teamPermission]);
   const runtimeConfig = useAcpConfigOptions({
     conversation_id,
     prepareRuntime: prepareRuntimeConfig,
+    prepareSetRuntime: teamPermission?.warmupSession,
+    loadConfigOptions: teamPermission?.loadConfigOptions,
     enabled: true,
   });
   const runtimeMode = runtimeConfig.mode;
@@ -193,6 +193,8 @@ const AcpSendBox: React.FC<{
     backend,
     initialModelId: current_model_id, // ace: seed from the conversation's persisted model
     prepareRuntime: prepareRuntimeConfig,
+    prepareSetRuntime: teamPermission?.warmupSession,
+    loadConfigOptions: teamPermission?.loadConfigOptions,
     enabled: true, // ace: desktop toolbar pills consume this on all viewports
     onSelectModelSuccess: () => Message.success(t('agent.model.switchSuccess')),
     onSelectModelFailed: (_modelId, error) => Message.error(t(configErrorMessageKey(error))),
@@ -218,19 +220,6 @@ const AcpSendBox: React.FC<{
     [isLeaderInTeam, runtimeConfig, runtimeMode, t, teamPermission]
   );
 
-  // In team mode, warmup the agent then fetch slash commands
-  useEffect(() => {
-    if (!teamPermission) return;
-    void teamPermission
-      .warmupSession()
-      .then(() => {
-        fetchSlashCommands();
-      })
-      .catch((error) => {
-        Message.error(getConversationRuntimeWorkspaceErrorMessage(error, t));
-      });
-  }, [teamPermission, fetchSlashCommands, t]);
-
   const handleContentChange = useCallback(
     (val: string) => {
       setContent(val);
@@ -247,6 +236,7 @@ const AcpSendBox: React.FC<{
   const addOrUpdateMessage = useAddOrUpdateMessage(); // Move this here so it's available in useEffect
   const addOrUpdateMessageRef = useLatestRef(addOrUpdateMessage);
   const runtimeView = useConversationRuntimeView(conversation_id);
+  const { markSendStarted, markSendAccepted, markSendFailed } = runtimeView;
 
   // Shared file handling logic
   const { handleFilesAdded, clearFiles } = useSendBoxFiles({
@@ -290,9 +280,9 @@ const AcpSendBox: React.FC<{
     workspacePath,
     setAiProcessing,
     resetState,
-    markSendStarted: runtimeView.markSendStarted,
-    markSendAccepted: runtimeView.markSendAccepted,
-    markSendFailed: runtimeView.markSendFailed,
+    markSendStarted,
+    markSendAccepted,
+    markSendFailed,
     checkAndUpdateTitle,
     addOrUpdateMessage: addOrUpdateMessageRef.current,
   });
@@ -316,19 +306,31 @@ const AcpSendBox: React.FC<{
           return;
         }
 
-        runtimeView.markSendStarted();
+        markSendStarted();
         setAiProcessing(true);
         const result = await ipcBridge.acpConversation.sendMessage.invoke({
           input: displayMessage,
           conversation_id,
           files,
         });
-        runtimeView.markSendAccepted(result.turn_id, result.runtime, result.msg_id);
+        markSendAccepted(result.turn_id, result.runtime, result.msg_id);
         emitter.emit('chat.history.refresh');
       } catch (error: unknown) {
         const errorMsg =
           getConversationRuntimeWorkspaceErrorMessage(error, t) || parseError(error) || t('common.unknownError');
-        runtimeView.markSendFailed(errorMsg);
+        const busyError = classifyConversationBusyError(error);
+        if (busyError) {
+          markSendFailed({
+            kind: 'busy_conflict',
+            reason: errorMsg,
+            busyKind: busyError.kind,
+            status: busyError.status,
+            code: busyError.code,
+          });
+          throw error;
+        }
+
+        markSendFailed({ kind: 'ordinary', reason: errorMsg });
 
         // Archived conversation (e.g. legacy Gemini). Backend signals this
         // via HTTP 410 + code='CONVERSATION_ARCHIVED' — identified by code,
@@ -397,8 +399,10 @@ Please check your local CLI tool authentication status`,
       backend,
       checkAndUpdateTitle,
       conversation_id,
+      markSendAccepted,
+      markSendFailed,
+      markSendStarted,
       resetState,
-      runtimeView,
       setAiProcessing,
       t,
       teamPermission,
@@ -409,12 +413,16 @@ Please check your local CLI tool authentication status`,
 
   const {
     items: queuedCommands,
+    mode: queueMode,
     isInteractionLocked: isQueueInteractionLocked,
     hasPendingCommands,
     enqueue,
     remove,
+    prioritize,
+    sendNow,
     clear,
     reorder,
+    toggleMode,
     lockInteraction,
     unlockInteraction,
     resetActiveExecution,
@@ -576,10 +584,10 @@ Please check your local CLI tool authentication status`,
       entries.push({
         key: 'skills',
         icon: <MagicHat theme='outline' size='16' />,
-        label: t('common.skills', { defaultValue: 'Skills' }),
+        label: t('common.selectedSkills', { defaultValue: 'Selected skills' }),
         variant: 'muted',
         submenu: {
-          title: t('common.skills', { defaultValue: 'Skills' }),
+          title: t('common.selectedSkills', { defaultValue: 'Selected skills' }),
           selectable: false,
           options: skillOptions,
           onSelect: (name) => {
@@ -603,10 +611,10 @@ Please check your local CLI tool authentication status`,
       entries.push({
         key: 'mcp',
         icon: <Shield theme='outline' size='16' />,
-        label: t('conversation.mcp.loaded', { defaultValue: 'Loaded MCP' }),
+        label: t('conversation.mcp.selected', { defaultValue: 'Selected MCP' }),
         variant: 'muted',
         submenu: {
-          title: t('conversation.mcp.loaded', { defaultValue: 'Loaded MCP' }),
+          title: t('conversation.mcp.selected', { defaultValue: 'Selected MCP' }),
           selectable: false,
           options: mcpOptions,
           onSelect: () => undefined,
@@ -664,16 +672,32 @@ Please check your local CLI tool authentication status`,
     }
   };
   const effectiveHandleStop = teamRuntime?.onStop ?? handleStop;
+  const handleSendNowQueued = useCallback(
+    async (item: ConversationCommandQueueItem) => {
+      // Stop the current reply (best-effort), then promote the chosen command
+      // to the front of the queue in auto mode.  The drain effect will fire it
+      // once the execution gate shows canExecute — avoiding the 409 race that
+      // occurs when sendNow() calls onExecute() directly before the backend
+      // has finished processing the stop.
+      await effectiveHandleStop();
+      prioritize(item.id);
+    },
+    [effectiveHandleStop, prioritize]
+  );
   const sendBoxWidthClass = getChatSurfaceWidthClass(Boolean(teamPermission));
 
   return (
     <div className={`${sendBoxWidthClass} flex flex-col mt-auto mb-16px`}>
       <CommandQueuePanel
         items={queuedCommands}
+        mode={queueMode}
+        isMobile={isMobile}
         interactionLocked={isQueueInteractionLocked}
         onInteractionLock={lockInteraction}
         onInteractionUnlock={unlockInteraction}
         onEdit={handleEditQueuedCommand}
+        onSendNow={handleSendNowQueued}
+        onToggleMode={toggleMode}
         onReorder={reorder}
         onRemove={remove}
         onClear={clear}
@@ -681,6 +705,9 @@ Please check your local CLI tool authentication status`,
       <ThoughtDisplay
         running={teamRuntime?.loading ?? (aiProcessing && !hasThinkingMessage)}
         startTime={runtimeView.processingStartedAt}
+        statusText={teamRuntime?.statusText}
+        externalElapsedSource={Boolean(teamRuntime)}
+        startedAtMs={teamRuntime?.startedAtMs ?? null}
         onStop={effectiveHandleStop}
       />
 
@@ -744,6 +771,8 @@ Please check your local CLI tool authentication status`,
                 hideCompactLabelPrefixOnMobile
                 onModeChanged={isLeaderInTeam ? teamPermission?.propagateMode : undefined}
                 beforeRuntimeSync={prepareRuntimeConfig}
+                beforeRuntimeSet={teamPermission?.warmupSession}
+                loadConfigOptions={teamPermission?.loadConfigOptions}
               />
             )}
           </div>

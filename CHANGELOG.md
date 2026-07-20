@@ -1,5 +1,261 @@
 # Changelog
 
+## [2.1.37](https://github.com/iOfficeAI/AionUi/compare/v2.1.36...v2.1.37) (2026-07-18)
+
+### Desktop
+
+#### Bug Fixes
+
+- **renderer:** keep team elapsed timer continuous across remount (#3612)
+- **bridge:** accept void-param invokes after JSON serialization (#3611)
+
+---
+
+## [2.1.36](https://github.com/iOfficeAI/AionUi/compare/v2.1.35...v2.1.36) (2026-07-17)
+
+### Desktop
+
+#### Features
+
+- **ui:** standardize drag-to-reorder UX for team tabs and pinned conversations (#3606)
+- **ui:** add search to skills/MCP submenus and assistant default selects (#3605)
+- **skills:** skill detail page with assistant attachment (#3604)
+- **skills:** add batch delete for custom skills (#3600)
+- **cron:** add queue protection and custom schedules (#3552)
+
+#### Styling
+
+- **skills:** soften batch-mode selected card state (#3603)
+
+### Core ([v0.1.48](https://github.com/iOfficeAI/AionCore/releases/tag/v0.1.48))
+
+#### Features
+
+- **agents:** add Pi coding agent as builtin ACP agent (#618)
+- **ai-agent:** route image attachments by model capability
+- **aionrs:** inline image attachments for Aion CLI
+- **team:** add CLI fallback collaboration transport (#629)
+
+#### Bug Fixes
+
+- **acp:** confirm legacy mode/model on ACK instead of awaiting observed update (#635)
+- **agents:** honor login PATH and validate builtin CLIs (#622)
+- **ai-agent:** pin image-capable aionrs revision
+- **assistant:** canonicalize rule file storage (#625)
+- **assistant:** stop legacy override sync from clobbering user toggles (#634)
+
+#### Code Refactoring
+
+- **runtime:** remove legacy Bun runtime support (#623)
+
+---
+
+## [2.1.35](https://github.com/iOfficeAI/AionUi/compare/v2.1.34...v2.1.35) (2026-07-14)
+
+### Desktop
+
+#### Bug Fixes
+
+- **renderer:** restrict message file marker parsing (#3590)
+- **conversation:** handle busy send conflicts (#3589)
+- **packaging:** verify bundled resources from manifest (#3587)
+- **feedback:** attach team route context
+- **startup:** classify assistant bootstrap failures (#3583)
+
+### Core ([v0.1.47](https://github.com/iOfficeAI/AionCore/releases/tag/v0.1.47))
+
+#### Features
+
+- **cron:** deduplicate and protect scheduled executions (#601)
+- **diagnostics:** expand feedback runtime evidence (#612)
+
+#### Bug Fixes
+
+- **assistant:** skip dirty assistant bootstrap records (#615)
+- **managed-resources:** emit bundled resource manifest (#617)
+
+---
+
+## [2.1.34](https://github.com/iOfficeAI/AionUi/compare/v2.1.33...v2.1.34) (2026-07-13)
+
+### Desktop
+
+#### Bug Fixes
+
+- **team:** show accepted team work as processing (#3576)
+- **conversation:** prevent queue drain from racing backend idle state (#3571)
+
+### Core ([v0.1.46](https://github.com/iOfficeAI/AionCore/releases/tag/v0.1.46))
+
+#### Bug Fixes
+
+- **acp:** normalize Codex full-access mode (#608)
+- **butler:** correct three breaking field mismatches + update rule to CLI model (#607)
+
+---
+
+## [2.1.33](https://github.com/iOfficeAI/AionUi/compare/v2.1.32...v2.1.33) (2026-07-11)
+
+### Desktop
+
+#### Bug Fixes
+
+- **build:** align Codex installer verifier (#3561)
+
+---
+
+## [2.1.32](https://github.com/iOfficeAI/AionUi/compare/v2.1.31...v2.1.32) (2026-07-10)
+
+### Desktop
+
+#### Bug Fixes
+
+- **i18n:** update Russian localization (#3541)
+
+#### Features
+
+- **i18n:** add French locale (#2731)
+- **guid:** move mobile home input controls into a + action sheet (#3554)
+- **team:** add manual teammate management (#3532)
+- **conversation:** rework model selector into a two-level menu (#3550)
+- **conversation:** rework message queue into a send draft box (#3547)
+
+#### Refactoring
+
+- **conversation:** fold draft box help into the mode toggle (#3553)
+
+### Core ([v0.1.45](https://github.com/iOfficeAI/AionCore/releases/tag/v0.1.45))
+
+#### Features
+
+- **ai-agent:** adapt to aionrs v0.2.2 config changes
+- **cli:** add agent-facing config and diagnose commands (#595)
+
+#### Bug Fixes
+
+- **ai-agent:** cap provider health check tokens
+- **ai-agent:** set default aionrs thinking cli args
+- **model_fetcher:** extract first key from multi-line api_key for HTTP requests (#593)
+- **runtime:** update Claude ACP package (#599)
+- **runtime:** update managed Codex ACP package (#598)
+- stop defaulting aionrs max tokens
+
+---
+
+## [2.1.31](https://github.com/iOfficeAI/AionUi/compare/v2.1.30...v2.1.31) (2026-07-08)
+
+### Desktop
+
+#### Bug Fixes
+
+- **installer:** harden Windows failure reporting and self-lock handling (#3533)
+- prepare backend startup directories (#3536)
+- **settings:** avoid Arco tooltip crash in skills page (#3535)
+
+#### Features
+
+- **feedback:** attach core diagnostics to reports (#3529)
+- **settings:** assistant editor and settings UI polish (#3528)
+
+### Core ([v0.1.44](https://github.com/iOfficeAI/AionCore/releases/tag/v0.1.44))
+
+#### Features
+
+- **agent:** use aionrs runtime env API (#586)
+- **ai-agent:** surface upstream 429 body in AgentSendError detail (#591)
+- **system:** add feedback diagnostics report (#585)
+
+#### Bug Fixes
+
+- **agent:** preserve ACP error cause detail (#581)
+- **skills:** correct aionui-config butler skill drift (2026-07) (#584)
+- use provider and model protocol to determine llm request
+
+---
+
+## [2.1.30](https://github.com/iOfficeAI/AionUi/compare/v2.1.29...v2.1.30) (2026-07-06)
+
+### Desktop
+
+#### Bug Fixes
+
+- wrong OpenAI SDK param name, throttle cleanup leak, missing alt text (#3512)
+- **installer:** harden Windows NSIS update failure handling (#3523)
+
+#### Features
+
+- **guid:** add slash command menu (#3524)
+- **assistant:** add thought level defaults to assistant UI (#3522)
+- **settings:** add inline link to model config when no image model is available
+- **settings:** default to the Agents tab when opening settings
+
+#### Refactoring
+
+- **settings:** describe skill origins per tab instead of per-card badges
+- **settings:** split skills/tools entries and unify page header paradigm
+
+#### Styling
+
+- **settings:** match agent availability filter to assistant home tabs
+
+### Core ([v0.1.43](https://github.com/iOfficeAI/AionCore/releases/tag/v0.1.43))
+
+#### Features
+
+- **assistant:** persist thought-level defaults (#574)
+
+#### Bug Fixes
+
+- **agent:** project available commands in management rows (#579)
+- **assistant:** filter generated assistants by installed agents (#578)
+- **cron:** enforce full-auto mode for scheduled tasks (#576)
+
+---
+
+## [2.1.29](https://github.com/iOfficeAI/AionUi/compare/v2.1.28...v2.1.29) (2026-07-03)
+
+### Desktop
+
+#### Bug Fixes
+
+- **assistant:** use management catalog for editor engines (#3511)
+- **cron:** improve scheduled task conversation history (#3510)
+- show unchecked agents and rotate frontend logs by message date (#3507)
+- **assistant:** return to My Assistants after duplicating/creating
+
+#### Features
+
+- **assistant:** promote assistants to a top-level sidebar entry
+- **assistant:** unify selection-list ordering, keep CLI agents on top
+- **assistant:** rebuild management page into My / Official tabs
+- **assistant:** reword official read-only banner and make copy link inline
+- **assistant:** custom-empty state, return-to-official on save, field polish
+
+#### Refactoring
+
+- **layout:** move conversation search into the titlebar toolbar
+
+#### Styling
+
+- **assistant:** apply oxfmt formatting to assistant home components
+
+### Core ([v0.1.42](https://github.com/iOfficeAI/AionCore/releases/tag/v0.1.42))
+
+#### Bug Fixes
+
+- **agent:** align unchecked availability with team runtime selection (#571)
+- **agent:** avoid full availability refresh on reads (#566)
+- **cron:** preserve existing conversation jobs across lifecycle changes (#572)
+- **mcp:** support aionrs config path subcommand with legacy fallback (#568)
+- preserve ACP config catalogs on resume (#570)
+- preserve Linux GLIBC baselines (#573)
+
+#### Features
+
+- **assistant:** 官方助手默认关闭 + 固定顺序 + 一次性重置迁移 (#567)
+
+---
+
 ## [2.1.28](https://github.com/iOfficeAI/AionUi/compare/v2.1.27...v2.1.28) (2026-07-02)
 
 ### Desktop

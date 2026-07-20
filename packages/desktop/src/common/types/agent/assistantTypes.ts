@@ -8,7 +8,7 @@
 // Any shape change on either side requires a same-PR update on the other.
 
 export type AssistantSource = 'builtin' | 'generated' | 'user';
-export type AssistantAgentStatus = 'missing' | 'online' | 'offline';
+export type AssistantAgentStatus = 'missing' | 'online' | 'offline' | 'unchecked';
 export type AssistantAgentSource = 'internal' | 'builtin' | 'extension' | 'custom';
 
 export type AssistantAgent = {
@@ -95,6 +95,7 @@ export interface AssistantDefaultList {
 export interface AssistantDefaults {
   model: AssistantDefaultScalar;
   permission: AssistantDefaultScalar;
+  thought_level: AssistantDefaultScalar;
   skills: AssistantDefaultList;
   mcps: AssistantDefaultList;
 }
@@ -102,6 +103,7 @@ export interface AssistantDefaults {
 export interface AssistantDefaultsRequest {
   model?: AssistantDefaultScalar;
   permission?: AssistantDefaultScalar;
+  thought_level?: AssistantDefaultScalar;
   skills?: AssistantDefaultList;
   mcps?: AssistantDefaultList;
 }
@@ -115,6 +117,7 @@ export interface AssistantCapabilities {
 export interface AssistantPreferences {
   last_model_id?: string;
   last_permission_value?: string;
+  last_thought_level_value?: string;
   last_skill_ids: string[];
   last_disabled_builtin_skill_ids: string[];
   last_mcp_ids: string[];

@@ -66,6 +66,8 @@ export type ConversationRowProps = {
   /** When true, this row belongs to a stale project: gray the name and desaturate the leading logo. Visual only. */
   stale?: boolean;
   // ace:end
+  /** Hover-reveal drag handle overlaying the leading icon; supplied by the sortable wrapper for reorderable (pinned) rows. */
+  dragHandle?: ReactNode;
 };
 
 export type WorkspaceGroupedHistoryProps = {

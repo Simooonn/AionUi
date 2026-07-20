@@ -20,6 +20,28 @@ const SESSION_SUBDIRS = ['sessions', 'archived_sessions'];
 const MAX_SCAN_LINES = 400;
 const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
 
+/**
+ * Codex Desktop spawns fork/subagent threads with new UUIDs that often inherit
+ * the parent thread's first user prompt as the title. Importing them floods the
+ * sidebar with look-alike duplicates. Only root user threads should import.
+ */
+export function isDerivedCodexThread(payload: Record<string, unknown>): boolean {
+  if (typeof payload.parent_thread_id === 'string' && payload.parent_thread_id.length > 0) {
+    return true;
+  }
+  if (typeof payload.forked_from_id === 'string' && payload.forked_from_id.length > 0) {
+    return true;
+  }
+  if (payload.thread_source === 'subagent') {
+    return true;
+  }
+  const source = payload.source;
+  if (source && typeof source === 'object' && source !== null && 'subagent' in source) {
+    return true;
+  }
+  return false;
+}
+
 function collectRolloutFiles(dir: string): string[] {
   const out: string[] = [];
   const stack = [dir];
@@ -47,7 +69,8 @@ function collectRolloutFiles(dir: string): string[] {
   return out;
 }
 
-function parseRolloutFile(filePath: string): CliSessionMeta | null {
+/** Exported for unit tests — skip fork/subagent rollouts. */
+export function parseRolloutFile(filePath: string): CliSessionMeta | null {
   let raw: string;
   try {
     raw = readFileSync(filePath, 'utf-8');
@@ -72,6 +95,10 @@ function parseRolloutFile(filePath: string): CliSessionMeta | null {
     }
     const payload = (o.payload && typeof o.payload === 'object' ? o.payload : o) as Record<string, unknown>;
     if (o.type === 'session_meta') {
+      // Drop Codex Desktop fork / subagent threads — they share parent titles.
+      if (isDerivedCodexThread(payload)) {
+        return null;
+      }
       if (!sessionId && typeof payload.id === 'string') sessionId = payload.id;
       if (!cwd && typeof payload.cwd === 'string') cwd = payload.cwd;
       if (createdAt === undefined && typeof payload.timestamp === 'string') {

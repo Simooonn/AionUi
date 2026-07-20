@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { isAionUiInternalProjectDir, parseSessionFile } from '@/process/ace/parsers/claudeParser';
+import { isDerivedCodexThread, parseRolloutFile } from '@/process/ace/parsers/codexParser';
 
 const dir = mkdtempSync(join(tmpdir(), 'ace-import-'));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -86,5 +87,55 @@ describe('isAionUiInternalProjectDir', () => {
 
   it('keeps normal project dirs', () => {
     expect(isAionUiInternalProjectDir('-Users-wmm-wmm-code-dappworks-ai-ops-ai-old-claude')).toBe(false);
+  });
+});
+
+describe('Codex derived-thread filter', () => {
+  it('detects parent/fork/subagent session_meta payloads', () => {
+    expect(isDerivedCodexThread({ parent_thread_id: 'parent-1' })).toBe(true);
+    expect(isDerivedCodexThread({ forked_from_id: 'parent-1' })).toBe(true);
+    expect(isDerivedCodexThread({ thread_source: 'subagent' })).toBe(true);
+    expect(isDerivedCodexThread({ source: { subagent: { thread_spawn: {} } } })).toBe(true);
+    expect(isDerivedCodexThread({ id: 'root', thread_source: 'user', cwd: '/tmp' })).toBe(false);
+  });
+
+  it('skips fork/subagent rollouts and keeps root user threads', () => {
+    const rootId = '11111111-1111-1111-1111-111111111111';
+    const forkId = '22222222-2222-2222-2222-222222222222';
+    const root = writeSession('codex-root', [
+      {
+        type: 'session_meta',
+        payload: {
+          id: rootId,
+          cwd: CWD,
+          timestamp: TS,
+          thread_source: 'user',
+        },
+      },
+      { type: 'response_item', payload: { role: 'user', content: [{ type: 'input_text', text: 'root prompt' }] } },
+    ]);
+    // writeSession writes .jsonl without rollout- prefix; parseRolloutFile only needs content.
+    const fork = writeSession('codex-fork', [
+      {
+        type: 'session_meta',
+        payload: {
+          id: forkId,
+          cwd: CWD,
+          timestamp: TS,
+          parent_thread_id: rootId,
+          forked_from_id: rootId,
+          thread_source: 'subagent',
+          source: { subagent: { thread_spawn: { parent_thread_id: rootId, depth: 1 } } },
+        },
+      },
+      { type: 'response_item', payload: { role: 'user', content: [{ type: 'input_text', text: 'root prompt' }] } },
+    ]);
+
+    const rootMeta = parseRolloutFile(root);
+    expect(rootMeta).not.toBeNull();
+    expect(rootMeta?.sessionId).toBe(rootId);
+    expect(rootMeta?.title).toBe('root prompt');
+
+    expect(parseRolloutFile(fork)).toBeNull();
   });
 });

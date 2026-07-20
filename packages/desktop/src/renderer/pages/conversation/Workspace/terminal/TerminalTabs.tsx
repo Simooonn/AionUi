@@ -178,9 +178,27 @@ const TerminalTabs: React.FC<TerminalTabsProps> = ({
     </Menu>
   );
 
+  // Always pin the add control on the far left of the tab strip.
+  // Use semantic --primary so light (#165dff) and dark (#4d9fff) both stay readable;
+  // force light icon color for contrast on the solid primary fill.
+  const addButton = (
+    <Dropdown droplist={addMenu} trigger='click' position='bl'>
+      <Button
+        type='primary'
+        size='mini'
+        shape='circle'
+        icon={<Plus size={12} fill='currentColor' />}
+        aria-label={t('conversation.workspace.terminal.newTab')}
+        className='terminal-tabs__add !w-20px !h-20px !p-0 !bg-primary !border-primary !text-white hover:!opacity-90'
+      />
+    </Dropdown>
+  );
+
   return (
     <div className='size-full flex flex-col'>
       <div className='relative size-full flex flex-col min-h-0'>
+        {/* Left-aligned add control — independent of tab titles so it stays findable. */}
+        <div className='absolute top-0 left-6px z-20 flex items-center h-32px pointer-events-auto'>{addButton}</div>
         <Tabs
           editable
           // `justify` activates Arco's .arco-tabs-justify height:100% rules for the
@@ -194,13 +212,14 @@ const TerminalTabs: React.FC<TerminalTabsProps> = ({
           onChange={onTabChange}
           onDeleteTab={closeTerminal}
           showAddButton={false}
-          className='terminal-tabs size-full flex flex-col [&_.arco-tabs-content]:flex-1 [&_.arco-tabs-content]:min-h-0 [&_.arco-tabs-pane]:size-full'
+          // Leave room on the left so the first tab title doesn't sit under the + button.
+          className='terminal-tabs size-full flex flex-col [&_.arco-tabs-header-nav]:pl-28px [&_.arco-tabs-content]:flex-1 [&_.arco-tabs-content]:min-h-0 [&_.arco-tabs-pane]:size-full'
         >
           {ids.map((id, index) => (
             <Tabs.TabPane
               key={id}
               title={
-                <span className='flex items-center gap-4px'>
+                <span className='inline-flex items-center gap-4px'>
                   <TerminalIcon size={14} />
                   {t('conversation.workspace.terminal.tabLabel', { index: index + 1 })}
                 </span>
@@ -210,17 +229,6 @@ const TerminalTabs: React.FC<TerminalTabsProps> = ({
             </Tabs.TabPane>
           ))}
         </Tabs>
-        <div className='absolute top-0 right-4px z-10 flex items-center h-32px'>
-          <Dropdown droplist={addMenu} trigger='click' position='br'>
-            <Button
-              type='text'
-              size='mini'
-              icon={<Plus size={14} />}
-              aria-label={t('conversation.workspace.terminal.newTab')}
-              className='!px-4px'
-            />
-          </Dropdown>
-        </div>
       </div>
     </div>
   );

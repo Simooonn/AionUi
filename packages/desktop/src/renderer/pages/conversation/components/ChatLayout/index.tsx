@@ -12,9 +12,10 @@ import { useTitleRename } from '@/renderer/pages/conversation/hooks/useTitleRena
 import { useChatCollapse } from '@/renderer/pages/conversation/hooks/useChatCollapse';
 import { useWorkspaceCollapse } from '@/renderer/pages/conversation/hooks/useWorkspaceCollapse';
 import { PreviewPanel, usePreviewContext } from '@/renderer/pages/conversation/Preview';
-import { CHAT_TOGGLE_EVENT } from '@/renderer/utils/workspace/chatPanelEvents';
+import { CHAT_TOGGLE_EVENT, LAYOUT_CYCLE_EVENT } from '@/renderer/utils/workspace/chatPanelEvents';
 import { WORKSPACE_TOGGLE_EVENT, dispatchWorkspaceToggleEvent } from '@/renderer/utils/workspace/workspaceEvents';
 import {
+  cycleLayoutMode,
   hydratePanelState,
   nextPanelState,
   readChatCollapsePreference,
@@ -196,13 +197,20 @@ const ChatLayout: React.FC<{
     }
     const handleChatToggle = () => onToggle('chat');
     const handleWorkspaceToggle = () => onToggle('right');
+    const handleLayoutCycle = () => {
+      if (!controlAvailable) return;
+      const next = cycleLayoutMode(panelRef.current);
+      commitPanelState(next, 'layout-cycle');
+    };
     window.addEventListener(CHAT_TOGGLE_EVENT, handleChatToggle);
     window.addEventListener(WORKSPACE_TOGGLE_EVENT, handleWorkspaceToggle);
+    window.addEventListener(LAYOUT_CYCLE_EVENT, handleLayoutCycle);
     return () => {
       window.removeEventListener(CHAT_TOGGLE_EVENT, handleChatToggle);
       window.removeEventListener(WORKSPACE_TOGGLE_EVENT, handleWorkspaceToggle);
+      window.removeEventListener(LAYOUT_CYCLE_EVENT, handleLayoutCycle);
     };
-  }, [onToggle]);
+  }, [commitPanelState, controlAvailable, onToggle]);
 
   // Hydrate force-open right: if storage pair was illegal, preference already normalized in
   // hydratePanelState; ensure workspace pref is written once when we force-opened right.

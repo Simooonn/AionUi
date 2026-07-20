@@ -9,8 +9,11 @@ import {
   CHAT_PANEL_COLLAPSED_KEY,
   applyMainContentInvariant,
   coercePanelState,
+  cycleLayoutMode,
   hydratePanelState,
+  layoutModeToPanelState,
   nextPanelState,
+  panelStateToLayoutMode,
   readChatCollapsePreference,
   suggestRightCollapsed,
   writeChatCollapsePreference,
@@ -177,6 +180,24 @@ describe('mainContentPanels', () => {
 
     it('returns null without preference key', () => {
       expect(readWorkspaceCollapsePreference(undefined)).toBeNull();
+    });
+  });
+
+  describe('layout mode cycle', () => {
+    it('maps panel state to layout modes', () => {
+      expect(panelStateToLayoutMode({ chatCollapsed: false, rightCollapsed: false })).toBe('both');
+      expect(panelStateToLayoutMode({ chatCollapsed: false, rightCollapsed: true })).toBe('chat-only');
+      expect(panelStateToLayoutMode({ chatCollapsed: true, rightCollapsed: false })).toBe('workspace-only');
+    });
+
+    it('cycles both → chat-only → workspace-only → both', () => {
+      const both = layoutModeToPanelState('both');
+      const chatOnly = cycleLayoutMode(both);
+      expect(chatOnly).toEqual({ chatCollapsed: false, rightCollapsed: true });
+      const workspaceOnly = cycleLayoutMode(chatOnly);
+      expect(workspaceOnly).toEqual({ chatCollapsed: true, rightCollapsed: false });
+      const backToBoth = cycleLayoutMode(workspaceOnly);
+      expect(backToBoth).toEqual({ chatCollapsed: false, rightCollapsed: false });
     });
   });
 });

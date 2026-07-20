@@ -31,6 +31,36 @@ export function nextPanelState(current: PanelState, toggle: ToggleTarget): Panel
   return applyMainContentInvariant(attempted, toggle);
 }
 
+/** Main-content layout modes for the single titlebar cycle control. */
+export type LayoutMode = 'both' | 'chat-only' | 'workspace-only';
+
+export function panelStateToLayoutMode(state: PanelState): LayoutMode {
+  if (state.chatCollapsed && !state.rightCollapsed) return 'workspace-only';
+  if (!state.chatCollapsed && state.rightCollapsed) return 'chat-only';
+  // both open, or illegal both-collapsed (treat as both for recovery)
+  return 'both';
+}
+
+export function layoutModeToPanelState(mode: LayoutMode): PanelState {
+  switch (mode) {
+    case 'chat-only':
+      return { chatCollapsed: false, rightCollapsed: true };
+    case 'workspace-only':
+      return { chatCollapsed: true, rightCollapsed: false };
+    case 'both':
+    default:
+      return { chatCollapsed: false, rightCollapsed: false };
+  }
+}
+
+/** Cycle: both → chat-only → workspace-only → both */
+export function cycleLayoutMode(current: PanelState): PanelState {
+  const mode = panelStateToLayoutMode(current);
+  const next: LayoutMode =
+    mode === 'both' ? 'chat-only' : mode === 'chat-only' ? 'workspace-only' : 'both';
+  return layoutModeToPanelState(next);
+}
+
 export function coercePanelState(
   current: PanelState,
   patch: Partial<PanelState>,

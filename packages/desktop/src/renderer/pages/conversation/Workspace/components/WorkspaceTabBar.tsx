@@ -69,7 +69,7 @@ const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ t, activeTab, onTabCh
       onChange={(key) => onTabChange(key as WorkspaceTab)}
       type='line'
       size='small'
-      className='px-12px [&_.arco-tabs-nav]:border-b-0 [&_.arco-tabs-header-title]:!mr-8px'
+      className='workspace-tab-bar px-12px [&_.arco-tabs-nav]:border-b-0 [&_.arco-tabs-header-title]:!mr-8px'
       extra={branchDropdown}
     >
       <Tabs.TabPane key='files' title={t('conversation.workspace.changes.filesTab')} />

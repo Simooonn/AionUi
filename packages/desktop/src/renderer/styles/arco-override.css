@@ -429,6 +429,32 @@ body[arco-theme='dark'] .arco-message-error {
   }
 }
 
+/* Dark-theme active-tab accent for Workspace panel tabs + terminal inner tabs.
+ * If a THIRD dark-theme Arco surface ever needs this same treatment, escalate to
+ * fixing --arcoblue-6 globally instead of copy-pasting a fourth local override —
+ * that copy-paste pattern already produced dead code once (see .settings-mobile-tabs /
+ * .settings-remote-tabs above, whose selectors don't match Arco's actual DOM classes).
+ */
+
+/* Workspace panel tabs (文件/变更/终端) */
+[data-theme='dark'] .workspace-tab-bar .arco-tabs-header-title-active {
+  color: var(--primary);
+}
+
+[data-theme='dark'] .workspace-tab-bar .arco-tabs-header-ink {
+  background-color: var(--primary);
+}
+
+/* Terminal inner tabs (终端 1 / 终端 2). Active background stays transparent —
+ * only the title text and ink bar get the accent color. */
+[data-theme='dark'] .terminal-tabs .arco-tabs-header-title-active {
+  color: var(--primary);
+}
+
+[data-theme='dark'] .terminal-tabs .arco-tabs-header-ink {
+  background-color: var(--primary);
+}
+
 /* Guid (homepage) mobile: cap model / permission pills so long values
  * truncate instead of pushing the `+` and send buttons off-screen.
  * Driven by LayoutContext.isMobile (data-mobile attribute) so it fires

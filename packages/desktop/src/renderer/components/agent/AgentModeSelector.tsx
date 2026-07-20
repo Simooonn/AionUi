@@ -143,8 +143,11 @@ const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
   // ace:start In a conversation, switching goes through the ACP runtime, which
   // needs a live `mode` option. While the session is idle aioncore serves no
   // mode (GET /mode 404s), so a switch would always fail — render the current
-  // mode read-only instead of letting the click error out.
-  const runtimeUnavailable = Boolean(conversation_id) && !onModeSelect && !runtimeMode;
+  // mode read-only instead of letting the click error out. Only treat the
+  // runtime as "confirmed unavailable" once the initial load has settled, so
+  // the compact pill stays hidden (instead of flashing a stale read-only
+  // label) while the mode option is still being fetched.
+  const runtimeUnavailable = Boolean(conversation_id) && !onModeSelect && !runtimeMode && !runtimeConfig.isLoading;
   const can_switchMode = modes.length > 0 && Boolean(conversation_id || onModeSelect) && !runtimeUnavailable;
   // ace:end
   // Mobile conversation header agent pill is display-only by design.

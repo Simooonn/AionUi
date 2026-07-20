@@ -13,12 +13,7 @@ import { Brain, Down } from '@icon-park/react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import RuntimeSelectorPill from './RuntimeSelectorPill';
-import {
-  getCurrentThoughtLevelLabel,
-  isConfigSetting,
-  RuntimeSelectorCheckedItem,
-  renderThoughtLevelMenuGroup,
-} from './runtimeSelectorOptions';
+import { getCurrentThoughtLevelLabel, isConfigSetting, RuntimeSelectorCheckedItem } from './runtimeSelectorOptions';
 
 /**
  * Some ACP backends (notably Claude Code) encode the reasoning effort INTO the
@@ -290,12 +285,21 @@ const AcpRuntimeModelControls: React.FC<{
         loading: isRuntimeSetting,
         droplist: (
           <Menu>
-            {renderThoughtLevelMenuGroup({
-              thoughtLevel,
-              setStatus,
-              title: t('agent.thoughtLevel.label'),
-              onSelect: (value) => onSelectThoughtLevel(thoughtLevel.id, value),
-            })}
+            <Menu.ItemGroup title={t('agent.thoughtLevel.label')}>
+              {thoughtLevel.options.map((item) => (
+                <Menu.Item
+                  key={item.value}
+                  className={item.value === thoughtLevel.currentValue ? 'bg-2!' : ''}
+                  onClick={() => {
+                    if (!isRuntimeSetting) onSelectThoughtLevel(thoughtLevel.id, item.value);
+                  }}
+                >
+                  <RuntimeSelectorCheckedItem selected={item.value === thoughtLevel.currentValue} description={item.description}>
+                    {item.label}
+                  </RuntimeSelectorCheckedItem>
+                </Menu.Item>
+              ))}
+            </Menu.ItemGroup>
           </Menu>
         ),
       })

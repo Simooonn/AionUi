@@ -5,7 +5,6 @@
  */
 
 import type { IProvider, TProviderWithModel } from '@/common/config/storage';
-import { RuntimeSelectorCheckedItem } from '@/renderer/components/agent/runtimeSelectorOptions';
 import { iconColors } from '@/renderer/styles/colors';
 import { getModelDisplayLabel } from '@/renderer/utils/model/agentLogo';
 import type { AgentRuntimeDerivedOption } from '@/renderer/utils/model/agentRuntimeCatalog';

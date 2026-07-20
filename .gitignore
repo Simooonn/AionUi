@@ -210,6 +210,10 @@ dist-server/
 .omc/
 .superset/
 .claude/teams/
+# Symlinks auto-injected by the local aioncore dev runtime's builtin-skills
+.claude/skills/cron
+.claude/skills/officecli
+.claude/skills/skill-creator
 iterations/
 graphify-out/
 .graphify_python

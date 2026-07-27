@@ -196,7 +196,15 @@ const ChatLayout: React.FC<{
       return undefined;
     }
     const handleChatToggle = () => onToggle('chat');
-    const handleWorkspaceToggle = () => onToggle('right');
+    // Report "handled" to keyboard-shortcut callers (dispatchWorkspaceToggleEvent)
+    // only when an enabled workspace consumer actually owns the toggle, so the
+    // native browser shortcut still fires when there's nothing to expand.
+    const handleWorkspaceToggle = (event: Event) => {
+      onToggle('right');
+      if (workspaceEnabled) {
+        event.preventDefault();
+      }
+    };
     const handleLayoutCycle = () => {
       if (!controlAvailable) return;
       const next = cycleLayoutMode(panelRef.current);
@@ -210,7 +218,7 @@ const ChatLayout: React.FC<{
       window.removeEventListener(WORKSPACE_TOGGLE_EVENT, handleWorkspaceToggle);
       window.removeEventListener(LAYOUT_CYCLE_EVENT, handleLayoutCycle);
     };
-  }, [commitPanelState, controlAvailable, onToggle]);
+  }, [commitPanelState, controlAvailable, onToggle, workspaceEnabled]);
 
   // Hydrate force-open right: if storage pair was illegal, preference already normalized in
   // hydratePanelState; ensure workspace pref is written once when we force-opened right.

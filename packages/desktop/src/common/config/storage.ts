@@ -441,6 +441,15 @@ export type ModelCapability = {
   isUserSelected?: boolean;
 };
 
+export type ModelOpenAiApiMode = 'chat_completions' | 'responses';
+
+export type ModelImageInputCapability = 'supported' | 'unsupported';
+
+export type ModelSettings = {
+  image_input?: ModelImageInputCapability;
+  openai_api_mode?: ModelOpenAiApiMode;
+};
+
 export interface IProvider {
   id: string;
   platform: string;
@@ -500,6 +509,11 @@ export interface IProvider {
       error?: string; // 错误信息 / error message
     }
   >;
+  /**
+   * Explicit per-model overrides. Missing entries retain automatic image-input
+   * capability and OpenAI API mode resolution.
+   */
+  model_settings?: Record<string, ModelSettings>;
   is_full_url?: boolean;
 }
 

@@ -294,7 +294,10 @@ const AcpRuntimeModelControls: React.FC<{
                     if (!isRuntimeSetting) onSelectThoughtLevel(thoughtLevel.id, item.value);
                   }}
                 >
-                  <RuntimeSelectorCheckedItem selected={item.value === thoughtLevel.currentValue} description={item.description}>
+                  <RuntimeSelectorCheckedItem
+                    selected={item.value === thoughtLevel.currentValue}
+                    description={item.description}
+                  >
                     {item.label}
                   </RuntimeSelectorCheckedItem>
                 </Menu.Item>

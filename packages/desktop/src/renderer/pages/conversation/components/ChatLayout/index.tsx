@@ -122,11 +122,7 @@ const ChatLayout: React.FC<{
   }, [chatCollapsed, rightSiderCollapsed]);
 
   const commitPanelState = useCallback(
-    (
-      next: PanelState,
-      _reason: string,
-      options?: { persistRight?: boolean; persistChat?: boolean }
-    ) => {
+    (next: PanelState, _reason: string, options?: { persistRight?: boolean; persistChat?: boolean }) => {
       const prev = panelRef.current;
       panelRef.current = next;
       const persistRight = options?.persistRight ?? true;

@@ -74,7 +74,11 @@ describe('mainContentPanels', () => {
 
     it('coerce both-true with trigger chat force-opens right', () => {
       expect(
-        coercePanelState({ chatCollapsed: false, rightCollapsed: false }, { chatCollapsed: true, rightCollapsed: true }, 'chat')
+        coercePanelState(
+          { chatCollapsed: false, rightCollapsed: false },
+          { chatCollapsed: true, rightCollapsed: true },
+          'chat'
+        )
       ).toEqual({ chatCollapsed: true, rightCollapsed: false });
     });
 

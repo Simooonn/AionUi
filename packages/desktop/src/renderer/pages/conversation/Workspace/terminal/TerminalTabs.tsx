@@ -41,12 +41,7 @@ interface TerminalTabsProps {
  * The add control is a dropdown: New tab (plain PTY) or Restore session
  * (create PTY + inject the app-built CLI resume command).
  */
-const TerminalTabs: React.FC<TerminalTabsProps> = ({
-  conversationId,
-  workspace,
-  visible,
-  resumeCommand = null,
-}) => {
+const TerminalTabs: React.FC<TerminalTabsProps> = ({ conversationId, workspace, visible, resumeCommand = null }) => {
   const { t } = useTranslation();
   const { ids, activeId } = useTerminalStore(conversationId);
   const canRestore = isRestoreEnabled(resumeCommand);

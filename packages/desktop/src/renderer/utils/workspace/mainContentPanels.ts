@@ -56,16 +56,11 @@ export function layoutModeToPanelState(mode: LayoutMode): PanelState {
 /** Cycle: both → chat-only → workspace-only → both */
 export function cycleLayoutMode(current: PanelState): PanelState {
   const mode = panelStateToLayoutMode(current);
-  const next: LayoutMode =
-    mode === 'both' ? 'chat-only' : mode === 'chat-only' ? 'workspace-only' : 'both';
+  const next: LayoutMode = mode === 'both' ? 'chat-only' : mode === 'chat-only' ? 'workspace-only' : 'both';
   return layoutModeToPanelState(next);
 }
 
-export function coercePanelState(
-  current: PanelState,
-  patch: Partial<PanelState>,
-  trigger: ToggleTarget
-): PanelState {
+export function coercePanelState(current: PanelState, patch: Partial<PanelState>, trigger: ToggleTarget): PanelState {
   return applyMainContentInvariant({ ...current, ...patch }, trigger);
 }
 
@@ -73,10 +68,7 @@ export function coercePanelState(
  * When chat is collapsed, non-toggle writers that want to collapse the right
  * panel must no-op (no storage write). Returns null when the patch is suppressed.
  */
-export function suggestRightCollapsed(
-  current: PanelState,
-  suggestedRightCollapsed: boolean
-): PanelState | null {
+export function suggestRightCollapsed(current: PanelState, suggestedRightCollapsed: boolean): PanelState | null {
   if (current.chatCollapsed && suggestedRightCollapsed) {
     return null;
   }
@@ -135,10 +127,7 @@ export function readWorkspaceCollapsePreference(preferenceKey: string | undefine
   return null;
 }
 
-export function writeWorkspaceCollapsePreference(
-  preferenceKey: string | undefined,
-  collapsed: boolean
-): void {
+export function writeWorkspaceCollapsePreference(preferenceKey: string | undefined, collapsed: boolean): void {
   const key = workspacePreferenceStorageKey(preferenceKey);
   if (!key || typeof localStorage === 'undefined') {
     return;

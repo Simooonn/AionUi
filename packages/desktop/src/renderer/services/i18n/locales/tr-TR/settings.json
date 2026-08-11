@@ -39,6 +39,12 @@
     "detailUsedByTitle": "Kullananlar",
     "detailUsedByEmpty": "Bu beceriyi henüz hiçbir asistan kullanmıyor.",
     "detailBuiltinAssistant": "Yerleşik",
+    "detailFilesTitle": "Beceri dosyaları",
+    "detailFilesError": "Bu becerinin dosyaları yüklenemedi.",
+    "editViaChat": {
+      "buttonLabel": "Sohbetle düzenle",
+      "defaultPrompt": "Bu Skill'i geliştirmek istiyorum: {{skillName}}\n\nLütfen içeriğini inceleyip geliştirmeme yardımcı olun. Değişiklik önerilerim:"
+    },
     "usedByCount": "{{count}} asistan kullanıyor",
     "manageInHub": "Beceri Merkezinde Yönet",
     "recommend": "Akıllı Öneri",
@@ -105,7 +111,8 @@
     "officialSkillsEmpty": "Kullanılabilir resmi beceri yok.",
     "noSearchResults": "Eşleşen beceri yok.",
     "customHint": "Bir beceri klasörü, üst klasör veya zip içe aktarın; dosya başına en fazla {{maxFileSize}} ve beceri başına {{maxTotalSize}}; aynı adla içe aktarma mevcut beceriyi değiştirir.",
-    "officialHint": "AionUi ile birlikte gelen resmi beceriler — kullanıma hazır, salt okunur ve her sürümde güncellenir."
+    "officialHint": "AionUi ile birlikte gelen resmi beceriler — kullanıma hazır, salt okunur ve her sürümde güncellenir.",
+    "deleteAffectsNewOnlyHint": "Deleting only affects new conversations. Skills already selected in existing conversations keep working."
   },
   "authMethod": "Kimlik Doğrulama",
   "geminiApiKey": "Gemini API Anahtarı",
@@ -211,6 +218,8 @@
   "assistantManagedPromptCount": "Ürün tarafından yönetilen {{count}} önerilen istem var.",
   "assistantManagedPromptFallback": "Önerilen istemler ürün tarafından yönetilir.",
   "assistantEngineAffectsDefaults": "Agent değiştirildiğinde, aşağıda seçilebilen model ve izin aralığı buna göre güncellenir.",
+  "assistantSearchAgent": "Aracıları ara",
+  "assistantNoMatchingAgent": "Eşleşen aracı yok",
   "assistantEffectiveImmediately": "Hemen geçerli",
   "assistantOnlyNewConversation": "Yalnızca yeni sohbetler için",
   "assistantDefaultModelLabel": "Model",
@@ -306,8 +315,6 @@
   "cacheClearFailed": "Önbellek temizlenemedi",
   "language": "Dil",
   "saveUploadToWorkspace": "Yüklemeleri Proje Klasörüne Kaydet",
-  "autoPreviewOfficeFiles": "Yeni Office Dosyalarını Otomatik Önizle",
-  "autoPreviewOfficeFilesDesc": "Geçerli projede yeni oluşturulan Word, Excel ve PowerPoint dosyalarını otomatik olarak açar. Office geçici kilit dosyaları yok sayılır.",
   "startOnBoot": "Açılışta Başlat",
   "startOnBootDesc": "macOS veya Windows oturumu açtığınızda AionUi'yi otomatik olarak başlatır.",
   "startOnBootUnsupported": "Yalnızca paketlenmiş macOS ve Windows uygulamalarında kullanılabilir.",
@@ -316,6 +323,8 @@
   "hardwareAcceleration": "Donanım Hızlandırma",
   "hardwareAccelerationDesc": "Arayüzü oluşturmak için GPU kullanır. Açılışta çökme veya görüntü titremesi varsa kapatın.",
   "hardwareAccelerationAutoDisabled": "Tekrarlanan GPU çökmeleri nedeniyle otomatik olarak devre dışı bırakıldı.",
+  "hardwareAccelerationAutoDisabledTitle": "Donanım hızlandırma devre dışı bırakıldı",
+  "hardwareAccelerationAutoDisabledNotice": "Tekrarlanan grafik çökmeleri algılandı; uygulamayı kararlı tutmak için donanım hızlandırma otomatik olarak kapatıldı. Ayarlar → Sistem bölümünden yeniden etkinleştirebilirsiniz.",
   "hardwareAccelerationRestartConfirm": "Yeni donanım hızlandırma ayarını uygulamak için AionUi yeniden başlatılsın mı?",
   "hardwareAccelerationUpdateFailed": "Donanım hızlandırma ayarı güncellenemedi",
   "browserNotification": {
@@ -334,6 +343,8 @@
   "groupAbout": "Diğer",
   "agentIdleTimeout": "Agent Boşta Kalma Süresi (dk)",
   "agentIdleTimeoutDesc": "Bellek boşaltmak için boşta kalan Agent süreçlerini bu süre sonunda sonlandır",
+  "previewTextSizeLimit": "Önizleme Boyut Sınırı (MB)",
+  "previewTextSizeLimitDesc": "Bu boyutu aşan metin dosyaları içerik yerine bir bildirimle açılır. Yalnızca yeni açılan sekmeler için geçerlidir.",
   "gemini": "Gemini",
   "model": "Model",
   "system": "Sistem",
@@ -963,7 +974,25 @@
     "autoFollowCliModel": "CLI calisirken modeli otomatik olarak takip et",
     "agentSwitched": "Asistan basariyla degistirildi",
     "modelSwitched": "Model basariyla degistirildi",
-    "name": "Asistan"
+    "name": "Asistan",
+    "slackBotToken": "Bot Belirteci",
+    "slackBotTokenDesc": "Bir Slack uygulaması oluşturun, çalışma alanınıza kurun ve Bot User OAuth Token (xoxb-) değerini kopyalayın.",
+    "slackBotTokenRequired": "Lütfen bir Bot Belirteci (xoxb-) girin",
+    "slackBotTokenPrefix": "Bot Belirteci \"xoxb-\" ile başlamalıdır",
+    "slackAppToken": "Uygulama Düzeyi Belirteç",
+    "slackAppTokenDesc": "Socket Mode'u etkinleştirin ve connections:write kapsamına sahip bir Uygulama Düzeyi Belirteç (xapp-) oluşturun.",
+    "slackAppTokenRequired": "Lütfen bir Uygulama Düzeyi Belirteç (xapp-) girin",
+    "slackAppTokenPrefix": "Uygulama Düzeyi Belirteç \"xapp-\" ile başlamalıdır",
+    "slackTokensRequired": "Lütfen önce Slack belirteçlerinizi girip test edin",
+    "slackPluginEnabled": "Slack botu etkinleştirildi",
+    "slackPluginDisabled": "Slack botu devre dışı bırakıldı",
+    "agentDescSlack": "Slack konuşmaları için kullanılır",
+    "defaultModelDescSlack": "Slack konuşmaları için kullanılan model",
+    "slackStep1": "Slack'i açın ve bir kanalda botunuzu etiketleyin ya da ona DM gönderin",
+    "slackStep2": "Eşleştirmeyi başlatmak için herhangi bir mesaj veya @etiket gönderin",
+    "slackStep3": "Aşağıda bir eşleştirme isteği görünecek. Kullanıcıyı yetkilendirmek için \"Onayla\"ya tıklayın.",
+    "slackStep4": "Onaylandıktan sonra Slack'te asistanla sohbet etmeye başlayabilirsiniz!",
+    "unknownUser": "Bilinmeyen kullanıcı"
   },
   "lark": {
     "appId": "App ID",
@@ -1149,7 +1178,9 @@
       "command_missing": "Install {{command}} and retry the connection test.",
       "managed_runtime_unavailable": "Repair or reinstall {{resource}}, then retry the connection test.",
       "auth_required": "Aracıya erişilebilir ancak oturum açılması gerekiyor. CLI üzerinden giriş yapın veya gerekli API anahtarını Ortam Değişkenleri altına ekleyin, ardından bağlantı testini yeniden deneyin.",
-      "no_provider": "Yapılandırılmış bir model sağlayıcısı yok. Ayarlar'da bir sağlayıcı ekleyip etkinleştirin, ardından bağlantı testini yeniden deneyin."
+      "no_provider": "Yapılandırılmış bir model sağlayıcısı yok. Ayarlar'da bir sağlayıcı ekleyip etkinleştirin, ardından bağlantı testini yeniden deneyin.",
+      "version_drift_older": "Kurulu CLI, AionUi tarafından doğrulanan sürümden eski; bazı özellikler eksik olabilir. Yükseltmeyi düşünün.",
+      "version_drift_newer": "Kurulu CLI, AionUi tarafından doğrulanan sürümden yeni. Genelde çalışır; tuhaf bir davranış görürseniz bildirin."
     },
     "boundAssistantsTitle": "Bu ajanı kullanan asistanlar",
     "boundAssistantsCount": "{{count}} asistan",
@@ -1309,5 +1340,19 @@
     "solveWithButler": "Kâhya'ya sor"
   },
   "providerIdConflict": "Provider ID zaten var. Lütfen tekrar deneyin.",
-  "autoInjectedSkillsHint": "Her sohbete otomatik olarak yüklenir — etkinleştirmeye gerek yoktur; aracı bunları ne zaman kullanacağına karar verir."
+  "autoInjectedSkillsHint": "Her sohbete otomatik olarak yüklenir — etkinleştirmeye gerek yoktur; aracı bunları ne zaman kullanacağına karar verir.",
+  "browserData": {
+    "title": "Uygulama içi tarayıcı",
+    "agentControlLabel": "Aracının uygulama içi tarayıcıyı kullanmasına izin ver",
+    "agentControlDesc": "Açık olduğunda aracı, uygulama içi tarayıcıda sizin adınıza sayfa açabilir, tıklayabilir ve form doldurabilir; örneğin bir şey araştırmak veya bir sitedeki işlemi tamamlamak için. Yalnızca bu tek tarayıcı görünümünü kullanabilir: AionUi arayüzünün kendisine erişemez ve hiçbir zaman ayrı bir Chrome penceresi açmaz. Kapattığınızda tarayıcıyı kendiniz kullanmaya devam edebilirsiniz; erişimi yalnızca aracı kaybeder.",
+    "agentControlSaved": "Ayar kaydedildi",
+    "agentControlFailed": "Ayar kaydedilemedi",
+    "agentControlRestartRequired": "Bu ayar, uygulamayı yeniden başlattıktan sonra geçerli olur.",
+    "clearLabel": "Tarama verilerini temizle",
+    "clearDesc": "Tarayıcıda oturum açılmış tüm sitelerden çıkış yapar ve önbelleği temizler. Açık sekmelerde yenilemeden sonra geçerli olur.",
+    "clearConfirmTitle": "Tarama verileri temizlensin mi?",
+    "clearConfirmContent": "Uygulama içi tarayıcıdaki tüm sitelerden çıkış yapılacak. Bu işlem geri alınamaz.",
+    "clearSuccess": "Tarama verileri temizlendi",
+    "clearFailed": "Tarama verileri temizlenemedi"
+  }
 }

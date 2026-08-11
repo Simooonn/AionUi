@@ -73,13 +73,15 @@
     "removeProject": "Projeyi kaldır",
     "removeProjectConfirm": "\"{{name}}\" projesi kaldırılsın mı? Projedeki {{count}} konuşma da kaldırılacak.",
     "newConversationInProject": "Bu projede yeni konuşma",
+    "deleting": "Siliniyor...",
+    "reorderPinned": "Sabitlenmiş sohbetin sırasını değiştirmek için sürükleyin",
+    "forkedFrom": "“{{name}}” konuşmasından çatallandı",
+    "forkedConversation": "Çatallanmış konuşma",
     "localFileDeleteFailed": "Bazı yerel oturum dosyaları silinemedi",
     "refreshProjects": "Proje durumunu yenile",
     "pinnedProjectsSection": "Sabitlenen projeler",
     "pinProject": "Projeyi sabitle",
-    "unpinProject": "Sabitlemeyi kaldır",
-    "deleting": "Siliniyor...",
-    "reorderPinned": "Sabitlenmiş sohbetin sırasını değiştirmek için sürükleyin"
+    "unpinProject": "Sabitlemeyi kaldır"
   },
   "historySearch": {
     "tooltip": "Mesajları ara",
@@ -406,24 +408,9 @@
     "openWith": {
       "vscode": "VS Code",
       "terminal": "Terminal",
-      "explorer": "Dosya Gezgini"
-    },
-    "terminal": {
-      "tab": "Terminal",
-      "tabLabel": "Terminal {{index}}",
-      "exited": "İşlem sonlandı (kod {{code}})",
-      "restart": "Yeniden başlat",
-      "capReached": "En fazla {{max}} terminal açılabilir",
-      "createFailed": "Terminal açılamadı",
-      "newTab": "Yeni sekme",
-      "restoreSession": "Oturumu geri yükle",
-      "restoreUnavailable": "Geçerli sohbet terminalde geri yüklenemez"
+      "explorer": "Dosya Gezgini",
+      "browser": "Tarayıcı"
     }
-  },
-  "resumeCommand": {
-    "copy": "Devam komutunu kopyala",
-    "copied": "Devam komutu kopyalandı",
-    "copyFailed": "Kopyalanamadı"
   },
   "minimap": {
     "searchAria": "Sohbeti ara",
@@ -514,7 +501,15 @@
     }
   },
   "contextUsage": {
-    "contextUsed": "bağlam kullanıldı"
+    "contextUsed": "bağlam kullanıldı",
+    "tokensUsed": "{{tokens}} jeton kullanıldı",
+    "windowUnknown": "Bağlam penceresi boyutu bilinmiyor",
+    "sessionCost": "Oturum maliyeti",
+    "input": "Girdi",
+    "output": "Çıktı",
+    "thought": "Düşünme",
+    "cachedRead": "Önbellek okuma",
+    "cachedWrite": "Önbellek yazma"
   },
   "skill_generator": {
     "title": "Yetenek/Kural Oluştur",
@@ -555,7 +550,6 @@
       "TEAM_ASSISTANT_FIELD_UNSUPPORTED": "Use assistant_id instead of {{field}}."
     }
   },
-  "runtimeStartFailed": "Failed to start the session runtime; model and mode settings are unavailable: {{reason}}",
   "thinking": {
     "complete": "Düşünme tamamlandı",
     "label": "Düşünüyor..."
@@ -579,7 +573,8 @@
     "sendboxHint": "Çalışma ortamı hazırlanıyor. İlk başlatma biraz daha uzun sürebilir."
   },
   "sendbox": {
-    "hint": "Komutlar için /, dosya için @ yazın, ↑/↓ ile mesaj geçmişi"
+    "hint": "Komutlar için /, dosya için @ yazın, ↑/↓ ile mesaj geçmişi",
+    "mediaPathFallback": "Bu ajan bu dosya türünü yerel olarak desteklemiyor; dosya yolu olarak gönderilecek."
   },
   "agentTip": {
     "codes": {
@@ -600,10 +595,144 @@
       },
       "ACP_EMPTY_TURN_REFUSAL": {
         "body": "Model, görünür bir yanıt üretmeden önce bu isteği reddetti."
+      },
+      "ANTIGRAVITY_STEPS_FAILED": {
+        "body": "{{count}} adım başarısız oldu ve etkili OLMADI. agy bu turları yine de başarılı olarak bitirir; bu yüzden yanıta değil gerçek sonuca bakın."
+      },
+      "CLI_VERSION_OLDER": {
+        "body": "Kurulu {{cli}} sürümü AionUi tarafından doğrulanan sürümden eski; bazı özellikler eksik olabilir. {{cli}} sürümünü yükseltmeyi düşünün. (kurulu: {{reported}} / AionUi tarafından doğrulanan: {{verified}})"
+      },
+      "CLI_VERSION_NEWER": {
+        "body": "Kurulu {{cli}} sürümü AionUi tarafından doğrulanan sürümden yeni. Genelde çalışır; tuhaf bir davranış görürseniz bildirin. (kurulu: {{reported}} / AionUi tarafından doğrulanan: {{verified}})"
+      },
+      "CODEX_RETRYING": {
+        "body": "{{detail}} ({{attempts}}. deneme, {{elapsed}} geçti — aracının sağlayıcısı bağlantıyı sürekli kesiyor; AionUi bekliyor.)"
       }
     }
   },
   "notFound": "Konuşma bulunamadı veya silinmiş",
+  "explorer": {
+    "addFolder": "Add folder to project",
+    "removeFolder": "Remove from project",
+    "attachDuplicate": "This folder is already in the project",
+    "attachOverlap": "This folder overlaps a folder already in the project",
+    "attachFailed": "Couldn't add the folder",
+    "removeFailed": "Couldn't remove the folder",
+    "contextMenu": {
+      "rename": "Yeniden adlandır",
+      "addToChat": "Sohbete ekle",
+      "copyRelativePath": "Göreli yolu kopyala",
+      "copyAbsolutePath": "Mutlak yolu kopyala"
+    },
+    "namePlaceholder": "Ad",
+    "deleteConfirm": "“{{name}}” silinsin mi? Bu geri alınamaz.",
+    "renameFailed": "Yeniden adlandırılamadı",
+    "tabs": {
+      "files": "Dosyalar",
+      "changes": "Değişiklikler"
+    },
+    "addedToChat": "{{name}} sohbete eklendi",
+    "imported": "{{count}} dosya içe aktarıldı",
+    "importPartialFailed": "{{copied}} kopyalandı, {{failed}} başarısız (ad çakışması veya desteklenmiyor)",
+    "importFailed": "Dosyalar içe aktarılamadı",
+    "search": {
+      "placeholder": "Dosya adına göre ara",
+      "searching": "Aranıyor…",
+      "empty": "Eşleşen dosya yok",
+      "limitReached": "İlk {{count}} gösteriliyor — daraltın"
+    },
+    "scm": {
+      "notARepository": "Bu klasör sürüm denetiminde değil",
+      "noChanges": "Değişiklik yok",
+      "loading": "Değişiklikler yükleniyor…",
+      "loadFailed": "Değişiklikler yüklenemedi",
+      "refresh": "Yenile",
+      "groups": {
+        "staged": "Hazırlanan değişiklikler",
+        "unstaged": "Değişiklikler",
+        "changes": "Değişiklikler",
+        "blocked": "Çözülmesi gerekiyor"
+      },
+      "sections": {
+        "repositories": "Depolar",
+        "changes": "Değişiklikler"
+      },
+      "viewAsTree": "Ağaç olarak görüntüle",
+      "viewAsList": "Liste olarak görüntüle",
+      "worktree": "Çalışma ağacı",
+      "expandWorktrees": "Çalışma ağaçlarını göster",
+      "collapseWorktrees": "Çalışma ağaçlarını gizle",
+      "state": {
+        "created": "Eklendi",
+        "modified": "Değiştirildi",
+        "deleted": "Silindi",
+        "renamed": "Yeniden adlandırıldı",
+        "conflicted": "Çakışma",
+        "unknown": "Tanınmayan durum"
+      },
+      "badge": {
+        "created": "A",
+        "modified": "M",
+        "deleted": "D",
+        "renamed": "R",
+        "conflicted": "!",
+        "unknown": "?"
+      },
+      "conflictedHint": "Bu çakışmayı önce AionUi dışında çözün",
+      "opaqueHint": "Bu durum daha yeni bir arka uçtan geliyor — salt okunur gösteriliyor",
+      "degraded": "git dizini güncellenemediği için yenileme daha yavaş bir modda çalışıyor",
+      "truncated": "Listelenecek çok fazla değişiklik var — yalnızca ilk kısım gösteriliyor",
+      "renamedFrom": "{{from}} → {{to}}",
+      "diff": {
+        "loading": "Fark yükleniyor…",
+        "failed": "Fark yüklenemedi",
+        "binary": "İkili dosya — metin farkı yok",
+        "truncated": "Fark kısaltıldı (büyük dosya)",
+        "empty": "Metinsel değişiklik yok",
+        "close": "Farkı kapat"
+      },
+      "actions": {
+        "stage": "Değişiklikleri hazırla",
+        "unstage": "Hazırlamayı geri al",
+        "discard": "Değişiklikleri sil",
+        "stageAll": "Tümünü hazırla",
+        "unstageAll": "Tümünün hazırlamasını geri al",
+        "blockedHint": "Hazırlamadan veya silmeden önce çakışmayı AionUi dışında çözün",
+        "confirmDiscardTitle": "Değişiklikler silinsin mi?",
+        "confirmDiscardTracked": "{{count}} dosyadaki düzenlemeler kaybolacak. Bu geri alınamaz.",
+        "confirmDiscardUntracked": "{{count}} yeni dosya çöp kutusuna taşınacak.",
+        "confirmDiscardMixed": "{{tracked}} dosyadaki düzenlemeler geri alınamaz şekilde kaybolacak; {{untracked}} yeni dosya çöp kutusuna gidecek.",
+        "discardConfirmButton": "Sil",
+        "okStage": "{{count}} dosya hazırlandı",
+        "okUnstage": "{{count}} dosyanın hazırlaması geri alındı",
+        "okDiscard": "{{count}} dosya silindi",
+        "partial": "{{total}} işlemden {{succeeded}} tamamlandı —— {{failed}} tamamlanamadı",
+        "partialDetail": "Tamamlanamayan: {{files}}",
+        "rejectedBlocked": "Hiçbir şey değişmedi —— önce çakışmayı çözün",
+        "rejectedUnsupported": "Bu depo bu işlemi desteklemiyor",
+        "rejectedFailed": "İşlem tamamlanamadı",
+        "retry": "Yeniden dene",
+        "notSent": "İstek arka uca ulaşmadı, hiçbir şey değişmedi. Yeniden deneyebilirsiniz.",
+        "outcomeUnknown": "Yanıt gelmeden bağlantı sıfırlandı — bu işlem tamamlanmış da olabilir, olmamış da. Yeniden denemeden önce yenileyip dosya listesini kontrol edin.",
+        "allFailed": "{{count}} dosyanın hiçbiri işlenemedi"
+      }
+    },
+    "pathCopied": "Yol kopyalandı",
+    "copyFailed": "Yol kopyalanamadı"
+  },
+  "terminal": {
+    "running": "Çalışıyor",
+    "stopped": "Durduruldu",
+    "exited": "Çıkış {{code}}",
+    "stop": "Durdur",
+    "truncated": "(önceki çıktı kesildi)"
+  },
+  "resumeCommand": {
+    "copy": "Devam komutunu kopyala",
+    "copied": "Devam komutu kopyalandı",
+    "copyFailed": "Kopyalanamadı"
+  },
+  "runtimeStartFailed": "Failed to start the session runtime; model and mode settings are unavailable: {{reason}}",
   "ace": {
     "cliResumeUnavailable": "Orijinal CLI oturumu belleği devam ettirilemiyor; yeni bir oturum olarak devam edilecek",
     "compactSummary": "Oturum sıkıştırıldı · özeti görmek için genişletin"

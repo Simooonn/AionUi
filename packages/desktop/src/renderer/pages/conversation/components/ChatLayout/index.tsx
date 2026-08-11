@@ -5,7 +5,7 @@ import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useResizableSplit } from '@/renderer/hooks/ui/useResizableSplit';
 import ChatTitleEditor from '@/renderer/pages/conversation/components/ChatTitleEditor';
 import MobileWorkspaceOverlay from './MobileWorkspaceOverlay';
-import WorkspacePanelHeader, { DesktopWorkspaceToggle } from './WorkspacePanelHeader';
+import WorkspacePanelHeader from './WorkspacePanelHeader';
 import { useContainerWidth } from '@/renderer/pages/conversation/hooks/useContainerWidth';
 import { useLayoutConstraints } from '@/renderer/pages/conversation/hooks/useLayoutConstraints';
 import { useTitleRename } from '@/renderer/pages/conversation/hooks/useTitleRename';
@@ -25,7 +25,6 @@ import {
   writeWorkspaceCollapsePreference,
 } from '@/renderer/utils/workspace/mainContentPanels';
 import classNames from 'classnames';
-import { isMacEnvironment, isWindowsEnvironment } from '@/renderer/pages/conversation/utils/detectPlatform';
 import {
   DEFAULT_WORKSPACE_PANEL_PX,
   MAX_WORKSPACE_PANEL_PX,
@@ -34,7 +33,6 @@ import {
   calcLayoutMetrics,
 } from '@/renderer/pages/conversation/utils/layoutCalc';
 import { Layout as ArcoLayout } from '@arco-design/web-react';
-import { ExpandLeft, ExpandRight } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './chat-layout.css';
@@ -56,6 +54,13 @@ const ChatLayout: React.FC<{
   titleSuffix?: React.ReactNode;
   // ace:end
   workspaceEnabled?: boolean;
+  /**
+   * When true (project conversations), the preview panel is hoisted to the
+   * Layout-level project host and this ChatLayout renders chat only — the preview
+   * region + its resize live at the Layout level, structurally persistent across
+   * same-project conversation switches (no remount).
+   */
+  previewHosted?: boolean;
   /** Conversation ID for mode switching */
   conversation_id?: string;
   /** Custom tabs slot; when provided, replaces the default ConversationTabs */
@@ -78,14 +83,23 @@ const ChatLayout: React.FC<{
   const { conversation_id, workspacePath, isTemporaryWorkspace } = props;
   const { backend, presetAssistant, agent_name, workspaceEnabled = true, workspacePreferenceKey } = props;
   const layout = useLayoutContext();
-  const isMacRuntime = isMacEnvironment();
-  const isWindowsRuntime = isWindowsEnvironment();
   const isDesktop = !layout?.isMobile;
   const isMobile = Boolean(layout?.isMobile);
   const preferenceKey = workspacePreferenceKey ?? conversation_id;
 
   // Preview panel state
-  const { isOpen: isPreviewOpen } = usePreviewContext();
+  const { isOpen: isPreviewOpenRaw } = usePreviewContext();
+  // Only hoist to the Layout host on desktop. On mobile (narrow width < 768) the
+  // host is not rendered (`previewRegionActive` in Layout.tsx is gated on
+  // `!isMobile`), so hoisting there would leave the preview with no renderer at
+  // all. Forcing `previewHosted` to false on mobile makes every conversation —
+  // including project conversations — fall back to ChatLayout's own mobile
+  // overlay path, exactly how non-project conversations still render today.
+  const previewHosted = Boolean(props.previewHosted) && !isMobile;
+  // For project conversations the preview lives at the Layout host, so this
+  // ChatLayout must behave as if there is no preview: chat fills, no split, no
+  // preview panel. Everywhere below uses `isPreviewOpen` for that local decision.
+  const isPreviewOpen = isPreviewOpenRaw && !previewHosted;
 
   // Sync hydrate of both panel flags (single source of truth for initial pair).
   const initialPanelState = useMemo(
@@ -386,19 +400,7 @@ const ChatLayout: React.FC<{
       {/* ace:start title-suffix slot — sibling of the title container so it never steals width from / gets clipped by the title */}
       {!editingTitle && props.titleSuffix && <div className='shrink-0 flex items-center'>{props.titleSuffix}</div>}
       {/* ace:end */}
-      <div className='flex items-center gap-12px shrink-0'>
-        {props.headerExtra}
-        {isWindowsRuntime && workspaceEnabled && (
-          <button
-            type='button'
-            className='workspace-header__toggle'
-            aria-label='Toggle workspace'
-            onClick={() => dispatchWorkspaceToggleEvent()}
-          >
-            {rightSiderCollapsed ? <ExpandRight size={16} /> : <ExpandLeft size={16} />}
-          </button>
-        )}
-      </div>
+      <div className='flex items-center gap-12px shrink-0'>{props.headerExtra}</div>
     </ArcoLayout.Header>
   );
 
@@ -462,14 +464,21 @@ const ChatLayout: React.FC<{
             {isPreviewOpen && (
               <div
                 className={classNames(
-                  'preview-panel flex flex-col relative overflow-visible rounded-[15px]',
-                  isDesktop ? 'mb-[12px] mr-[12px] ml-[8px]' : 'm-[8px]'
+                  'preview-panel flex flex-col relative overflow-visible',
+                  // 移动端预览是覆盖层，保留内缩和圆角；桌面端不留边距，
+                  // 否则窗口底色会从缝隙透出（深色模式下尤其突兀）。
+                  // On mobile the preview is an overlay, so it keeps its inset and
+                  // rounding. On desktop no margin: a gap would expose the window's
+                  // own background, which is jarring in dark mode.
+                  isDesktop ? '' : 'm-[8px] rounded-[15px]'
                 )}
                 style={{
                   flexGrow: 1,
                   flexShrink: 1,
                   flexBasis: 0,
-                  border: '1px solid var(--bg-3)',
+                  // 桌面端只用左边框分界；移动端覆盖层保留完整描边
+                  // Desktop: left divider only. Mobile overlay keeps a full border.
+                  ...(isDesktop ? { borderLeft: '1px solid var(--bg-3)' } : { border: '1px solid var(--bg-3)' }),
                   minWidth: isDesktop ? '260px' : 0,
                   maxWidth: isMobile ? 'calc(100% - 16px)' : undefined,
                   width: isMobile ? 'calc(100% - 16px)' : undefined,
@@ -484,7 +493,7 @@ const ChatLayout: React.FC<{
                     lineClassName: 'opacity-30 group-hover:opacity-100 group-active:opacity-100',
                     lineStyle: { width: '2px' },
                   })}
-                <div className='h-full w-full overflow-hidden rounded-[15px]'>
+                <div className={classNames('h-full w-full overflow-hidden', isDesktop ? '' : 'rounded-[15px]')}>
                   <PreviewPanel />
                 </div>
               </div>
@@ -532,7 +541,6 @@ const ChatLayout: React.FC<{
               !chatCollapsed &&
               createWorkspaceDragHandle({ className: 'absolute left-0 top-0 bottom-0', style: {}, reverse: true })}
             <WorkspacePanelHeader
-              showToggle={!isMacRuntime && !isWindowsRuntime}
               collapsed={rightSiderCollapsed}
               onToggle={() => dispatchWorkspaceToggleEvent()}
               togglePlacement={layout?.isMobile ? 'left' : 'right'}
@@ -559,11 +567,6 @@ const ChatLayout: React.FC<{
             workspacePath={workspacePath}
             isTemporaryWorkspace={isTemporaryWorkspace}
           />
-        )}
-
-        {/* Desktop expand button when workspace is collapsed */}
-        {!isMacRuntime && !isWindowsRuntime && workspaceEnabled && rightSiderCollapsed && !layout?.isMobile && (
-          <DesktopWorkspaceToggle />
         )}
       </div>
     </ArcoLayout>

@@ -61,6 +61,8 @@ export type ConversationRowProps = {
   onExport?: (conversation: TChatConversation) => void;
   onTogglePin: (conversation: TChatConversation) => void;
   getJobStatus: (conversation_id: string) => 'none' | 'active' | 'paused' | 'error' | 'unread';
+  /** Resolve a loaded conversation's name by id (fork-lineage badge tooltip). */
+  resolveConversationName?: (conversation_id: string) => string | undefined;
   /** When true, the agent icon is dimmed by default and only shows full color on hover. Used inside project folders to reduce visual weight. */
   dimIcon?: boolean;
   // ace:start gray out rows of a stale (missing-workspace) project

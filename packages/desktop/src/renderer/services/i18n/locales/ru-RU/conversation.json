@@ -73,13 +73,15 @@
     "removeProject": "Удалить проект",
     "removeProjectConfirm": "Удалить проект «{{name}}»? Беседы в проекте тоже будут удалены: {{count}}.",
     "newConversationInProject": "Новая беседа в этом проекте",
+    "deleting": "Удаление...",
+    "reorderPinned": "Перетащите, чтобы изменить порядок закреплённых бесед",
+    "forkedFrom": "Ответвление от «{{name}}»",
+    "forkedConversation": "Ответвлённая беседа",
     "localFileDeleteFailed": "Некоторые локальные файлы сессий не удалось удалить",
     "refreshProjects": "Обновить статус проектов",
     "pinnedProjectsSection": "Закреплённые проекты",
     "pinProject": "Закрепить проект",
-    "unpinProject": "Открепить проект",
-    "deleting": "Удаление...",
-    "reorderPinned": "Перетащите, чтобы изменить порядок закреплённых бесед"
+    "unpinProject": "Открепить проект"
   },
   "historySearch": {
     "tooltip": "Поиск сообщений",
@@ -109,7 +111,6 @@
       "TEAM_ASSISTANT_FIELD_UNSUPPORTED": "Используйте assistant_id вместо {{field}}."
     }
   },
-  "runtimeStartFailed": "Failed to start the session runtime; model and mode settings are unavailable: {{reason}}",
   "agentError": {
     "fallbackTitle": "Агент не смог ответить",
     "errorCode": "Код ошибки",
@@ -422,24 +423,9 @@
     "openWith": {
       "vscode": "VS Code",
       "terminal": "Терминал",
-      "explorer": "Проводник"
-    },
-    "terminal": {
-      "tab": "Терминал",
-      "tabLabel": "Терминал {{index}}",
-      "exited": "Процесс завершён (код {{code}})",
-      "restart": "Перезапустить",
-      "capReached": "Достигнут предел в {{max}} терминалов",
-      "createFailed": "Не удалось открыть терминал",
-      "newTab": "Новая вкладка",
-      "restoreSession": "Восстановить сессию",
-      "restoreUnavailable": "Текущий разговор нельзя восстановить в терминале"
+      "explorer": "Проводник",
+      "browser": "Браузер"
     }
-  },
-  "resumeCommand": {
-    "copy": "Скопировать команду возобновления",
-    "copied": "Команда возобновления скопирована",
-    "copyFailed": "Не удалось скопировать"
   },
   "minimap": {
     "searchAria": "Поиск по диалогу",
@@ -530,7 +516,15 @@
     }
   },
   "contextUsage": {
-    "contextUsed": "контекст использован"
+    "contextUsed": "контекст использован",
+    "tokensUsed": "Использовано токенов: {{tokens}}",
+    "windowUnknown": "Размер контекстного окна неизвестен",
+    "sessionCost": "Стоимость сессии",
+    "input": "Ввод",
+    "output": "Вывод",
+    "thought": "Размышление",
+    "cachedRead": "Чтение кэша",
+    "cachedWrite": "Запись кэша"
   },
   "skill_generator": {
     "title": "Создать навык/правило",
@@ -577,7 +571,8 @@
     "sendboxHint": "Подготавливается среда выполнения. Первый запуск может занять немного больше времени."
   },
   "sendbox": {
-    "hint": "Введите / для команд, @ для ссылок на файлы, ↑/↓ для истории сообщений"
+    "hint": "Введите / для команд, @ для ссылок на файлы, ↑/↓ для истории сообщений",
+    "mediaPathFallback": "Этот агент не поддерживает данный тип файла нативно; он будет отправлен в виде пути к файлу."
   },
   "agentTip": {
     "codes": {
@@ -598,10 +593,144 @@
       },
       "ACP_EMPTY_TURN_REFUSAL": {
         "body": "Модель отклонила этот запрос до того, как появился видимый ответ."
+      },
+      "ANTIGRAVITY_STEPS_FAILED": {
+        "body": "Шагов завершилось неудачей: {{count}}; они НЕ были выполнены. agy всё равно помечает такие ходы как успешные — проверяйте фактический результат, а не ответ."
+      },
+      "CLI_VERSION_OLDER": {
+        "body": "Установленная версия {{cli}} старее проверенной AionUi; часть возможностей может отсутствовать. Рекомендуется обновить {{cli}}. (установлено: {{reported}} / проверено AionUi: {{verified}})"
+      },
+      "CLI_VERSION_NEWER": {
+        "body": "Установленная версия {{cli}} новее проверенной AionUi. Обычно всё работает; сообщите о странном поведении. (установлено: {{reported}} / проверено AionUi: {{verified}})"
+      },
+      "CODEX_RETRYING": {
+        "body": "{{detail}} (попытка {{attempts}}, прошло {{elapsed}} — провайдер агента постоянно обрывает соединение, AionUi ждёт восстановления.)"
       }
     }
   },
   "notFound": "Беседа не найдена или была удалена",
+  "explorer": {
+    "addFolder": "Add folder to project",
+    "removeFolder": "Remove from project",
+    "attachDuplicate": "This folder is already in the project",
+    "attachOverlap": "This folder overlaps a folder already in the project",
+    "attachFailed": "Couldn't add the folder",
+    "removeFailed": "Couldn't remove the folder",
+    "contextMenu": {
+      "rename": "Переименовать",
+      "addToChat": "Добавить в чат",
+      "copyRelativePath": "Копировать относительный путь",
+      "copyAbsolutePath": "Копировать абсолютный путь"
+    },
+    "namePlaceholder": "Имя",
+    "deleteConfirm": "Удалить «{{name}}»? Это действие нельзя отменить.",
+    "renameFailed": "Не удалось переименовать",
+    "tabs": {
+      "files": "Файлы",
+      "changes": "Изменения"
+    },
+    "addedToChat": "{{name}} добавлен в чат",
+    "imported": "Импортировано файлов: {{count}}",
+    "importPartialFailed": "Скопировано: {{copied}}, с ошибкой: {{failed}} (конфликты имён или не поддерживается)",
+    "importFailed": "Не удалось импортировать файлы",
+    "search": {
+      "placeholder": "Поиск файлов по имени",
+      "searching": "Поиск…",
+      "empty": "Нет совпадающих файлов",
+      "limitReached": "Показаны первые {{count}} — уточните запрос"
+    },
+    "scm": {
+      "notARepository": "Эта папка не под контролем версий",
+      "noChanges": "Нет изменений",
+      "loading": "Загрузка изменений…",
+      "loadFailed": "Не удалось загрузить изменения",
+      "refresh": "Обновить",
+      "groups": {
+        "staged": "Проиндексированные изменения",
+        "unstaged": "Изменения",
+        "changes": "Изменения",
+        "blocked": "Требует решения"
+      },
+      "sections": {
+        "repositories": "Репозитории",
+        "changes": "Изменения"
+      },
+      "viewAsTree": "В виде дерева",
+      "viewAsList": "В виде списка",
+      "worktree": "Рабочее дерево",
+      "expandWorktrees": "Показать рабочие деревья",
+      "collapseWorktrees": "Скрыть рабочие деревья",
+      "state": {
+        "created": "Добавлен",
+        "modified": "Изменён",
+        "deleted": "Удалён",
+        "renamed": "Переименован",
+        "conflicted": "Конфликт",
+        "unknown": "Неизвестное состояние"
+      },
+      "badge": {
+        "created": "A",
+        "modified": "M",
+        "deleted": "D",
+        "renamed": "R",
+        "conflicted": "!",
+        "unknown": "?"
+      },
+      "conflictedHint": "Сначала устраните конфликт вне AionUi",
+      "opaqueHint": "Это состояние пришло от более новой версии сервера — только для просмотра",
+      "degraded": "Обновление идёт в замедленном режиме: не удаётся записать индекс git",
+      "truncated": "Слишком много изменений — показана только первая часть",
+      "renamedFrom": "{{from}} → {{to}}",
+      "diff": {
+        "loading": "Загрузка различий…",
+        "failed": "Не удалось загрузить различия",
+        "binary": "Двоичный файл — текстовых различий нет",
+        "truncated": "Различия усечены (большой файл)",
+        "empty": "Нет текстовых изменений",
+        "close": "Закрыть различия"
+      },
+      "actions": {
+        "stage": "Проиндексировать изменения",
+        "unstage": "Убрать из индекса",
+        "discard": "Отменить изменения",
+        "stageAll": "Проиндексировать всё",
+        "unstageAll": "Убрать всё из индекса",
+        "blockedHint": "Сначала устраните конфликт вне AionUi, затем индексируйте или отменяйте",
+        "confirmDiscardTitle": "Отменить изменения?",
+        "confirmDiscardTracked": "Правки в {{count}} файлах будут потеряны. Это нельзя отменить.",
+        "confirmDiscardUntracked": "{{count}} новых файлов будут перемещены в корзину.",
+        "confirmDiscardMixed": "Правки в {{tracked}} файле(ах) будут безвозвратно потеряны; {{untracked}} новых файла(ов) попадут в корзину.",
+        "discardConfirmButton": "Отменить",
+        "okStage": "Проиндексировано файлов: {{count}}",
+        "okUnstage": "Убрано из индекса файлов: {{count}}",
+        "okDiscard": "Отменены изменения в {{count}} файлах",
+        "partial": "Выполнено {{succeeded}} из {{total}} —— не удалось: {{failed}}",
+        "partialDetail": "Не выполнено: {{files}}",
+        "rejectedBlocked": "Ничего не изменено —— сначала устраните конфликт",
+        "rejectedUnsupported": "Этот репозиторий не поддерживает такое действие",
+        "rejectedFailed": "Не удалось выполнить действие",
+        "retry": "Повторить",
+        "notSent": "Запрос не дошёл до сервера, ничего не изменено. Можно повторить.",
+        "outcomeUnknown": "Соединение сброшено до получения ответа — операция могла завершиться, а могла и нет. Обновите и проверьте список файлов, прежде чем повторять.",
+        "allFailed": "Ни один из {{count}} файл(ов) не удалось обработать"
+      }
+    },
+    "pathCopied": "Путь скопирован",
+    "copyFailed": "Не удалось скопировать путь"
+  },
+  "terminal": {
+    "running": "Выполняется",
+    "stopped": "Остановлено",
+    "exited": "Код {{code}}",
+    "stop": "Остановить",
+    "truncated": "(ранний вывод усечён)"
+  },
+  "runtimeStartFailed": "Failed to start the session runtime; model and mode settings are unavailable: {{reason}}",
+  "resumeCommand": {
+    "copy": "Скопировать команду возобновления",
+    "copied": "Команда возобновления скопирована",
+    "copyFailed": "Не удалось скопировать"
+  },
   "ace": {
     "cliResumeUnavailable": "Не удалось продолжить память исходной сессии CLI; продолжаем как новую сессию",
     "compactSummary": "Сессия сжата · разверните, чтобы увидеть сводку"

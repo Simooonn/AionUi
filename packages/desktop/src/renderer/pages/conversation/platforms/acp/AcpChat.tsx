@@ -5,6 +5,7 @@
  */
 
 import type { IConversationMcpStatus } from '@/common/config/storage';
+import type { ChatFileRef } from '@/common/types/chatFile';
 import { ConversationProvider } from '@/renderer/hooks/context/ConversationContext';
 import { CHAT_SURFACE_CONTAINER_CLASS } from '@/renderer/pages/conversation/utils/chatSurfaceWidth';
 import { useTeamPermission } from '@/renderer/pages/team/hooks/TeamPermissionContext';
@@ -41,9 +42,11 @@ const AcpChat: React.FC<{
   loadedSkills?: string[];
   loadedMcpServers?: string[];
   loadedMcpStatuses?: IConversationMcpStatus[];
-  teamSendMessage?: (payload: { input: string; files: string[] }) => Promise<void>;
+  teamSendMessage?: (payload: { input: string; files: ChatFileRef[] }) => Promise<void>;
   teamRuntime?: TeamSendBoxRuntime;
   assistantId?: string;
+  forkCapability?: { at_turn: boolean };
+  promptCapability?: { image: boolean; audio: boolean };
 }> = ({
   conversation_id,
   workspace,
@@ -60,6 +63,8 @@ const AcpChat: React.FC<{
   teamSendMessage,
   teamRuntime,
   assistantId,
+  forkCapability,
+  promptCapability,
 }) => {
   useMessageLstCache(conversation_id);
   usePendingConfirmationsRecovery(conversation_id);
@@ -81,6 +86,8 @@ const AcpChat: React.FC<{
         loadedMcpServers,
         loadedMcpStatuses,
         assistantId,
+        forkCapability,
+        promptCapability,
       }}
     >
       <ConversationArtifactProvider conversation_id={conversation_id}>
@@ -95,7 +102,6 @@ const AcpChat: React.FC<{
               backend={backend}
               session_mode={session_mode}
               agent_name={agent_name}
-              workspacePath={workspace}
               current_model_id={current_model_id}
               messageState={messageState}
               teamSendMessage={teamSendMessage}

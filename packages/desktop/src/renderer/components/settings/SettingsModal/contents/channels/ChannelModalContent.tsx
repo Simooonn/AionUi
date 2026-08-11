@@ -20,12 +20,13 @@ import ChannelItem from './ChannelItem';
 import type { ChannelConfig } from './types';
 import DingTalkConfigForm from './DingTalkConfigForm';
 import LarkConfigForm from './LarkConfigForm';
+import SlackConfigForm from './SlackConfigForm';
 import TelegramConfigForm from './TelegramConfigForm';
 import WeixinConfigForm from './WeixinConfigForm';
 import WecomConfigForm from './WecomConfigForm';
 
 // ace: 'lark_intl' added for the Lark International channel
-type ChannelSettingsPlatform = 'telegram' | 'lark' | 'lark_intl' | 'dingtalk' | 'weixin' | 'wecom';
+type ChannelSettingsPlatform = 'telegram' | 'slack' | 'lark' | 'lark_intl' | 'dingtalk' | 'weixin' | 'wecom';
 
 type ExtensionFieldType = 'text' | 'password' | 'select' | 'number' | 'boolean';
 
@@ -156,6 +157,7 @@ const ChannelModalContent: React.FC = () => {
 
   // Plugin state
   const [pluginStatus, setPluginStatus] = useState<IChannelPluginStatus | null>(null);
+  const [slackPluginStatus, setSlackPluginStatus] = useState<IChannelPluginStatus | null>(null);
   const [larkPluginStatus, setLarkPluginStatus] = useState<IChannelPluginStatus | null>(null);
   // ace:start lark_intl channel
   const [larkIntlPluginStatus, setLarkIntlPluginStatus] = useState<IChannelPluginStatus | null>(null);
@@ -164,6 +166,7 @@ const ChannelModalContent: React.FC = () => {
   const [weixinPluginStatus, setWeixinPluginStatus] = useState<IChannelPluginStatus | null>(null);
   const [wecomPluginStatus, setWecomPluginStatus] = useState<IChannelPluginStatus | null>(null);
   const [enableLoading, setEnableLoading] = useState(false);
+  const [slackEnableLoading, setSlackEnableLoading] = useState(false);
   const [larkEnableLoading, setLarkEnableLoading] = useState(false);
   // ace:start lark_intl channel
   const [larkIntlEnableLoading, setLarkIntlEnableLoading] = useState(false);
@@ -178,6 +181,9 @@ const ChannelModalContent: React.FC = () => {
 
   // Track the token entered in TelegramConfigForm so the toggle handler can use it
   const telegramTokenRef = React.useRef<string>('');
+
+  // Track the Bot Token entered in SlackConfigForm so the toggle handler can use it
+  const slackTokenRef = React.useRef<string>('');
 
   // Collapse state - true means collapsed (closed), false means expanded (open)
   const [collapseKeys, setCollapseKeys] = useState<Record<string, boolean>>({
@@ -195,6 +201,7 @@ const ChannelModalContent: React.FC = () => {
 
   // Model selection state — uses unified hook with backend-owned channel settings
   const telegramModelSelection = useChannelModelSelection('telegram');
+  const slackModelSelection = useChannelModelSelection('slack');
   const larkModelSelection = useChannelModelSelection('lark');
   // ace:start lark_intl channel
   const larkIntlModelSelection = useChannelModelSelection('lark_intl');
@@ -210,6 +217,7 @@ const ChannelModalContent: React.FC = () => {
       const plugins = await channel.getPluginStatus.invoke();
       if (plugins) {
         const telegramPlugin = plugins.find((p) => p.type === 'telegram');
+        const slackPlugin = plugins.find((p) => p.type === 'slack');
         const larkPlugin = plugins.find((p) => p.type === 'lark');
         // ace:start lark_intl channel
         const larkIntlPlugin = plugins.find((p) => p.type === 'lark_intl');
@@ -220,6 +228,7 @@ const ChannelModalContent: React.FC = () => {
         const extensionPlugins = plugins.filter((p) => !BUILTIN_CHANNEL_TYPES.has(p.type));
 
         setPluginStatus(telegramPlugin || null);
+        setSlackPluginStatus(slackPlugin || null);
         setLarkPluginStatus(larkPlugin || null);
         // ace:start lark_intl channel
         setLarkIntlPluginStatus(larkIntlPlugin || null);
@@ -284,6 +293,8 @@ const ChannelModalContent: React.FC = () => {
     const unsubscribe = channel.pluginStatusChanged.on(({ status }) => {
       if (status.type === 'telegram') {
         setPluginStatus(status);
+      } else if (status.type === 'slack') {
+        setSlackPluginStatus(status);
       } else if (status.type === 'lark') {
         setLarkPluginStatus(status);
         // ace:start lark_intl channel
@@ -352,6 +363,42 @@ const ChannelModalContent: React.FC = () => {
       Message.error(error instanceof Error ? error.message : String(error));
     } finally {
       setEnableLoading(false);
+    }
+  };
+
+  // Enable/Disable Slack plugin
+  const handleToggleSlackPlugin = async (enabled: boolean) => {
+    setSlackEnableLoading(true);
+    try {
+      if (enabled) {
+        // Slack requires two tokens (Bot Token + App-Level Token) supplied via
+        // SlackConfigForm's "Test" flow (which auto-enables on success). The
+        // manual toggle only re-enables when tokens are already saved.
+        if (!slackPluginStatus?.hasToken) {
+          Message.warning(t('settings.assistant.slackTokensRequired', 'Please enter and test your Slack tokens first'));
+          setSlackEnableLoading(false);
+          return;
+        }
+
+        await channel.enablePlugin.invoke({
+          plugin_id: 'slack',
+          config: {},
+        });
+
+        Message.success(t('settings.assistant.slackPluginEnabled', 'Slack bot enabled'));
+        await loadPluginStatus();
+      } else {
+        await channel.disablePlugin.invoke({
+          plugin_id: 'slack',
+        });
+
+        Message.success(t('settings.assistant.slackPluginDisabled', 'Slack bot disabled'));
+        await loadPluginStatus();
+      }
+    } catch (error: unknown) {
+      Message.error(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSlackEnableLoading(false);
     }
   };
 
@@ -724,6 +771,28 @@ const ChannelModalContent: React.FC = () => {
       ),
     };
 
+    const slackChannel: ChannelConfig = {
+      id: 'slack',
+      title: t('settings.channels.slackTitle', 'Slack'),
+      description: t('settings.channels.slackDesc', 'Chat with AionUi assistant via Slack'),
+      status: 'active',
+      enabled: slackPluginStatus?.enabled || false,
+      disabled: slackEnableLoading,
+      is_connected: slackPluginStatus?.connected || false,
+      botUsername: slackPluginStatus?.botUsername,
+      defaultModel: slackModelSelection.current_model?.use_model,
+      content: (
+        <SlackConfigForm
+          pluginStatus={slackPluginStatus}
+          modelSelection={slackModelSelection}
+          onStatusChange={setSlackPluginStatus}
+          onTokenChange={(token) => {
+            slackTokenRef.current = token;
+          }}
+        />
+      ),
+    };
+
     const larkChannel: ChannelConfig = {
       id: 'lark',
       title: t('settings.channels.larkTitle', 'Lark / Feishu'),
@@ -837,21 +906,6 @@ const ChannelModalContent: React.FC = () => {
     const extensionTypeSet = new Set(extensionChannels.map((channel) => String(channel.id).toLowerCase()));
     const comingSoonChannels: ChannelConfig[] = [
       {
-        id: 'slack',
-        title: t('settings.channels.slackTitle', 'Slack'),
-        description: t('settings.channels.slackDesc', 'Chat with AionUi assistant via Slack'),
-        status: 'coming_soon' as const,
-        enabled: false,
-        disabled: true,
-        content: (
-          <div className='text-14px text-t-secondary py-12px'>
-            {t('settings.channels.comingSoonDesc', 'Support for {{channel}} is coming soon', {
-              channel: t('settings.channels.slackTitle', 'Slack'),
-            })}
-          </div>
-        ),
-      },
-      {
         id: 'discord',
         title: t('settings.channels.discordTitle', 'Discord'),
         description: t('settings.channels.discordDesc', 'Chat with AionUi assistant via Discord'),
@@ -870,6 +924,7 @@ const ChannelModalContent: React.FC = () => {
 
     return [
       telegramChannel,
+      slackChannel,
       larkChannel,
       // ace:start lark_intl channel
       larkIntlChannel,
@@ -882,11 +937,13 @@ const ChannelModalContent: React.FC = () => {
     ];
   }, [
     pluginStatus,
+    slackPluginStatus,
     larkPluginStatus,
     dingtalkPluginStatus,
     extensionStatuses,
     extensionLoadingMap,
     telegramModelSelection,
+    slackModelSelection,
     larkModelSelection,
     // ace:start lark_intl channel
     larkIntlPluginStatus,
@@ -895,6 +952,7 @@ const ChannelModalContent: React.FC = () => {
     // ace:end
     dingtalkModelSelection,
     enableLoading,
+    slackEnableLoading,
     larkEnableLoading,
     dingtalkEnableLoading,
     weixinPluginStatus,
@@ -911,6 +969,7 @@ const ChannelModalContent: React.FC = () => {
   // Get toggle handler for each channel
   const getToggleHandler = (channelId: string) => {
     if (channelId === 'telegram') return handleTogglePlugin;
+    if (channelId === 'slack') return handleToggleSlackPlugin;
     if (channelId === 'lark') return handleToggleLarkPlugin;
     // ace:start lark_intl channel
     if (channelId === 'lark_intl') return handleToggleLarkIntlPlugin;

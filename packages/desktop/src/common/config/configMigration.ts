@@ -64,8 +64,6 @@ const ALL_LEGACY_KEYS: LegacyConfigKey[] = [
   'acp.promptTimeout',
   'acp.agentIdleTimeout',
   'language',
-  'theme',
-  'colorScheme',
   'ui.zoomFactor',
   'ui.fontSize.chat',
   'ui.fontSize.markdown',
@@ -73,9 +71,6 @@ const ALL_LEGACY_KEYS: LegacyConfigKey[] = [
   'webui.desktop.enabled',
   'webui.desktop.allowRemote',
   'webui.desktop.port',
-  'customCss',
-  'css.themes',
-  'css.activeThemeId',
   'tools.imageGenerationModel',
   'tools.speechToText',
   'workspace.pasteConfirm',
@@ -89,7 +84,6 @@ const ALL_LEGACY_KEYS: LegacyConfigKey[] = [
   'system.notificationEnabled',
   'system.cronNotificationEnabled',
   'system.keepAwake',
-  'system.autoPreviewOfficeFiles',
 ];
 
 export async function migrateConfigStorage(configFile: ConfigFile): Promise<void> {

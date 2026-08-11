@@ -39,6 +39,12 @@
     "detailUsedByTitle": "در حال استفاده",
     "detailUsedByEmpty": "هنوز هیچ دستیاری از این مهارت استفاده نمی‌کند.",
     "detailBuiltinAssistant": "داخلی",
+    "detailFilesTitle": "فایل‌های مهارت",
+    "detailFilesError": "فایل‌های این مهارت بارگیری نشدند.",
+    "editViaChat": {
+      "buttonLabel": "ویرایش از طریق گفتگو",
+      "defaultPrompt": "می‌خواهم این Skill را بهبود دهم: {{skillName}}\n\nلطفاً محتوای آن را بررسی کنید و برای بهبودش به من کمک کنید. پیشنهادهای من برای تغییر عبارت‌اند از:"
+    },
     "usedByCount": "{{count}} دستیار در حال استفاده",
     "manageInHub": "مدیریت در مرکز مهارت‌ها",
     "recommend": "پیشنهاد مهارت‌ها",
@@ -105,7 +111,8 @@
     "officialSkillsEmpty": "هیچ مهارت رسمی در دسترس نیست.",
     "noSearchResults": "هیچ مهارت منطبقی وجود ندارد.",
     "customHint": "یک پوشه مهارت، پوشه والد یا zip را وارد کنید؛ حداکثر {{maxFileSize}} برای هر فایل و {{maxTotalSize}} برای هر مهارت؛ وارد کردن نام تکراری مهارت موجود را بازنویسی می‌کند.",
-    "officialHint": "مهارت‌های رسمی همراه AionUi — آماده استفاده، فقط‌خواندنی و با هر نسخه به‌روزرسانی می‌شوند."
+    "officialHint": "مهارت‌های رسمی همراه AionUi — آماده استفاده، فقط‌خواندنی و با هر نسخه به‌روزرسانی می‌شوند.",
+    "deleteAffectsNewOnlyHint": "Deleting only affects new conversations. Skills already selected in existing conversations keep working."
   },
   "authMethod": "احراز هویت",
   "geminiApiKey": "کلید API جمینای",
@@ -211,6 +218,8 @@
   "assistantManagedPromptCount": "{{count}} پیشنهاد پرامپت توسط محصول نگهداری می‌شود.",
   "assistantManagedPromptFallback": "پیشنهادهای پرامپت توسط محصول نگهداری می‌شوند.",
   "assistantEngineAffectsDefaults": "تغییر ایجنت اصلی، مدل‌ها و مقادیر مجوز قابل انتخاب در پایین را به‌روزرسانی می‌کند.",
+  "assistantSearchAgent": "جست‌وجوی ایجنت",
+  "assistantNoMatchingAgent": "هیچ ایجنتی مطابقت ندارد",
   "assistantEffectiveImmediately": "فوراً اعمال می‌شود",
   "assistantOnlyNewConversation": "فقط مکالمات جدید",
   "assistantDefaultModelLabel": "مدل",
@@ -306,8 +315,6 @@
   "cacheClearFailed": "پاکسازی کش ناموفق بود",
   "language": "زبان",
   "saveUploadToWorkspace": "ذخیره آپلودها در پوشه پروژه",
-  "autoPreviewOfficeFiles": "پیش‌نمایش خودکار فایل‌های آفیس",
-  "autoPreviewOfficeFilesDesc": "فایل‌های جدید Word، Excel و PowerPoint ایجادشده در پروژه فعلی به‌صورت خودکار باز می‌شوند. فایل‌های موقت قفل آفیس نادیده گرفته می‌شوند.",
   "startOnBoot": "اجرا هنگام راه‌اندازی",
   "startOnBootDesc": "AionUi هنگام ورود به macOS یا Windows به‌صورت خودکار اجرا شود.",
   "startOnBootUnsupported": "فقط در نسخه‌های بسته‌بندی‌شده macOS و Windows در دسترس است.",
@@ -316,6 +323,8 @@
   "hardwareAcceleration": "شتاب‌دهی سخت‌افزاری",
   "hardwareAccelerationDesc": "از GPU برای رندر رابط کاربری استفاده کنید. اگر برنامه هنگام اجرا کرش می‌کند یا تصویر چشمک می‌زند، غیرفعال کنید.",
   "hardwareAccelerationAutoDisabled": "پس از کرش‌های مکرر GPU به‌صورت خودکار غیرفعال شد.",
+  "hardwareAccelerationAutoDisabledTitle": "شتاب‌دهی سخت‌افزاری غیرفعال شد",
+  "hardwareAccelerationAutoDisabledNotice": "خرابی‌های مکرر گرافیکی شناسایی شد، بنابراین برای پایداری برنامه، شتاب‌دهی سخت‌افزاری به‌طور خودکار خاموش شد. می‌توانید آن را در تنظیمات ← سیستم دوباره فعال کنید.",
   "hardwareAccelerationRestartConfirm": "برای اعمال تنظیم شتاب‌دهی سخت‌افزاری، AionUi را ری‌استارت کنید؟",
   "hardwareAccelerationUpdateFailed": "به‌روزرسانی تنظیم شتاب‌دهی سخت‌افزاری ناموفق بود",
   "browserNotification": {
@@ -334,6 +343,8 @@
   "groupAbout": "سایر",
   "agentIdleTimeout": "مهلت بیکاری ایجنت (دقیقه)",
   "agentIdleTimeoutDesc": "پس از این مدت، پردازش‌های بیکار ایجنت بسته می‌شوند تا حافظه آزاد شود",
+  "previewTextSizeLimit": "محدودیت حجم پیش‌نمایش (مگابایت)",
+  "previewTextSizeLimitDesc": "فایل‌های متنی بزرگ‌تر از این حجم به‌جای محتوا با یک اطلاع‌رسانی باز می‌شوند. فقط برای زبانه‌های جدید اعمال می‌شود.",
   "gemini": "Gemini CLI",
   "model": "مدل",
   "system": "سیستم",
@@ -973,7 +984,25 @@
     "autoFollowCliModel": "به‌صورت خودکار از مدل هنگام اجرای CLI پیروی کنید",
     "agentSwitched": "ایجنت با موفقیت تغییر کرد",
     "modelSwitched": "مدل با موفقیت تغییر کرد",
-    "name": "دستیار"
+    "name": "دستیار",
+    "slackBotToken": "توکن بات",
+    "slackBotTokenDesc": "یک اپ Slack بسازید، آن را در فضای کاری خود نصب کنید و سپس Bot User OAuth Token (xoxb-) را کپی کنید.",
+    "slackBotTokenRequired": "لطفاً یک توکن بات (xoxb-) وارد کنید",
+    "slackBotTokenPrefix": "توکن بات باید با «xoxb-» شروع شود",
+    "slackAppToken": "توکن سطح اپ",
+    "slackAppTokenDesc": "حالت Socket را فعال کنید و یک توکن سطح اپ با دسترسی connections:write (xapp-) بسازید.",
+    "slackAppTokenRequired": "لطفاً یک توکن سطح اپ (xapp-) وارد کنید",
+    "slackAppTokenPrefix": "توکن سطح اپ باید با «xapp-» شروع شود",
+    "slackTokensRequired": "ابتدا توکن‌های Slack خود را وارد و آزمایش کنید",
+    "slackPluginEnabled": "بات Slack فعال شد",
+    "slackPluginDisabled": "بات Slack غیرفعال شد",
+    "agentDescSlack": "برای گفتگوهای Slack استفاده می‌شود",
+    "defaultModelDescSlack": "مدلی که برای گفتگوهای Slack استفاده می‌شود",
+    "slackStep1": "Slack را باز کنید و در یک کانال بات خود را منشن کنید یا به آن پیام خصوصی بفرستید",
+    "slackStep2": "برای شروع جفت‌سازی هر پیامی یا @منشن ارسال کنید",
+    "slackStep3": "یک درخواست جفت‌سازی در زیر ظاهر می‌شود. برای مجاز کردن کاربر روی «تأیید» کلیک کنید.",
+    "slackStep4": "پس از تأیید، می‌توانید در Slack با دستیار گفتگو کنید!",
+    "unknownUser": "کاربر ناشناس"
   },
   "lark": {
     "appId": "شناسه برنامه",
@@ -1158,7 +1187,9 @@
       "command_missing": "{{command}} را نصب کنید و آزمایش اتصال را دوباره انجام دهید.",
       "managed_runtime_unavailable": "{{resource}} را ترمیم یا دوباره نصب کنید، سپس آزمایش اتصال را دوباره انجام دهید.",
       "auth_required": "ایجنت در دسترس است اما نیاز به ورود دارد. از طریق CLI وارد شوید، یا کلید API لازم را در متغیرهای محیطی اضافه کنید، سپس آزمایش اتصال را دوباره انجام دهید.",
-      "no_provider": "ارائه‌دهنده مدلی پیکربندی نشده است. یک ارائه‌دهنده را در تنظیمات اضافه و فعال کنید، سپس آزمایش اتصال را دوباره انجام دهید."
+      "no_provider": "ارائه‌دهنده مدلی پیکربندی نشده است. یک ارائه‌دهنده را در تنظیمات اضافه و فعال کنید، سپس آزمایش اتصال را دوباره انجام دهید.",
+      "version_drift_older": "نسخهٔ نصب‌شدهٔ CLI قدیمی‌تر از نسخهٔ تأییدشده توسط AionUi است؛ ممکن است برخی قابلیت‌ها نباشند. ارتقا توصیه می‌شود.",
+      "version_drift_newer": "نسخهٔ نصب‌شدهٔ CLI جدیدتر از نسخهٔ تأییدشده توسط AionUi است. معمولاً کار می‌کند؛ رفتار غیرعادی را گزارش کنید."
     },
     "boundAssistantsTitle": "دستیارهای استفاده‌کننده از این ایجنت",
     "boundAssistantsCount": "{{count}} دستیار",
@@ -1286,5 +1317,19 @@
     "solveWithButler": "از باتلر بپرس"
   },
   "providerIdConflict": "شناسه ارائه‌دهنده از قبل وجود دارد. دوباره تلاش کنید.",
-  "autoInjectedSkillsHint": "در هر گفتگو به‌طور خودکار بارگذاری می‌شوند — نیازی به فعال‌سازی نیست؛ عامل تصمیم می‌گیرد چه زمانی از آن‌ها استفاده کند."
+  "autoInjectedSkillsHint": "در هر گفتگو به‌طور خودکار بارگذاری می‌شوند — نیازی به فعال‌سازی نیست؛ عامل تصمیم می‌گیرد چه زمانی از آن‌ها استفاده کند.",
+  "browserData": {
+    "title": "مرورگر درون‌برنامه",
+    "agentControlLabel": "اجازه به عامل برای استفاده از مرورگر داخلی برنامه",
+    "agentControlDesc": "با فعال بودن این گزینه، عامل می‌تواند در مرورگر داخلی برنامه به‌جای شما صفحه باز کند، کلیک کند و فرم‌ها را پر کند؛ مثلاً برای جست‌وجوی اطلاعات یا تکمیل یک فرایند در یک وب‌سایت. عامل فقط همین یک نمای مرورگر را در اختیار دارد: به رابط کاربری AionUi دسترسی ندارد و هرگز پنجره‌ی جداگانه‌ای از Chrome باز نمی‌کند. با غیرفعال کردن آن، خودتان می‌توانید از مرورگر استفاده کنید و تنها عامل دسترسی‌اش را از دست می‌دهد.",
+    "agentControlSaved": "تنظیم ذخیره شد",
+    "agentControlFailed": "ذخیره‌سازی تنظیم انجام نشد",
+    "agentControlRestartRequired": "این تنظیم پس از راه‌اندازی مجدد برنامه اعمال می‌شود.",
+    "clearLabel": "پاک کردن داده‌های مرور",
+    "clearDesc": "از همه سایت‌هایی که مرورگر در آن‌ها وارد شده خارج می‌شود و حافظه پنهان را پاک می‌کند. زبانه‌های باز پس از بازخوانی اعمال می‌شوند.",
+    "clearConfirmTitle": "داده‌های مرور پاک شود؟",
+    "clearConfirmContent": "از همه سایت‌های مرورگر درون‌برنامه خارج می‌شوید. این کار قابل بازگشت نیست.",
+    "clearSuccess": "داده‌های مرور پاک شد",
+    "clearFailed": "پاک کردن داده‌های مرور ناموفق بود"
+  }
 }

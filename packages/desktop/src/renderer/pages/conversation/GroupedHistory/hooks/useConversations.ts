@@ -60,8 +60,12 @@ export const useConversations = () => {
   const {
     conversations,
     isConversationGenerating,
+    isConversationWaitingConfirmation,
     hasCompletionUnread,
     clearCompletionUnread,
+    isManualUnread,
+    markManualUnread,
+    clearManualUnread,
     setActiveConversation,
     groupedHistory,
     hasLoadedOnce,
@@ -101,6 +105,7 @@ export const useConversations = () => {
 
     setActiveConversation(id);
     clearCompletionUnread(id);
+    clearManualUnread(id);
 
     if (revealedIdRef.current === id) return;
 
@@ -138,7 +143,7 @@ export const useConversations = () => {
       cancelAnimationFrame(outerRafId);
       cancelAnimationFrame(innerRafId);
     };
-  }, [clearCompletionUnread, id, setActiveConversation, pinnedConversations, timelineSections]);
+  }, [clearCompletionUnread, clearManualUnread, id, setActiveConversation, pinnedConversations, timelineSections]);
 
   // Persist workspace expansion state
   useEffect(() => {
@@ -210,7 +215,11 @@ export const useConversations = () => {
   return {
     conversations,
     isConversationGenerating,
+    isConversationWaitingConfirmation,
     hasCompletionUnread,
+    isManualUnread,
+    markManualUnread,
+    clearManualUnread,
     expandedWorkspaces,
     pinnedConversations,
     timelineSections,

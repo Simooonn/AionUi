@@ -19,6 +19,7 @@ import { useSettingsViewMode } from '../../settingsViewContext';
 import ChannelItem from './ChannelItem';
 import type { ChannelConfig } from './types';
 import DingTalkConfigForm from './DingTalkConfigForm';
+import DiscordConfigForm from './DiscordConfigForm';
 import LarkConfigForm from './LarkConfigForm';
 import SlackConfigForm from './SlackConfigForm';
 import TelegramConfigForm from './TelegramConfigForm';
@@ -26,7 +27,15 @@ import WeixinConfigForm from './WeixinConfigForm';
 import WecomConfigForm from './WecomConfigForm';
 
 // ace: 'lark_intl' added for the Lark International channel
-type ChannelSettingsPlatform = 'telegram' | 'slack' | 'lark' | 'lark_intl' | 'dingtalk' | 'weixin' | 'wecom';
+type ChannelSettingsPlatform =
+  | 'telegram'
+  | 'slack'
+  | 'discord'
+  | 'lark'
+  | 'lark_intl'
+  | 'dingtalk'
+  | 'weixin'
+  | 'wecom';
 
 type ExtensionFieldType = 'text' | 'password' | 'select' | 'number' | 'boolean';
 
@@ -158,6 +167,7 @@ const ChannelModalContent: React.FC = () => {
   // Plugin state
   const [pluginStatus, setPluginStatus] = useState<IChannelPluginStatus | null>(null);
   const [slackPluginStatus, setSlackPluginStatus] = useState<IChannelPluginStatus | null>(null);
+  const [discordPluginStatus, setDiscordPluginStatus] = useState<IChannelPluginStatus | null>(null);
   const [larkPluginStatus, setLarkPluginStatus] = useState<IChannelPluginStatus | null>(null);
   // ace:start lark_intl channel
   const [larkIntlPluginStatus, setLarkIntlPluginStatus] = useState<IChannelPluginStatus | null>(null);
@@ -167,6 +177,7 @@ const ChannelModalContent: React.FC = () => {
   const [wecomPluginStatus, setWecomPluginStatus] = useState<IChannelPluginStatus | null>(null);
   const [enableLoading, setEnableLoading] = useState(false);
   const [slackEnableLoading, setSlackEnableLoading] = useState(false);
+  const [discordEnableLoading, setDiscordEnableLoading] = useState(false);
   const [larkEnableLoading, setLarkEnableLoading] = useState(false);
   // ace:start lark_intl channel
   const [larkIntlEnableLoading, setLarkIntlEnableLoading] = useState(false);
@@ -185,6 +196,9 @@ const ChannelModalContent: React.FC = () => {
   // Track the Bot Token entered in SlackConfigForm so the toggle handler can use it
   const slackTokenRef = React.useRef<string>('');
 
+  // Track the Bot Token entered in DiscordConfigForm so the toggle handler can use it
+  const discordTokenRef = React.useRef<string>('');
+
   // Collapse state - true means collapsed (closed), false means expanded (open)
   const [collapseKeys, setCollapseKeys] = useState<Record<string, boolean>>({
     telegram: true, // Default to collapsed
@@ -202,6 +216,7 @@ const ChannelModalContent: React.FC = () => {
   // Model selection state — uses unified hook with backend-owned channel settings
   const telegramModelSelection = useChannelModelSelection('telegram');
   const slackModelSelection = useChannelModelSelection('slack');
+  const discordModelSelection = useChannelModelSelection('discord');
   const larkModelSelection = useChannelModelSelection('lark');
   // ace:start lark_intl channel
   const larkIntlModelSelection = useChannelModelSelection('lark_intl');
@@ -218,6 +233,7 @@ const ChannelModalContent: React.FC = () => {
       if (plugins) {
         const telegramPlugin = plugins.find((p) => p.type === 'telegram');
         const slackPlugin = plugins.find((p) => p.type === 'slack');
+        const discordPlugin = plugins.find((p) => p.type === 'discord');
         const larkPlugin = plugins.find((p) => p.type === 'lark');
         // ace:start lark_intl channel
         const larkIntlPlugin = plugins.find((p) => p.type === 'lark_intl');
@@ -229,6 +245,7 @@ const ChannelModalContent: React.FC = () => {
 
         setPluginStatus(telegramPlugin || null);
         setSlackPluginStatus(slackPlugin || null);
+        setDiscordPluginStatus(discordPlugin || null);
         setLarkPluginStatus(larkPlugin || null);
         // ace:start lark_intl channel
         setLarkIntlPluginStatus(larkIntlPlugin || null);
@@ -295,6 +312,8 @@ const ChannelModalContent: React.FC = () => {
         setPluginStatus(status);
       } else if (status.type === 'slack') {
         setSlackPluginStatus(status);
+      } else if (status.type === 'discord') {
+        setDiscordPluginStatus(status);
       } else if (status.type === 'lark') {
         setLarkPluginStatus(status);
         // ace:start lark_intl channel
@@ -399,6 +418,42 @@ const ChannelModalContent: React.FC = () => {
       Message.error(error instanceof Error ? error.message : String(error));
     } finally {
       setSlackEnableLoading(false);
+    }
+  };
+
+  // Enable/Disable Discord plugin
+  const handleToggleDiscordPlugin = async (enabled: boolean) => {
+    setDiscordEnableLoading(true);
+    try {
+      if (enabled) {
+        // Discord uses a single Bot Token, supplied either from a prior save or
+        // typed into DiscordConfigForm (which also auto-enables on a successful Test).
+        const pendingToken = discordTokenRef.current.trim();
+        if (!discordPluginStatus?.hasToken && !pendingToken) {
+          Message.warning(t('settings.assistant.tokenRequired', 'Please enter a bot token first'));
+          setDiscordEnableLoading(false);
+          return;
+        }
+
+        await channel.enablePlugin.invoke({
+          plugin_id: 'discord',
+          config: pendingToken ? { credentials: { token: pendingToken } } : {},
+        });
+
+        Message.success(t('settings.assistant.discordPluginEnabled', 'Discord bot enabled'));
+        await loadPluginStatus();
+      } else {
+        await channel.disablePlugin.invoke({
+          plugin_id: 'discord',
+        });
+
+        Message.success(t('settings.assistant.discordPluginDisabled', 'Discord bot disabled'));
+        await loadPluginStatus();
+      }
+    } catch (error: unknown) {
+      Message.error(error instanceof Error ? error.message : String(error));
+    } finally {
+      setDiscordEnableLoading(false);
     }
   };
 
@@ -793,6 +848,28 @@ const ChannelModalContent: React.FC = () => {
       ),
     };
 
+    const discordChannel: ChannelConfig = {
+      id: 'discord',
+      title: t('settings.channels.discordTitle', 'Discord'),
+      description: t('settings.channels.discordDesc', 'Chat with AionUi assistant via Discord'),
+      status: 'active',
+      enabled: discordPluginStatus?.enabled || false,
+      disabled: discordEnableLoading,
+      is_connected: discordPluginStatus?.connected || false,
+      botUsername: discordPluginStatus?.botUsername,
+      defaultModel: discordModelSelection.current_model?.use_model,
+      content: (
+        <DiscordConfigForm
+          pluginStatus={discordPluginStatus}
+          modelSelection={discordModelSelection}
+          onStatusChange={setDiscordPluginStatus}
+          onTokenChange={(token) => {
+            discordTokenRef.current = token;
+          }}
+        />
+      ),
+    };
+
     const larkChannel: ChannelConfig = {
       id: 'lark',
       title: t('settings.channels.larkTitle', 'Lark / Feishu'),
@@ -903,28 +980,10 @@ const ChannelModalContent: React.FC = () => {
         content: renderExtensionConfigForm(status),
       }));
 
-    const extensionTypeSet = new Set(extensionChannels.map((channel) => String(channel.id).toLowerCase()));
-    const comingSoonChannels: ChannelConfig[] = [
-      {
-        id: 'discord',
-        title: t('settings.channels.discordTitle', 'Discord'),
-        description: t('settings.channels.discordDesc', 'Chat with AionUi assistant via Discord'),
-        status: 'coming_soon' as const,
-        enabled: false,
-        disabled: true,
-        content: (
-          <div className='text-14px text-t-secondary py-12px'>
-            {t('settings.channels.comingSoonDesc', 'Support for {{channel}} is coming soon', {
-              channel: t('settings.channels.discordTitle', 'Discord'),
-            })}
-          </div>
-        ),
-      },
-    ].filter((channel) => !extensionTypeSet.has(String(channel.id).toLowerCase()));
-
     return [
       telegramChannel,
       slackChannel,
+      discordChannel,
       larkChannel,
       // ace:start lark_intl channel
       larkIntlChannel,
@@ -933,17 +992,18 @@ const ChannelModalContent: React.FC = () => {
       weixinChannel,
       wecomChannel,
       ...extensionChannels,
-      ...comingSoonChannels,
     ];
   }, [
     pluginStatus,
     slackPluginStatus,
+    discordPluginStatus,
     larkPluginStatus,
     dingtalkPluginStatus,
     extensionStatuses,
     extensionLoadingMap,
     telegramModelSelection,
     slackModelSelection,
+    discordModelSelection,
     larkModelSelection,
     // ace:start lark_intl channel
     larkIntlPluginStatus,
@@ -953,6 +1013,7 @@ const ChannelModalContent: React.FC = () => {
     dingtalkModelSelection,
     enableLoading,
     slackEnableLoading,
+    discordEnableLoading,
     larkEnableLoading,
     dingtalkEnableLoading,
     weixinPluginStatus,
@@ -970,6 +1031,7 @@ const ChannelModalContent: React.FC = () => {
   const getToggleHandler = (channelId: string) => {
     if (channelId === 'telegram') return handleTogglePlugin;
     if (channelId === 'slack') return handleToggleSlackPlugin;
+    if (channelId === 'discord') return handleToggleDiscordPlugin;
     if (channelId === 'lark') return handleToggleLarkPlugin;
     // ace:start lark_intl channel
     if (channelId === 'lark_intl') return handleToggleLarkIntlPlugin;

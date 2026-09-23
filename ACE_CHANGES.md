@@ -117,13 +117,14 @@
 
 ### 现有文件挂载点（均有 `// ace:` marker）
 
-| 文件                                                                                              | 改动                                                                                                          |
-| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `packages/desktop/src/process/ace/aceBridge.ts`                                                   | 加 `ace:resolve-conversation-files` / `ace:unlink-session-files` / `ace:check-workspaces-exist` 三 handler    |
-| `packages/desktop/src/preload/main.ts`                                                            | 暴露 `resolveConversationFiles` / `unlinkSessionFiles` / `checkWorkspacesExist`                               |
-| `packages/desktop/src/renderer/pages/conversation/GroupedHistory/hooks/useConversationActions.ts` | 三个删除 onOk（单删/批量/删项目）改走 `deleteConversationsWithFiles`，失败弹一次 `localFileDeleteFailed` 警告 |
-| `packages/desktop/src/renderer/pages/conversation/GroupedHistory/index.tsx`                       | 项目区 displayName 在 workspace 目录不存在时灰显（`text-t-disabled`，仅样式）                                 |
-| `packages/desktop/src/renderer/services/i18n/locales/*/conversation.json`                         | 加 `history.localFileDeleteFailed`（9 语言）                                                                  |
+| 文件                                                                                         | 改动                                                                                                                                                                                                                                            |
+| -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/desktop/src/process/ace/aceBridge.ts`                                              | 加 `ace:resolve-conversation-files` / `ace:unlink-session-files` / `ace:check-workspaces-exist` 三 handler                                                                                                                                      |
+| `packages/desktop/src/preload/main.ts`                                                       | 暴露 `resolveConversationFiles` / `unlinkSessionFiles` / `checkWorkspacesExist`                                                                                                                                                                 |
+| `packages/desktop/src/renderer/pages/settings/ArchivedSettings/deleteArchivedWithCleanup.ts` | 上游把侧栏"删除"改成"归档"后，硬删除入口移到设置的归档页；此文件把单条/团队/项目三种删除端点接回 `deleteConversationsWithLocalData`（先解析、删后端、再 unlink），并补回 `conversation.deleted` 事件与 PTY 释放（后端 HTTP 删除不经 main 进程） |
+| `packages/desktop/src/renderer/pages/settings/ArchivedSettings/index.tsx`                    | 三个删除 onOk（单删/批量/删项目）改走 `deleteArchivedWithCleanup`，失败弹一次 `localFileDeleteFailed` 警告；团队行携带 `member_conversation_ids` 供级联清理                                                                                     |
+| `packages/desktop/src/renderer/pages/conversation/GroupedHistory/index.tsx`                  | 项目区 displayName 在 workspace 目录不存在时灰显（`text-t-disabled`，仅样式）                                                                                                                                                                   |
+| `packages/desktop/src/renderer/services/i18n/locales/*/conversation.json`                    | 加 `history.localFileDeleteFailed`（9 语言）                                                                                                                                                                                                    |
 
 ### 设计要点
 

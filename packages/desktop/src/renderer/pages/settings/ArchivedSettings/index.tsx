@@ -18,6 +18,8 @@ import useSWR from 'swr';
 import SettingsPageHeader from '../components/SettingsPageHeader';
 import SettingsPageWrapper from '../components/SettingsPageWrapper';
 import { resolveConversationLeadingMark } from '@/renderer/pages/conversation/utils/conversationAssistantIdentity';
+// ace: hard-delete keeps the sidebar's old local cleanup (session files, PTYs, queue state)
+import { deleteArchivedWithCleanup } from './deleteArchivedWithCleanup';
 
 const ARCHIVED_SWR_KEY = 'sidebar-archived';
 
@@ -46,6 +48,11 @@ type ArchivedRow = {
   name: string;
   icon: React.ReactElement;
   updatedAt?: number;
+  /**
+   * ace: for team rows, the member conversations the backend cascade-deletes
+   * with the team. Carried so their local CLI session data is cleaned up too.
+   */
+  member_conversation_ids?: string[];
 };
 
 /** One archived project bucket. Ordinary chats are grouped into the synthetic no-project bucket. */
@@ -162,6 +169,7 @@ const ArchivedSettings: React.FC = () => {
         name: item.name,
         icon: <Peoples theme='outline' size='16' className='block leading-none text-t-secondary' />,
         updatedAt: item.updated_at,
+        member_conversation_ids: item.member_conversation_ids,
       };
     };
 
@@ -323,6 +331,30 @@ const ArchivedSettings: React.FC = () => {
     [t]
   );
 
+  // ace:start every conversation a row's deletion removes: itself, or a team's members
+  const rowConversationIds = (row: ArchivedRow): string[] =>
+    row.item_type === 'conversation' ? [row.item_id] : (row.member_conversation_ids ?? []);
+
+  // ace: one archived row → its backend delete plus local cleanup
+  const deleteRow = React.useCallback(
+    (row: ArchivedRow) =>
+      deleteArchivedWithCleanup(rowConversationIds(row), () =>
+        ipcBridge.sidebar.deleteArchivedItem.invoke({ item_type: row.item_type, item_id: row.item_id })
+      ),
+    []
+  );
+
+  // ace: surface a failed local cleanup once; the DB delete itself already succeeded
+  const warnIfLocalCleanupFailed = React.useCallback(
+    (results: { fileDeleteFailed: boolean }[]) => {
+      if (results.some((result) => result.fileDeleteFailed)) {
+        Message.warning(t('conversation.history.localFileDeleteFailed'));
+      }
+    },
+    [t]
+  );
+  // ace:end
+
   const handleDelete = React.useCallback(
     (row: ArchivedRow) => {
       Modal.confirm({
@@ -333,9 +365,10 @@ const ArchivedSettings: React.FC = () => {
         okButtonProps: { status: 'danger' },
         onOk: async () => {
           try {
-            await ipcBridge.sidebar.deleteArchivedItem.invoke({ item_type: row.item_type, item_id: row.item_id });
+            const result = await deleteRow(row);
             await refresh();
             Message.success(t('settings.archived.deleteSuccess'));
+            warnIfLocalCleanupFailed([result]);
           } catch (error) {
             console.error('Failed to delete archived item:', error);
             Message.error(t('settings.archived.deleteFailed'));
@@ -346,7 +379,7 @@ const ArchivedSettings: React.FC = () => {
         getPopupContainer: () => document.body,
       });
     },
-    [refresh, t]
+    [deleteRow, refresh, t, warnIfLocalCleanupFailed]
   );
 
   const handleDeleteSelected = React.useCallback(() => {
@@ -368,19 +401,22 @@ const ArchivedSettings: React.FC = () => {
           );
           const selectedSingleRows = selectedRows.filter((row) => !projectSelectedKeys.has(row.key));
 
-          await Promise.all([
+          const results = await Promise.all([
+            // ace: the project cascade removes every archived unit; local cleanup
+            // covers the rows loaded on this page (unpaged rows are best-effort).
             ...selectedProjectBlocks.map((block) =>
-              ipcBridge.sidebar.deleteArchivedProject.invoke({ project_id: block.projectId as string })
+              deleteArchivedWithCleanup(block.rows.flatMap(rowConversationIds), () =>
+                ipcBridge.sidebar.deleteArchivedProject.invoke({ project_id: block.projectId as string }).then(() => {})
+              )
             ),
-            ...selectedSingleRows.map((row) =>
-              ipcBridge.sidebar.deleteArchivedItem.invoke({ item_type: row.item_type, item_id: row.item_id })
-            ),
+            ...selectedSingleRows.map((row) => deleteRow(row)),
           ]);
 
           setSelectedKeys(new Set<string>());
           setSelectionMode(false);
           await refresh();
           Message.success(t('settings.archived.deleteSelectedSuccess'));
+          warnIfLocalCleanupFailed(results);
         } catch (error) {
           console.error('Failed to delete selected archived items:', error);
           Message.error(t('settings.archived.deleteFailed'));
@@ -390,7 +426,7 @@ const ArchivedSettings: React.FC = () => {
       alignCenter: true,
       getPopupContainer: () => document.body,
     });
-  }, [refresh, archivedBlocks, selectedKeys, selectedRows, t]);
+  }, [archivedBlocks, deleteRow, refresh, selectedKeys, selectedRows, t, warnIfLocalCleanupFailed]);
 
   const formatArchivedTime = React.useCallback(
     (timestamp?: number) => {

@@ -40,13 +40,31 @@ export async function deleteConversationsWithFiles(
   ids: string[],
   deleteDb: (id: string) => Promise<boolean>
 ): Promise<{ dbResults: boolean[]; fileDeleteFailed: boolean }> {
+  // Promise.all preserves order, which the order-zip below relies on.
+  return deleteConversationsWithLocalData(ids, (batch) => Promise.all(batch.map((id) => deleteDb(id))));
+}
+
+/**
+ * Same DB-first orchestration, but the DB delete is a single batch call instead
+ * of one call per id. Used by callers whose backend endpoint deletes several
+ * conversations at once (archived team / project cascade): the local data is
+ * resolved for every member up front, the one endpoint call runs, and cleanup
+ * proceeds only for the ids `deleteAll` reports as removed.
+ *
+ * @param deleteAll performs the DB delete; must return one boolean per id in
+ *   `ids`, order-aligned. A rejection aborts before any local cleanup.
+ */
+export async function deleteConversationsWithLocalData(
+  ids: string[],
+  deleteAll: (ids: string[]) => Promise<boolean[]>
+): Promise<{ dbResults: boolean[]; fileDeleteFailed: boolean }> {
   const api = getApi();
 
   // 1. Resolve local data BEFORE deleting DB rows (acp_session/extra vanish after).
   const refs: Record<string, ResolvedFile> = (await api?.resolveConversationFiles?.(ids).catch(() => ({}))) ?? {};
 
-  // 2. Delete DB rows (existing channel). Promise.all preserves order.
-  const dbResults = await Promise.all(ids.map((id) => deleteDb(id)));
+  // 2. Delete DB rows (existing channel). Results stay index-aligned with ids.
+  const dbResults = await deleteAll(ids);
 
   // 3. Clean up only the local data of DB-success ids (never iterate refs keys
   //    directly — that would lose the success filter and could delete data of

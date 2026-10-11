@@ -150,6 +150,13 @@ describe('deleteWithLocalFiles.deleteConversationsWithFiles (DB-first order-zip)
     expect(unlinkSpy).not.toHaveBeenCalled();
     expect(fileDeleteFailed).toBe(false);
   });
+
+  it('reports fileDeleteFailed when the unlink call itself rejects, keeping DB results', async () => {
+    installApi(vi.fn(async () => Promise.reject(new Error('ipc down'))));
+    const { dbResults, fileDeleteFailed } = await deleteConversationsWithFiles(['a'], async () => true);
+    expect(dbResults).toEqual([true]);
+    expect(fileDeleteFailed).toBe(true);
+  });
 });
 
 describe('gemini multi-file delete + symlink refusal', () => {
@@ -359,5 +366,24 @@ describe('mixed-batch order-zip routing (file + opencode descriptors)', () => {
     };
     const { fileDeleteFailed } = await deleteConversationsWithFiles(['a'], async () => true);
     expect(fileDeleteFailed).toBe(true);
+  });
+
+  it('reports fileDeleteFailed when the opencode delete call itself rejects', async () => {
+    (globalThis as { window?: unknown }).window = {
+      electronAPI: {
+        resolveConversationFiles: async () => ({ a: { kind: 'opencode', opencodeSessionId: SES_A } }),
+        unlinkSessionFiles: vi.fn(async () => ({})),
+        deleteOpencodeSessions: async () => Promise.reject(new Error('ipc down')),
+      },
+    };
+    const { fileDeleteFailed } = await deleteConversationsWithFiles(['a'], async () => true);
+    expect(fileDeleteFailed).toBe(true);
+  });
+
+  it('stays quiet when there is no cleanup API at all (non-Electron)', async () => {
+    (globalThis as { window?: unknown }).window = {};
+    const { dbResults, fileDeleteFailed } = await deleteConversationsWithFiles(['a'], async () => true);
+    expect(dbResults).toEqual([true]);
+    expect(fileDeleteFailed).toBe(false);
   });
 });

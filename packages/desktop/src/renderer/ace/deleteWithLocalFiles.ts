@@ -85,15 +85,16 @@ export async function deleteConversationsWithLocalData(
     }
   }
 
+  // A rejected cleanup call means the data was never removed — report it as a
+  // failure (null), unlike an absent API (undefined) where there is nothing to run.
   let fileDeleteFailed = false;
   if (paths.length) {
-    const res: Record<string, UnlinkResult> = (await api?.unlinkSessionFiles?.(paths).catch(() => ({}))) ?? {};
-    fileDeleteFailed = anyDeleteFailed(res);
+    const res = await api?.unlinkSessionFiles?.(paths).catch((): null => null);
+    fileDeleteFailed = res === null || (res !== undefined && anyDeleteFailed(res));
   }
   if (opencodeIds.length) {
-    const res: Record<string, UnlinkResult> =
-      (await api?.deleteOpencodeSessions?.(opencodeIds).catch(() => ({}))) ?? {};
-    fileDeleteFailed = fileDeleteFailed || anyDeleteFailed(res);
+    const res = await api?.deleteOpencodeSessions?.(opencodeIds).catch((): null => null);
+    fileDeleteFailed = fileDeleteFailed || res === null || (res !== undefined && anyDeleteFailed(res));
   }
 
   return { dbResults, fileDeleteFailed };

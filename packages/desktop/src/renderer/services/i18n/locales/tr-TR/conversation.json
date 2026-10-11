@@ -94,7 +94,10 @@
     "archiveProject": "Archive project",
     "archiveProjectTitle": "Archive project",
     "archiveProjectConfirm": "Archive project \"{{name}}\"? Its {{count}} conversation(s) will be archived too. You can restore or delete them from Archived in Settings.",
-    "archiving": "Archiving..."
+    "archiving": "Archiving...",
+    "folderStatusWaiting": "İşlem bekleyen konuşmalar",
+    "folderStatusGenerating": "Devam eden konuşmalar",
+    "folderStatusUnread": "Okunmamış sonuçlu konuşmalar"
   },
   "historySearch": {
     "tooltip": "Mesajları ara",

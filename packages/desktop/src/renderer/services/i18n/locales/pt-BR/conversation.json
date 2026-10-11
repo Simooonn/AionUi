@@ -94,7 +94,10 @@
     "archiveProject": "Archive project",
     "archiveProjectTitle": "Archive project",
     "archiveProjectConfirm": "Archive project \"{{name}}\"? Its {{count}} conversation(s) will be archived too. You can restore or delete them from Archived in Settings.",
-    "archiving": "Archiving..."
+    "archiving": "Archiving...",
+    "folderStatusWaiting": "Chats aguardando ação",
+    "folderStatusGenerating": "Chats em andamento",
+    "folderStatusUnread": "Chats com resultados não lidos"
   },
   "historySearch": {
     "tooltip": "Pesquisar mensagens",

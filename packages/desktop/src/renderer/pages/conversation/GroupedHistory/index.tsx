@@ -14,8 +14,8 @@ import { useCronJobsMap } from '@/renderer/pages/cron';
 import { restrictToVerticalAxis } from '@/renderer/utils/ui/dndModifiers';
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Button, Dropdown, Empty, Input, Menu, Message, Modal, Tooltip } from '@arco-design/web-react';
-import { FolderClose, MoreOne, Pin, Plus, Refresh, Right } from '@icon-park/react';
+import { Button, Dropdown, Empty, Input, Menu, Message, Modal, Spin, Tooltip } from '@arco-design/web-react';
+import { Attention, FolderClose, MoreOne, Pin, Plus, Refresh, Right } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -31,6 +31,16 @@ import { useConversations } from './hooks/useConversations';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { usePinnedProjects, usePinnedProjectDragAndDrop } from './hooks/usePinnedProjects';
 import type { ConversationRowProps, WorkspaceGroupedHistoryProps } from './types';
+// ace:start folder-level status badges
+import { collectFolderStatuses, type FolderStatusKind } from './utils/folderStatusBadges';
+
+/** i18n keys for the folder status badges, keyed by status kind. */
+const FOLDER_STATUS_LABEL_KEY = {
+  waiting: 'conversation.history.folderStatusWaiting',
+  generating: 'conversation.history.folderStatusGenerating',
+  unread: 'conversation.history.folderStatusUnread',
+} as const satisfies Record<FolderStatusKind, string>;
+// ace:end
 
 const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
   onSessionClick,
@@ -326,6 +336,49 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     [timelineSections]
   );
 
+  // ace:start folder-level status badges — a collapsed folder hides its rows but must
+  // still show that something inside is waiting / running / unread. Reuses the row
+  // visuals and precedence so a folder never surfaces a status no row displays.
+  const renderFolderStatusBadges = (conversations: TChatConversation[]) => {
+    // Batch mode hides every row badge, so the folder shows none either.
+    if (batchMode) return null;
+    const statuses = collectFolderStatuses(conversations, {
+      isGenerating: isConversationGenerating,
+      isWaitingConfirmation: isConversationWaitingConfirmation,
+      hasUnread: (conversationId) => hasCompletionUnread(conversationId) || isManualUnread(conversationId),
+    });
+    if (statuses.length === 0) return null;
+    const renderStatusIcon = (status: FolderStatusKind) => {
+      if (status === 'waiting') {
+        return <Attention theme='filled' size='14' className='line-height-0 text-warning animate-wiggle' />;
+      }
+      if (status === 'generating') {
+        return <Spin size={12} className='[&_.arco-spin-icon]:text-#2C7FFF' />;
+      }
+      return <span className='h-8px w-8px rounded-full bg-#2C7FFF shadow-[0_0_0_2px_rgba(44,127,255,0.18)]' />;
+    };
+    return (
+      // On mobile the trailing buttons stay visible and overflow leftwards, so keep clear of them.
+      <span
+        className={classNames('flex items-center gap-6px', isMobile && 'me-24px')}
+        data-testid='folder-status-badges'
+      >
+        {statuses.map((status) => (
+          <span
+            key={status}
+            role='img'
+            aria-label={t(FOLDER_STATUS_LABEL_KEY[status])}
+            data-testid={`folder-status-${status}`}
+            className='flex-center size-14px'
+          >
+            {renderStatusIcon(status)}
+          </span>
+        ))}
+      </span>
+    );
+  };
+  // ace:end
+
   // Render a single project folder. Shared by the pinned-projects section and the
   // regular projects section so both look and behave identically.
   const renderProjectGroup = (group: {
@@ -384,6 +437,9 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
           </span>
           // ace:end
         }
+        // ace:start folder-level status badges
+        badges={renderFolderStatusBadges(group.conversations)}
+        // ace:end
         trailing={
           <span className='flex items-center gap-6px'>
             <Tooltip content={t('conversation.history.newConversationInProject')} position='top'>

@@ -23,6 +23,10 @@ interface WorkspaceCollapseProps {
   siderCollapsed?: boolean;
   /** 标题尾部插槽 - 例如 hover 显示的菜单按钮，点击不会触发 onToggle */
   trailing?: React.ReactNode;
+  // ace:start aggregate conversation status badges on the folder header
+  /** 状态标志插槽 - 汇总组内会话状态，位于标题与尾部操作之间（纯展示） */
+  badges?: React.ReactNode;
+  // ace:end
   // ace:start gray the folder icon when the project's workspace dir is missing
   /** 工作目录已失效时置灰文件夹图标（纯视觉） */
   dimmed?: boolean;
@@ -45,6 +49,7 @@ const WorkspaceCollapse: React.FC<WorkspaceCollapseProps> = ({
   siderCollapsed = false,
   trailing,
   // ace:start
+  badges,
   dimmed = false,
   // ace:end
   stickyHeader = false,
@@ -85,6 +90,11 @@ const WorkspaceCollapse: React.FC<WorkspaceCollapseProps> = ({
 
             {/* 标题内容 — flex 容器让内部 header span 的 truncate 生效 */}
             <div className='flex-1 min-w-0 flex items-center overflow-hidden'>{header}</div>
+
+            {/* ace:start 状态标志槽 — 跟随组内会话的可见标志；hover 时让位给尾部操作按钮，
+                与 ConversationRow 未读点的 group-hover:hidden 处理一致 */}
+            {badges && <div className='shrink-0 flex items-center group-hover:hidden'>{badges}</div>}
+            {/* ace:end */}
 
             {/* 尾部操作槽 — 固定宽度让文本提前截断；按钮 hover 才出现时允许左溢出到文本区覆盖最后 1-2 字 */}
             {trailing && (

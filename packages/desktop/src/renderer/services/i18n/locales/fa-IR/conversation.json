@@ -89,7 +89,10 @@
     "archiveProject": "Archive project",
     "archiveProjectTitle": "Archive project",
     "archiveProjectConfirm": "Archive project \"{{name}}\"? Its {{count}} conversation(s) will be archived too. You can restore or delete them from Archived in Settings.",
-    "archiving": "Archiving..."
+    "archiving": "Archiving...",
+    "folderStatusWaiting": "گفتگوهای در انتظار اقدام",
+    "folderStatusGenerating": "گفتگوهای در حال انجام",
+    "folderStatusUnread": "گفتگوهای دارای نتیجه خوانده‌نشده"
   },
   "historySearch": {
     "tooltip": "جستجوی پیام‌ها",

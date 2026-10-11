@@ -94,7 +94,10 @@
     "archiveProject": "Archive project",
     "archiveProjectTitle": "Archive project",
     "archiveProjectConfirm": "Archive project \"{{name}}\"? Its {{count}} conversation(s) will be archived too. You can restore or delete them from Archived in Settings.",
-    "archiving": "Archiving..."
+    "archiving": "Archiving...",
+    "folderStatusWaiting": "작업 대기 중인 대화 있음",
+    "folderStatusGenerating": "진행 중인 대화 있음",
+    "folderStatusUnread": "읽지 않은 완료 대화 있음"
   },
   "historySearch": {
     "tooltip": "메시지 검색",

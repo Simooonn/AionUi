@@ -42,6 +42,9 @@ import { getActivityTime } from '@/renderer/utils/chat/timeline';
 import { buildCliResumeCommand, useNativeResumeCommand } from '@/renderer/ace/readonly';
 import { copyText } from '@/renderer/utils/ui/clipboard';
 // ace:end
+// ace:start direct delete alongside archive
+import { DeleteOne } from '@icon-park/react';
+// ace:end
 
 const ConversationRow: React.FC<ConversationRowProps> = (props) => {
   const {
@@ -72,6 +75,9 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
     onEditStart,
     onCreateCronTask,
     onArchive,
+    // ace:start direct delete alongside archive
+    onDelete,
+    // ace:end
     onExport,
     onTogglePin,
     onToggleManualUnread,
@@ -321,6 +327,9 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
             <Dropdown
               droplist={
                 <Menu
+                  // ace:start lift the 200px cap so archive + delete never hide behind a scrollbar
+                  className='sider-row-menu'
+                  // ace:end
                   onClickMenuItem={(key) => {
                     if (key === 'pin') {
                       onTogglePin(conversation);
@@ -353,6 +362,11 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
                     if (key === 'archive') {
                       onArchive(conversation);
                     }
+                    // ace:start direct delete alongside archive
+                    if (key === 'delete') {
+                      onDelete(conversation);
+                    }
+                    // ace:end
                   }}
                 >
                   <Menu.Item key='pin'>
@@ -403,6 +417,14 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
                       <span>{t('conversation.history.archive')}</span>
                     </div>
                   </Menu.Item>
+                  {/* ace:start direct delete alongside archive */}
+                  <Menu.Item key='delete'>
+                    <div className='flex items-center gap-8px text-danger'>
+                      <DeleteOne theme='outline' size='14' />
+                      <span>{t('conversation.history.deleteTitle')}</span>
+                    </div>
+                  </Menu.Item>
+                  {/* ace:end */}
                 </Menu>
               }
               trigger='click'

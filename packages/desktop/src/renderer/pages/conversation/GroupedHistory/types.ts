@@ -64,6 +64,9 @@ export type ConversationRowProps = {
   onEditStart: (conversation: TChatConversation) => void;
   onCreateCronTask: (conversation: TChatConversation) => void;
   onArchive: (conversation: TChatConversation) => void;
+  // ace:start direct delete alongside archive
+  onDelete: (conversation: TChatConversation) => void;
+  // ace:end
   onExport?: (conversation: TChatConversation) => void;
   onTogglePin: (conversation: TChatConversation) => void;
   onToggleManualUnread: (conversation: TChatConversation) => void;

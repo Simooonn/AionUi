@@ -6,6 +6,9 @@
 
 import { ipcBridge } from '@/common';
 import type { TChatConversation } from '@/common/config/storage';
+// ace:start delete local CLI session files alongside DB rows
+import { deleteConversationsWithFiles } from '@/renderer/ace/deleteWithLocalFiles';
+// ace:end
 import { requestConversationSendBoxPrefill } from '@/renderer/hooks/chat/useSendBoxDraft';
 import { refreshConversationCache } from '@/renderer/pages/conversation/utils/conversationCache';
 import { isLegacyReadOnlyConversationType } from '@/renderer/pages/conversation/utils/conversationRuntime';
@@ -29,6 +32,9 @@ type UseConversationActionsParams = {
   markManualUnread: (conversation_id: string) => void;
   clearManualUnread: (conversation_id: string) => void;
   isManualUnread: (conversation_id: string) => boolean;
+  // ace:start running state for the delete confirmation's interruption hint
+  isConversationRunning?: (conversation_id: string) => boolean;
+  // ace:end
 };
 
 export const useConversationActions = ({
@@ -42,6 +48,9 @@ export const useConversationActions = ({
   markManualUnread,
   clearManualUnread,
   isManualUnread,
+  // ace:start running state for the delete confirmation's interruption hint
+  isConversationRunning,
+  // ace:end
 }: UseConversationActionsParams) => {
   const [renameModalVisible, setRenameModalVisible] = useState(false);
   const [renameModalName, setRenameModalName] = useState<string>('');
@@ -141,6 +150,111 @@ export const useConversationActions = ({
       getPopupContainer: () => document.body,
     });
   }, [onBatchModeChange, selectedConversationIds, t, setSelectedConversationIds]);
+
+  // ace:start direct delete alongside archive — deleting no longer requires a
+  // detour through the archived page. The backend delete kills the conversation's
+  // agent process before dropping the row, so a running conversation is stopped
+  // by the delete itself; the confirmation only has to warn about it.
+  const deleteConversations = useCallback(
+    async (conversation_ids: string[]) => {
+      // A thrown remove must not reject the whole batch: rows already deleted
+      // still need their local data cleaned, so a failure becomes `false`.
+      const { dbResults, fileDeleteFailed } = await deleteConversationsWithFiles(conversation_ids, (conversation_id) =>
+        removeConversation(conversation_id).catch((error: unknown) => {
+          console.error('Failed to remove conversation:', error);
+          return false;
+        })
+      );
+      const successCount = dbResults.filter(Boolean).length;
+      const failedCount = conversation_ids.length - successCount;
+      emitter.emit('chat.history.refresh');
+      if (failedCount === 0) {
+        Message.success(
+          conversation_ids.length === 1
+            ? t('conversation.history.deleteSuccess')
+            : t('conversation.history.batchDeleteSuccess', { count: successCount })
+        );
+      } else if (successCount > 0) {
+        Message.warning(t('conversation.history.deletePartialFailed', { success: successCount, failed: failedCount }));
+      } else {
+        Message.error(t('conversation.history.deleteFailed'));
+      }
+      if (fileDeleteFailed) {
+        Message.warning(t('conversation.history.localFileDeleteFailed'));
+      }
+    },
+    [removeConversation, t]
+  );
+
+  const confirmDelete = useCallback(
+    (title: string, message: string, conversation_ids: string[], onDeleted?: () => void) => {
+      const runningCount = isConversationRunning ? conversation_ids.filter(isConversationRunning).length : 0;
+      const runningHint =
+        runningCount === 0
+          ? null
+          : conversation_ids.length === 1
+            ? t('conversation.history.deleteRunningHint')
+            : t('conversation.history.deleteRunningCountHint', { count: runningCount });
+      Modal.confirm({
+        title,
+        content: [message, t('conversation.history.deleteIrreversibleHint'), runningHint].filter(Boolean).join(' '),
+        okText: t('conversation.history.confirmDelete'),
+        cancelText: t('conversation.history.cancelDelete'),
+        okButtonProps: { status: 'danger' },
+        onOk: async () => {
+          await deleteConversations(conversation_ids);
+          onDeleted?.();
+        },
+        style: { borderRadius: '12px' },
+        alignCenter: true,
+        getPopupContainer: () => document.body,
+      });
+    },
+    [deleteConversations, isConversationRunning, t]
+  );
+
+  const handleDelete = useCallback(
+    (conversation: TChatConversation) => {
+      setDropdownVisibleId(null);
+      confirmDelete(t('conversation.history.deleteTitle'), t('conversation.history.deleteConfirm'), [conversation.id]);
+    },
+    [confirmDelete, t]
+  );
+
+  const handleBatchDelete = useCallback(() => {
+    if (selectedConversationIds.size === 0) {
+      Message.warning(t('conversation.history.batchNoSelection'));
+      return;
+    }
+    const selectedIds = Array.from(selectedConversationIds);
+    confirmDelete(
+      t('conversation.history.batchDelete'),
+      t('conversation.history.batchDeleteConfirm', { count: selectedIds.length }),
+      selectedIds,
+      () => {
+        setSelectedConversationIds(new Set());
+        onBatchModeChange?.(false);
+      }
+    );
+  }, [confirmDelete, onBatchModeChange, selectedConversationIds, setSelectedConversationIds, t]);
+
+  /**
+   * Delete every conversation of a sidebar project folder. The folder only holds
+   * active rows (archived ones are excluded from the list), so archived
+   * conversations of the same workspace survive, as does the workspace directory.
+   */
+  const handleDeleteProject = useCallback(
+    (projectName: string, conversations: TChatConversation[]) => {
+      if (conversations.length === 0) return;
+      confirmDelete(
+        t('conversation.history.deleteProject'),
+        t('conversation.history.deleteProjectConfirm', { name: projectName, count: conversations.length }),
+        conversations.map((conversation) => conversation.id)
+      );
+    },
+    [confirmDelete, t]
+  );
+  // ace:end
 
   const handleEditStart = useCallback((conversation: TChatConversation) => {
     setRenameModalId(conversation.id);
@@ -344,5 +458,10 @@ export const useConversationActions = ({
     archiveProjectLoading,
     handleArchiveProjectCancel,
     handleArchiveProjectConfirm,
+    // ace:start direct delete alongside archive
+    handleDelete,
+    handleBatchDelete,
+    handleDeleteProject,
+    // ace:end
   };
 };

@@ -16,6 +16,9 @@ import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Button, Dropdown, Empty, Input, Menu, Message, Modal, Spin, Tooltip } from '@arco-design/web-react';
 import { Attention, FolderClose, MoreOne, Pin, Plus, Refresh, Right } from '@icon-park/react';
+// ace:start direct delete alongside archive
+import { DeleteOne } from '@icon-park/react';
+// ace:end
 import classNames from 'classnames';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -143,6 +146,15 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     handleToggleSelectAll,
   } = useBatchSelection(batchMode, conversations);
 
+  // ace:start a turn is live while generating or paused on a confirmation — the
+  // delete confirmation warns that deleting will interrupt it
+  const isConversationRunning = useCallback(
+    (conversationId: string) =>
+      isConversationGenerating(conversationId) || isConversationWaitingConfirmation(conversationId),
+    [isConversationGenerating, isConversationWaitingConfirmation]
+  );
+  // ace:end
+
   const {
     renameModalVisible,
     renameModalName,
@@ -165,6 +177,11 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     archiveProjectLoading,
     handleArchiveProjectCancel,
     handleArchiveProjectConfirm,
+    // ace:start direct delete alongside archive
+    handleDelete,
+    handleBatchDelete,
+    handleDeleteProject,
+    // ace:end
   } = useConversationActions({
     batchMode,
     onSessionClick,
@@ -176,6 +193,9 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     markManualUnread,
     clearManualUnread,
     isManualUnread,
+    // ace:start delete confirmation's interruption hint
+    isConversationRunning,
+    // ace:end
   });
 
   const { sensors, handleDragEnd, isDragEnabled } = useDragAndDrop({
@@ -219,6 +239,9 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
       onEditStart: handleEditStart,
       onCreateCronTask: handleCreateCronTask,
       onArchive: handleArchive,
+      // ace:start direct delete alongside archive
+      onDelete: handleDelete,
+      // ace:end
       onTogglePin: handleTogglePin,
       onToggleManualUnread: handleToggleManualUnread,
       getJobStatus,
@@ -242,6 +265,9 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
       handleEditStart,
       handleCreateCronTask,
       handleArchive,
+      // ace:start direct delete alongside archive
+      handleDelete,
+      // ace:end
       handleTogglePin,
       handleToggleManualUnread,
       getJobStatus,
@@ -398,6 +424,11 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
           } else if (key === 'archive') {
             handleArchiveProject(group.displayName, group.conversations);
           }
+          // ace:start direct delete alongside archive
+          if (key === 'delete') {
+            handleDeleteProject(group.displayName, group.conversations);
+          }
+          // ace:end
         }}
       >
         <Menu.Item key='pin'>
@@ -412,6 +443,14 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
             {t('conversation.history.archiveProject')}
           </span>
         </Menu.Item>
+        {/* ace:start direct delete alongside archive */}
+        <Menu.Item key='delete'>
+          <span className='flex items-center gap-8px text-danger'>
+            <DeleteOne theme='outline' size='14' />
+            {t('conversation.history.deleteProject')}
+          </span>
+        </Menu.Item>
+        {/* ace:end */}
       </Menu>
     );
     return (
@@ -563,6 +602,17 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
               >
                 {t('conversation.history.batchArchive')}
               </Button>
+              {/* ace:start direct delete alongside archive — own full-width row so labels never squeeze */}
+              <Button
+                className='col-span-2 !w-full !justify-center !min-w-0 !h-30px !px-8px !text-12px whitespace-nowrap'
+                size='mini'
+                type='secondary'
+                status='danger'
+                onClick={handleBatchDelete}
+              >
+                {t('conversation.history.batchDelete')}
+              </Button>
+              {/* ace:end */}
             </div>
           </div>
         </div>

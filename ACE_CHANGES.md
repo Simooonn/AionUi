@@ -347,3 +347,16 @@ opencode 没有每会话文件——全部数据在 `<XDG_DATA_HOME|~/.local/sha
 - `process/ace/aceBridge.ts`：save/get 透传 domain（枚举闸门）；domain 变更同样重置 token 缓存。
 - `renderer/ace/larkNotify/LarkNotifySettings.tsx`：新增"平台"下拉（飞书 / Lark 国际版）；i18n `larkNotify.domain*` ×9。
 - 测试：`tests/unit/ace-lark-notify.test.ts` 新增 larksuite 路由 + 缓存隔离用例（30 用例全绿）。
+
+## 目录级会话状态汇总标志（2026-10-12）
+
+> 规格：`.omc/specs/deep-interview-folder-status.md`。
+
+折叠项目目录后，内部"进行中 / 等待操作 / 完成未读"的会话标志一起被藏起来，看不出哪个项目还在干活。现在目录名后汇总组内会话**实际可见**的标志，多种状态并列、同类只显示一个。
+
+- `GroupedHistory/utils/folderStatusBadges.ts`（ace 新增）：纯函数。`resolveRowStatus` 复刻 ConversationRow 的优先级（waiting > generating > unread）取单会话**可见**的那一个；`collectFolderStatuses` 取组内去重并集，按固定顺序返回。读 `group.conversations` 而非已渲染的行，所以折叠态结果与展开态一致。
+- `components/WorkspaceCollapse.tsx`（marker）：新增 `badges` 插槽，位于 header 与 trailing 之间。`group-hover:hidden` —— 与 ConversationRow 未读点同款处理，hover 时让位给尾部 `+` / `⋯`（trailing 固定 22px，按钮展开会左溢出）。
+- `GroupedHistory/index.tsx`（marker）：`renderFolderStatusBadges()` 一处计算，置顶区与项目区共用 `renderProjectGroup` 自动同享。batchMode 下行标志全隐藏，目录同步不显示。视觉常量直接复用 ConversationRow（`text-warning animate-wiggle` / `[&_.arco-spin-icon]:text-#2C7FFF` / `bg-#2C7FFF` 圆点）——注意本项目 Arco `primaryColor` 是灰色，不能用 `--primary-*` token。
+- i18n：`history.folderStatusWaiting` / `folderStatusGenerating` / `folderStatusUnread`（13 语言），仅作 `aria-label`。
+- 纯展示，无新交互：不加点击定位、不加批量已读、不改状态来源 / 未读清除 / 持久化 / 侧栏窄模式。
+- 测试：`tests/unit/conversation/folderStatusBadges.test.ts`（聚合规则 11 例）+ `workspaceCollapseBadges.dom.test.tsx`（插槽 5 例），16 例全绿。

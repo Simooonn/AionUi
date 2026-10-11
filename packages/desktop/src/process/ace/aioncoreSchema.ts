@@ -29,11 +29,8 @@ type SqliteDb = {
   pragma: (sql: string) => unknown;
 };
 
-/** True when `table` exists and contains every column this fork depends on. */
-export function hasCoupledSchema(db: SqliteDb, table: CoupledTable): boolean {
-  // Runtime allowlist: the union type is compile-time only; never let an
-  // unvetted string reach the PRAGMA interpolation below.
-  if (!Object.hasOwn(ACE_AIONCORE_COUPLED_SCHEMA, table)) return false;
+/** True when `table` exists and contains every column in `cols` (PRAGMA table_info). */
+function tableHasColumns(db: SqliteDb, table: string, cols: readonly string[]): boolean {
   let columns: PragmaColumn[];
   try {
     columns = db.pragma(`table_info(${table})`) as PragmaColumn[];
@@ -42,7 +39,124 @@ export function hasCoupledSchema(db: SqliteDb, table: CoupledTable): boolean {
   }
   if (!Array.isArray(columns) || columns.length === 0) return false;
   const names = new Set(columns.map((c) => c.name));
-  return ACE_AIONCORE_COUPLED_SCHEMA[table].every((col) => names.has(col));
+  return cols.every((col) => names.has(col));
+}
+
+/** True when `table` exists and contains every column this fork depends on. */
+export function hasCoupledSchema(db: SqliteDb, table: CoupledTable): boolean {
+  // Runtime allowlist: the union type is compile-time only; never let an
+  // unvetted string reach the PRAGMA interpolation below.
+  if (!Object.hasOwn(ACE_AIONCORE_COUPLED_SCHEMA, table)) return false;
+  return tableHasColumns(db, table, ACE_AIONCORE_COUPLED_SCHEMA[table]);
+}
+
+// --- CLI-import dedupe (baseline read + duplicate cleanup) -------------------
+// Kept separate from ACE_AIONCORE_COUPLED_SCHEMA on purpose: that list gates
+// activity touch / backfill / local-file resolution, and widening it would let
+// one schema drift disable unrelated features (e.g. permanent-delete file
+// cleanup). The baseline read only needs conversations.extra; the cleanup
+// query additionally needs ranking, archive state and live-turn / cron checks.
+
+/** Columns the "already imported" baseline read touches. */
+export const ACE_IMPORT_BASELINE_SCHEMA = { conversations: ['id', 'extra'] } as const;
+/** Columns the duplicate cleanup query touches (ranking, archive state, live turns, cron bindings). */
+export const ACE_IMPORT_DEDUPE_SCHEMA = {
+  conversations: ['id', 'user_id', 'extra', 'created_at', 'archived_at'],
+  messages: ['id', 'conversation_id'],
+  cron_jobs: ['id', 'conversation_id'],
+} as const;
+
+export type ImportSchemaRequirement = typeof ACE_IMPORT_BASELINE_SCHEMA | typeof ACE_IMPORT_DEDUPE_SCHEMA;
+
+const IMPORT_SCHEMA_REQUIREMENTS: readonly ImportSchemaRequirement[] = [
+  ACE_IMPORT_BASELINE_SCHEMA,
+  ACE_IMPORT_DEDUPE_SCHEMA,
+];
+
+/**
+ * True when every table/column in `requirement` exists. Only the two exported
+ * requirement objects are accepted (reference equality), so table names never
+ * come from outside this module.
+ */
+export function hasImportSchema(db: SqliteDb, requirement: ImportSchemaRequirement): boolean {
+  if (!IMPORT_SCHEMA_REQUIREMENTS.includes(requirement)) return false;
+  return (Object.entries(requirement) as Array<[string, readonly string[]]>).every(([table, cols]) =>
+    tableHasColumns(db, table, cols)
+  );
+}
+
+export type SqliteQueryDb = SqliteDb & {
+  prepare: (sql: string) => { all: () => unknown[] };
+};
+
+/**
+ * Every CLI session id already imported, regardless of archive state. Only
+ * non-empty JSON strings count: `json_type` (not `typeof(json_extract())`,
+ * which reports 'text' for object/array values too) and `<> ''`.
+ */
+export const IMPORTED_CLI_SESSION_IDS_SQL = `SELECT json_extract(extra, '$.cli_session_id') AS sid
+  FROM conversations
+  WHERE json_type(extra, '$.cli_session_id') = 'text'
+    AND json_extract(extra, '$.cli_session_id') <> ''`;
+
+export function readImportedCliSessionIds(db: SqliteQueryDb): Set<string> {
+  const rows = db.prepare(IMPORTED_CLI_SESSION_IDS_SQL).all() as Array<{ sid: string }>;
+  return new Set(rows.map((r) => r.sid));
+}
+
+/** A later duplicate row of an already-imported CLI session, with the facts that protect it. */
+export type DuplicateImportLoser = {
+  id: string;
+  cliSessionId: string;
+  archived: boolean;
+  /** Has in-app turns (live message rows, i.e. ids NOT LIKE 'cli-%'). */
+  hasLiveTurns: boolean;
+  /** A cron job is bound to it (the backend DELETE would cascade to the job). */
+  hasCronJobs: boolean;
+};
+
+/**
+ * Duplicate groups: same user, same non-empty text cli_session_id, excluding
+ * server-minted fork copies (extra.fork). The survivor is the EARLIEST import
+ * (created_at, then rowid); every later row is a loser. Protection flags are
+ * computed in the OUTER query so they can never change who the survivor is.
+ * Output order is fixed so callers/tests can rely on it.
+ */
+export const DUPLICATE_IMPORT_LOSERS_SQL = `SELECT r.id, r.sid AS cliSessionId,
+       (r.archived_at IS NOT NULL) AS archived,
+       EXISTS (SELECT 1 FROM messages m WHERE m.conversation_id = r.id AND m.id NOT LIKE 'cli-%') AS hasLiveTurns,
+       EXISTS (SELECT 1 FROM cron_jobs j WHERE j.conversation_id = r.id) AS hasCronJobs
+  FROM (
+    SELECT id, user_id, archived_at,
+           json_extract(extra, '$.cli_session_id') AS sid,
+           ROW_NUMBER() OVER (
+             PARTITION BY user_id, json_extract(extra, '$.cli_session_id')
+             ORDER BY created_at ASC, rowid ASC
+           ) AS rn
+      FROM conversations
+     WHERE json_type(extra, '$.cli_session_id') = 'text'
+       AND json_extract(extra, '$.cli_session_id') <> ''
+       AND json_extract(extra, '$.fork') IS NULL
+  ) AS r
+ WHERE r.rn > 1
+ ORDER BY r.user_id, r.sid, r.rn`;
+
+export function findDuplicateImportLosers(db: SqliteQueryDb): DuplicateImportLoser[] {
+  const rows = db.prepare(DUPLICATE_IMPORT_LOSERS_SQL).all() as Array<{
+    id: string;
+    cliSessionId: string;
+    archived: number;
+    hasLiveTurns: number;
+    hasCronJobs: number;
+  }>;
+  // SQLite returns 0/1 for EXISTS / IS NOT NULL.
+  return rows.map((r) => ({
+    id: r.id,
+    cliSessionId: r.cliSessionId,
+    archived: Boolean(r.archived),
+    hasLiveTurns: Boolean(r.hasLiveTurns),
+    hasCronJobs: Boolean(r.hasCronJobs),
+  }));
 }
 
 // --- Coupled write helpers (sidebar activity ordering) -----------------------

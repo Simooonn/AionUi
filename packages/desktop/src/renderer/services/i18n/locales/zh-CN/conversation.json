@@ -791,7 +791,14 @@
     "confirmTitle": "导入 CLI 会话",
     "confirmContent": "发现 {{count}} 条可导入的新会话，确定全部导入？",
     "nothingNew": "没有发现新的 CLI 会话",
-    "scanFailed": "扫描本地 CLI 会话失败，请稍后重试"
+    "scanFailed": "扫描本地 CLI 会话失败，请稍后重试",
+    "done": "导入完成：{{summary}}",
+    "summaryImported": "新增 {{count}}",
+    "summarySkipped": "跳过 {{count}}",
+    "summaryFailed": "失败 {{count}}",
+    "duplicatesRemoved": "清理重复 {{count}} 条",
+    "duplicatesKept": "{{count}} 条重复副本因含应用内消息、定时任务或打开的终端已保留；请勿在归档页永久删除同一会话的任何一份副本（包括已归档的原始导入）——那会连同共享的本地 CLI 会话文件一起删除",
+    "separator": "，"
   },
   "emptyState": {
     "greeting": "你好！说说你的需求，我这就开始。"

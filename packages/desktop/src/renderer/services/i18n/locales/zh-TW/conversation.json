@@ -791,7 +791,14 @@
     "confirmTitle": "匯入 CLI 會話",
     "confirmContent": "發現 {{count}} 條可匯入的新會話，確定全部匯入？",
     "nothingNew": "沒有發現新的 CLI 會話",
-    "scanFailed": "掃描本地 CLI 會話失敗，請稍後重試"
+    "scanFailed": "掃描本地 CLI 會話失敗，請稍後重試",
+    "done": "匯入完成：{{summary}}",
+    "summaryImported": "新增 {{count}}",
+    "summarySkipped": "略過 {{count}}",
+    "summaryFailed": "失敗 {{count}}",
+    "duplicatesRemoved": "清理重複 {{count}} 筆",
+    "duplicatesKept": "{{count}} 筆重複副本因含應用內訊息、排程任務或開啟中的終端已保留；請勿在封存頁永久刪除同一會話的任何一份副本（包括已封存的原始匯入）——那會連同共用的本機 CLI 會話檔案一起刪除",
+    "separator": "，"
   },
   "emptyState": {
     "greeting": "你好！說說你的需求，我這就開始。"

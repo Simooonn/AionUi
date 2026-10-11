@@ -791,7 +791,14 @@
     "confirmTitle": "Import CLI sessions",
     "confirmContent": "Found {{count}} new sessions to import. Import them all?",
     "nothingNew": "No new CLI sessions found",
-    "scanFailed": "Failed to scan local CLI sessions, please retry later"
+    "scanFailed": "Failed to scan local CLI sessions, please retry later",
+    "done": "가져오기 완료: {{summary}}",
+    "summaryImported": "{{count}}개 추가",
+    "summarySkipped": "{{count}}개 건너뜀",
+    "summaryFailed": "{{count}}개 실패",
+    "duplicatesRemoved": "중복 {{count}}개 정리",
+    "duplicatesKept": "중복 사본 {{count}}개는 앱 내 메시지, 예약 작업 또는 열려 있는 터미널이 있어 보존했습니다. 보관함 페이지에서 이 세션의 어떤 사본도 영구 삭제하지 마세요. 공유된 로컬 CLI 세션 파일까지 함께 삭제됩니다.",
+    "separator": ", "
   },
   "emptyState": {
     "greeting": "안녕하세요! 필요한 것을 말씀해 주시면 바로 시작하겠습니다."

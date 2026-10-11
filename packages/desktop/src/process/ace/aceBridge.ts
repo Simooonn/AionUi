@@ -17,8 +17,11 @@ import type {
 import { LARK_NOTIFY_STATUS_WEIGHT } from '@/common/ace/types';
 import { LARK_NOTIFY_SUMMARY_INPUT_CAP } from '@/common/ace/larkNotify';
 import { ProcessConfig } from '@process/utils/initStorage';
+// Direct module import on purpose: the `@process/bridge` barrel side-effect-imports
+// this file, so going through it would create an import cycle.
+import { getTerminalManager } from '@process/bridge/terminalBridge';
 import { getTenantToken, resetLarkTokenCache, sendLarkNotification, sendLarkText } from './larkNotifySender';
-import { importCliSessions, scanCliSessions } from './importCliSessions';
+import { emptyImportResult, hasOpenTerminalIn, importCliSessions, scanCliSessions } from './importCliSessions';
 import { importConversationMessages } from './messageImporter';
 import {
   checkWorkspacesExist,
@@ -51,9 +54,11 @@ ipcMain.handle('ace:hud-statusline', async (_event, rawParams: unknown): Promise
 
 ipcMain.handle('ace:import-cli-sessions', async (): Promise<ImportCliSessionsResult> => {
   try {
-    return await importCliSessions();
+    return await importCliSessions({
+      hasOpenTerminal: (conversationId) => hasOpenTerminalIn(getTerminalManager(), conversationId),
+    });
   } catch (e) {
-    return { imported: 0, skipped: 0, failed: 0, errors: [e instanceof Error ? e.message : String(e)] };
+    return emptyImportResult([e instanceof Error ? e.message : String(e)]);
   }
 });
 

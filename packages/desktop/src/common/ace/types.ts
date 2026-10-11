@@ -66,10 +66,16 @@ export type ImportedConversationExtra = {
 
 export type ImportCliSessionsResult = {
   imported: number;
-  /** Already present (matched by cli_session_id) — proves idempotency. */
+  /** Already present (matched by cli_session_id, archived rows included) — proves idempotency. */
   skipped: number;
   failed: number;
   errors: string[];
+  /** Later duplicate rows of an already-imported session removed by the end-of-import cleanup. */
+  duplicatesRemoved: number;
+  /** Duplicate rows kept because they carry in-app messages, cron bindings or an open terminal. */
+  duplicatesSkipped: number;
+  /** Conversation ids the cleanup deleted — the renderer releases PTYs / command queues for them. */
+  removedIds: string[];
 };
 
 /** Pre-import scan: how many NEW sessions an import would create, per source. */

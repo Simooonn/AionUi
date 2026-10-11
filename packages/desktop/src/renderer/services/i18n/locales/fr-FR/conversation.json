@@ -762,6 +762,19 @@
     "stop": "Arrêter",
     "truncated": "(sortie antérieure tronquée)"
   },
+  "importCli": {
+    "confirmTitle": "Importer les sessions CLI",
+    "confirmContent": "{{count}} nouvelles sessions à importer ont été trouvées. Tout importer ?",
+    "nothingNew": "Aucune nouvelle session CLI trouvée",
+    "scanFailed": "Échec de l'analyse des sessions CLI locales, veuillez réessayer plus tard",
+    "done": "Import terminé : {{summary}}",
+    "summaryImported": "{{count}} ajoutées",
+    "summarySkipped": "{{count}} ignorées",
+    "summaryFailed": "{{count}} en échec",
+    "duplicatesRemoved": "{{count}} doublon(s) supprimé(s)",
+    "duplicatesKept": "{{count}} copies en double conservées (messages dans l'application, tâches planifiées ou terminal ouvert). Ne supprimez définitivement aucune copie de ces sessions depuis la page Archivées : le fichier local partagé de la session CLI serait lui aussi supprimé.",
+    "separator": ", "
+  },
   "emptyState": {
     "greeting": "Bonjour ! Dites-moi ce dont vous avez besoin et je commence."
   },

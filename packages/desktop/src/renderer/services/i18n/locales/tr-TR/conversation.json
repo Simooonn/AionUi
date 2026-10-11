@@ -793,7 +793,14 @@
     "confirmTitle": "Import CLI sessions",
     "confirmContent": "Found {{count}} new sessions to import. Import them all?",
     "nothingNew": "No new CLI sessions found",
-    "scanFailed": "Failed to scan local CLI sessions, please retry later"
+    "scanFailed": "Failed to scan local CLI sessions, please retry later",
+    "done": "İçe aktarma tamamlandı: {{summary}}",
+    "summaryImported": "{{count}} eklendi",
+    "summarySkipped": "{{count}} atlandı",
+    "summaryFailed": "{{count}} başarısız",
+    "duplicatesRemoved": "{{count}} yinelenen kayıt temizlendi",
+    "duplicatesKept": "{{count}} yinelenen kopya korundu (uygulama içi mesajlar, zamanlanmış görevler veya açık bir terminal). Bu oturumların hiçbir kopyasını Arşiv sayfasından kalıcı olarak silmeyin; paylaşılan yerel CLI oturum dosyası da silinir.",
+    "separator": ", "
   },
   "emptyState": {
     "greeting": "Merhaba! Ne istediğinizi söyleyin, hemen başlayayım."

@@ -791,7 +791,14 @@
     "confirmTitle": "Import CLI sessions",
     "confirmContent": "Found {{count}} new sessions to import. Import them all?",
     "nothingNew": "No new CLI sessions found",
-    "scanFailed": "Failed to scan local CLI sessions, please retry later"
+    "scanFailed": "Failed to scan local CLI sessions, please retry later",
+    "done": "インポート完了：{{summary}}",
+    "summaryImported": "{{count}} 件追加",
+    "summarySkipped": "{{count}} 件スキップ",
+    "summaryFailed": "{{count}} 件失敗",
+    "duplicatesRemoved": "重複 {{count}} 件を削除",
+    "duplicatesKept": "重複コピー {{count}} 件は保持しました（アプリ内メッセージ・定期タスク・開いているターミナルを含むため）。アーカイブページでこれらのセッションのコピーを完全削除しないでください。共有されたローカル CLI セッションファイルも削除されます。",
+    "separator": "、"
   },
   "emptyState": {
     "greeting": "こんにちは！ご要望を教えてください。すぐに取りかかります。"

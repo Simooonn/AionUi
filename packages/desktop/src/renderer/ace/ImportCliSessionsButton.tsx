@@ -1,16 +1,23 @@
 /**
- * Settings-page button that imports local Claude Code CLI sessions into the
- * conversation list (idempotent, metadata-only, read-only). A dry-run scan +
- * confirmation dialog guards the actual import: a projects dir polluted by
- * automation once held 42k session files, and one click imported all of them.
+ * Settings-page button that imports local CLI sessions into the conversation
+ * list (idempotent, metadata-only, read-only). A dry-run scan + confirmation
+ * dialog guards the actual import: a projects dir polluted by automation once
+ * held 42k session files, and one click imported all of them. With 0 new
+ * sessions the import still runs (no dialog) so the duplicate cleanup happens.
  */
 
 import React from 'react';
 import { Button, Message, Modal } from '@arco-design/web-react';
 import { Download } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
+import { ipcBridge } from '@/common';
 import { emitter } from '@/renderer/utils/emitter';
-import { useImportCliSessions } from './useImportCliSessions';
+import {
+  buildImportSummary,
+  releaseRemovedConversations,
+  resolveScanAction,
+  useImportCliSessions,
+} from './useImportCliSessions';
 
 const ImportCliSessionsButton: React.FC = () => {
   const { t } = useTranslation();
@@ -18,28 +25,39 @@ const ImportCliSessionsButton: React.FC = () => {
 
   const doImport = async () => {
     const res = await runImport();
-    const summary = `新增 ${res.imported}，跳过 ${res.skipped}` + (res.failed ? `，失败 ${res.failed}` : '');
-    if (res.failed > 0) Message.warning(`导入完成：${summary}`);
-    else Message.success(`导入完成：${summary}`);
-    // Refresh the sidebar list so newly imported conversations appear immediately.
+    // The toast carries counts only; failure reasons go to the devtools console.
+    if (res.errors.length > 0) console.warn('[ace:import]', res.errors);
+    const summary = buildImportSummary(res, t);
+    if (summary.level === 'nothing') Message.info(summary.text);
+    else if (summary.level === 'warning') Message.warning(summary.text);
+    else Message.success(summary.text);
+    // Backend HTTP deletes never reach the main process: release the PTYs and
+    // persisted command queues of the duplicates the cleanup removed.
+    releaseRemovedConversations(res.removedIds ?? [], {
+      emit: (id) => emitter.emit('conversation.deleted', id),
+      dispose: (id) => ipcBridge.terminal.disposeByConversation.invoke({ conversationId: id }),
+    });
+    // Refresh the sidebar list so imported / removed conversations show immediately.
     emitter.emit('chat.history.refresh');
   };
 
   const handleClick = async () => {
     const scan = await runScan();
-    if (!scan) {
-      Message.error(t('conversation.importCli.scanFailed'));
-      return;
+    switch (resolveScanAction(scan)) {
+      case 'scan-failed':
+        Message.error(t('conversation.importCli.scanFailed'));
+        return;
+      case 'import-direct':
+        await doImport();
+        return;
+      case 'confirm':
+        Modal.confirm({
+          title: t('conversation.importCli.confirmTitle'),
+          content: t('conversation.importCli.confirmContent', { count: scan?.total ?? 0 }),
+          onOk: doImport,
+        });
+        return;
     }
-    if (scan.total === 0) {
-      Message.info(t('conversation.importCli.nothingNew'));
-      return;
-    }
-    Modal.confirm({
-      title: t('conversation.importCli.confirmTitle'),
-      content: t('conversation.importCli.confirmContent', { count: scan.total }),
-      onOk: doImport,
-    });
   };
 
   return (

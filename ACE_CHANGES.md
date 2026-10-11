@@ -10,34 +10,37 @@
 
 ### 新增文件（纯新增，不与上游冲突）
 
-| 文件                                                            | 作用                                                                         |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `packages/desktop/src/common/ace/types.ts`                      | CLI 会话导入相关类型                                                         |
-| `packages/desktop/src/process/ace/parsers/sessionTitle.ts`      | Claude/Codex 共用的标题提取（跳过系统注入前缀）                              |
-| `packages/desktop/src/process/ace/parsers/claudeParser.ts`      | 解析 `~/.claude/projects/**/*.jsonl` → 会话元数据                            |
-| `packages/desktop/src/process/ace/parsers/codexParser.ts`       | 解析 `~/.codex/{sessions,archived_sessions}/**/rollout-*.jsonl` → 会话元数据 |
-| `packages/desktop/src/process/ace/importCliSessions.ts`         | 幂等导入逻辑（Claude + Codex，GET 预过滤 + acp 落库）                        |
-| `packages/desktop/src/process/ace/aceBridge.ts`                 | `ipcMain.handle('ace:import-cli-sessions')` 自注册                           |
-| `packages/desktop/src/renderer/ace/readonly.ts`                 | `isReadOnlyConversation` helper（含 cli 导入会话）                           |
-| `packages/desktop/src/renderer/ace/useImportCliSessions.ts`     | 渲染层 hook                                                                  |
-| `packages/desktop/src/renderer/ace/ImportCliSessionsButton.tsx` | 设置页导入按钮                                                               |
+| 文件                                                            | 作用                                                                                                                                                                                                                                                                  |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/desktop/src/common/ace/types.ts`                      | CLI 会话导入相关类型                                                                                                                                                                                                                                                  |
+| `packages/desktop/src/process/ace/parsers/sessionTitle.ts`      | Claude/Codex 共用的标题提取（跳过系统注入前缀）                                                                                                                                                                                                                       |
+| `packages/desktop/src/process/ace/parsers/claudeParser.ts`      | 解析 `~/.claude/projects/**/*.jsonl` → 会话元数据                                                                                                                                                                                                                     |
+| `packages/desktop/src/process/ace/parsers/codexParser.ts`       | 解析 `~/.codex/{sessions,archived_sessions}/**/rollout-*.jsonl` → 会话元数据                                                                                                                                                                                          |
+| `packages/desktop/src/process/ace/importCliSessions.ts`         | 幂等导入逻辑（Claude / Codex / Gemini / OpenCode；**只读直读 DB 名单（含归档行）+ 空名单 HTTP 绊线** + acp 落库 + **导入末尾受保护重复清理**（只走后端单条删除端点；禁止走 deleteWithLocalFiles / sessionFiles））                                                    |
+| `packages/desktop/src/process/ace/aceBridge.ts`                 | `ipcMain.handle('ace:import-cli-sessions')` 自注册；注入 `hasOpenTerminal`（直接导入 `@process/bridge/terminalBridge` 的 `getTerminalManager`，不走 barrel 以免成环；依赖 ace 新增但尚未登记的 `terminalBridge.ts` / `TerminalManager.ts`——既有登记缺口，本次仅注明） |
+| `packages/desktop/src/renderer/ace/readonly.ts`                 | `isReadOnlyConversation` helper（含 cli 导入会话）                                                                                                                                                                                                                    |
+| `packages/desktop/src/renderer/ace/useImportCliSessions.ts`     | 渲染层 hook + 纯函数 `resolveScanAction` / `buildImportSummary` / `releaseRemovedConversations`（按钮只接线，node 单测覆盖）                                                                                                                                          |
+| `packages/desktop/src/renderer/ace/ImportCliSessionsButton.tsx` | 设置页导入按钮（0 条新会话时也执行导入以触发清理、无弹窗；toast 摘要 i18n；errors 写 console；对 `removedIds` 发 `conversation.deleted` 并释放终端）                                                                                                                  |
+| `tests/unit/process/aceImportDedupe.test.ts`                    | 名单 / schema 闸门 / 导入编排 / 重复清理（含 AC7 本地文件通道 automock 零调用、sidebar 其余端点零调用）/ `hasOpenTerminalIn`（真实 TerminalManager + fake pty）/ 渲染层纯函数单测（node:sqlite 适配 better-sqlite3，parser 全 mock）                                  |
 
 ### 现有文件挂载点（均有 `// ace:` marker）
 
-| 文件                                                                               | 改动                                                    | 行                 |
-| ---------------------------------------------------------------------------------- | ------------------------------------------------------- | ------------------ |
-| `packages/desktop/src/process/bridge/index.ts`                                     | side-effect import `../ace/aceBridge` 触发注册          | 顶部               |
-| `packages/desktop/src/preload/main.ts`                                             | `electronAPI.importCliSessions` 暴露 IPC                | electronAPI 对象内 |
-| `packages/desktop/src/renderer/pages/conversation/components/ChatConversation.tsx` | 2 处只读判断改用 `isReadOnlyConversation(conversation)` | ~225,226           |
-| `packages/desktop/src/renderer/pages/team/components/TeamChatView.tsx`             | 2 处只读判断改用 `isReadOnlyConversation(conversation)` | ~73,78             |
-| `packages/desktop/src/renderer/pages/settings/SystemSettings.tsx`                  | 挂载 `ImportCliSessionsButton`                          | 导入按钮区         |
+| 文件                                                                               | 改动                                                                                                                                                                                                                                   | 行                                 |
+| ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `packages/desktop/src/process/bridge/index.ts`                                     | side-effect import `../ace/aceBridge` 触发注册                                                                                                                                                                                         | 顶部                               |
+| `packages/desktop/src/preload/main.ts`                                             | `electronAPI.importCliSessions` 暴露 IPC                                                                                                                                                                                               | electronAPI 对象内                 |
+| `packages/desktop/src/renderer/pages/conversation/components/ChatConversation.tsx` | 2 处只读判断改用 `isReadOnlyConversation(conversation)`                                                                                                                                                                                | ~225,226                           |
+| `packages/desktop/src/renderer/pages/team/components/TeamChatView.tsx`             | 2 处只读判断改用 `isReadOnlyConversation(conversation)`                                                                                                                                                                                | ~73,78                             |
+| `packages/desktop/src/renderer/pages/settings/SystemSettings.tsx`                  | 挂载 `ImportCliSessionsButton`                                                                                                                                                                                                         | 导入按钮区                         |
+| `packages/desktop/src/renderer/services/i18n/locales/*/conversation.json`          | `conversation.importCli.{done,summaryImported,summarySkipped,summaryFailed,duplicatesRemoved,duplicatesKept,separator}`（13 语言；fr-FR 连同既有 4 键新建 `importCli` 对象；`separator` 逐语言：zh `，`、ja `、`、fa `، `、其余 `, `） | `importCli` 对象（JSON 无 marker） |
 
 ### 设计要点（实证验证）
 
 - 落库用 `type='acp'`（后端唯一可新建类型；codex/legacy type 被后端 400 拒绝）。
 - 来源 + 图标：`extra.backend='claude'|'codex'`（`getBackendKeyFromConversation` 读此字段，logo map 已含 claude/codex）。
-- 幂等键：`extra.cli_session_id`（后端忽略 client `id` 自生成，故不能用主键；改用导入前 `GET /api/conversations` 按 `extra.cli_session_id` 预过滤）。
-- ⚠️ **已踩坑（全量重复导入）**：预过滤拉取失败时早期实现"静默当空集合继续"，恰逢列表接口 500 → 379 条全部重复创建。现已改为：列表拉取失败**直接中止导入**；返回 200 但为空时再用 better-sqlite3 直读 DB 交叉核对（防分页/接口回归造成的假空），DB 里已有导入会话同样中止。
+- 幂等键：`extra.cli_session_id`（后端忽略 client `id` 自生成，故不能用主键）。"已导入"名单由主进程 **只读直读** `aionui-backend.db` 的 `conversations` 表得到（`readImportedCliSessionIds`，`json_type = 'text'` 且非空），**天然包含已归档行**——后端 `GET /api/conversations` 排除 `archived_at` 非空的行，曾让归档后的会话被当成新会话重复导入。scan（确认弹窗计数）与 import 共用同一名单函数。
+- ⚠️ **已踩坑（全量重复导入）**：早期实现在名单拉取失败时"静默当空集合继续"，恰逢列表接口 500 → 379 条全部重复创建。现规则：名单 **读不到或可疑即中止**（`db-unavailable` / `schema-mismatch` / `query-failed` 带原因进 errors）；DB 名单为空时再调一次 `GET /api/conversations` 做绊线——列表仍报有导入行 → `baseline-suspect` 中止，HTTP 失败 → `list-failed` 中止；两边都空才视为真正首次导入。
+- 重复兜底清理（每次点击导入末尾，含 0 条新会话）：`findDuplicateImportLosers` 按同用户、同非空文本 `cli_session_id`、`extra.fork IS NULL` 分组，最早导入（`created_at, rowid`）为 survivor；loser 若有应用内消息（`messages.id NOT LIKE 'cli-%'`）/ cron 绑定 / 打开的内嵌终端（`hasOpenTerminal`，终端 UI 已于 `8ed831b84` 移除，当前恒 false）则保留并计入 `duplicatesSkipped` 提示；其余经 `DELETE /api/conversations/{id}`（归档行经 `DELETE /api/sidebar/archived/conversation/{id}`）删除——后端删除会终止 agent、级联 cron / artifacts / snapshots，**不碰本地 CLI 文件**；清理侧 schema 不匹配只记 `cleanup skipped`，不阻断导入；渲染层对 `removedIds` 发 `conversation.deleted` + `terminal.disposeByConversation`。
 - 只读：`extra.cli_session_id` 存在 → 走现成 `LegacyReadOnlyConversation`（空消息占位、无发送框）。
 
 ## 功能：导入会话真 resume 继续 + 懒同步消息历史（双通道）
@@ -52,14 +55,14 @@
 
 ### 新增文件（纯新增）
 
-| 文件                                                             | 作用                                                                                                                                                                 |
-| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/desktop/src/process/ace/aioncoreSchema.ts`             | **耦合 schema 单一事实源**（acp_session/messages 所需列清单 + PRAGMA 校验）                                                                                          |
-| `packages/desktop/src/process/ace/sessionResume.ts`              | resume 接线：schema 防御→jsonl 检查→warmup 建行→驱逐 idle agent（SIGTERM→宽限→SIGKILL，进程组级）→幂等 UPDATE→重生复查                                               |
-| `packages/desktop/src/process/ace/messageParser.ts`              | 解析单个 CLI 会话消息历史（text/thinking/image/compact-summary/tool）+ harness 注入噪音过滤；导出 `findSessionFile`/`parseSessionFile`                               |
-| `packages/desktop/src/process/ace/messageImporter.ts`            | 映射 + 直写 `messages` 表；按会话 replace-sync `cli-` 行（幂等、自愈）+ 跨通道双因子排重                                                                             |
-| `packages/desktop/src/renderer/ace/ensureCliMessagesImported.ts` | 渲染层统一入口 `ensureCliConversationReady` / `ensureCliResumeBeforeSend` + 降级可见提示（i18n `conversation.ace.cliResumeUnavailable`，瞬态失败连续 ≥3 次升级提示） |
-| `tests/unit/ace-cli-resume.test.ts`                              | schema 防御 / 双因子排重 / 幂等 UPDATE 语义单测                                                                                                                      |
+| 文件                                                             | 作用                                                                                                                                                                                                                                              |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/desktop/src/process/ace/aioncoreSchema.ts`             | **耦合 schema 单一事实源**（acp_session/messages 所需列清单 + PRAGMA 校验）；另含导入专用的 `ACE_IMPORT_BASELINE_SCHEMA` / `ACE_IMPORT_DEDUPE_SCHEMA` + `hasImportSchema`（与共享闸门分开，按操作独立降级）及名单 SQL `readImportedCliSessionIds` |
+| `packages/desktop/src/process/ace/sessionResume.ts`              | resume 接线：schema 防御→jsonl 检查→warmup 建行→驱逐 idle agent（SIGTERM→宽限→SIGKILL，进程组级）→幂等 UPDATE→重生复查                                                                                                                            |
+| `packages/desktop/src/process/ace/messageParser.ts`              | 解析单个 CLI 会话消息历史（text/thinking/image/compact-summary/tool）+ harness 注入噪音过滤；导出 `findSessionFile`/`parseSessionFile`                                                                                                            |
+| `packages/desktop/src/process/ace/messageImporter.ts`            | 映射 + 直写 `messages` 表；按会话 replace-sync `cli-` 行（幂等、自愈）+ 跨通道双因子排重                                                                                                                                                          |
+| `packages/desktop/src/renderer/ace/ensureCliMessagesImported.ts` | 渲染层统一入口 `ensureCliConversationReady` / `ensureCliResumeBeforeSend` + 降级可见提示（i18n `conversation.ace.cliResumeUnavailable`，瞬态失败连续 ≥3 次升级提示）                                                                              |
+| `tests/unit/ace-cli-resume.test.ts`                              | schema 防御 / 双因子排重 / 幂等 UPDATE 语义单测                                                                                                                                                                                                   |
 
 ### 现有文件挂载点（均有 `// ace:` marker）
 
@@ -82,6 +85,9 @@
 - `acp_session(conversation_id, session_id, session_status, agent_backend)` —— resume 驱动表（migration v26）。
 - `messages(id, conversation_id, msg_id, type, content, position, status, hidden, created_at)` —— 展示表。
 - `conversations(id, updated_at, extra)` —— 侧栏排序键（渲染层 modified_at）。
+- `conversations(id, extra)` —— 导入"已导入"名单（`ACE_IMPORT_BASELINE_SCHEMA`，只读直读；不匹配 → **中止导入**）。
+- `conversations(id, user_id, extra, created_at, archived_at)` + `messages(id, conversation_id)` + `cron_jobs(id, conversation_id)` —— 导入末尾重复清理（`ACE_IMPORT_DEDUPE_SCHEMA`；不匹配只降级为 `cleanup skipped`，不阻断导入）。
+- **非 schema 核对**：(a) `POST /api/conversations` 创建后 `extra.cli_session_id` 仍被持久化（v0.2.2 已剥离 client 传入的 `extra.fork` / `extra.model`；若自定义键也被剥离，名单恒空 → 绊线 `baseline-suspect` 中止导入）；(b) `DELETE /api/conversations/{id}` 与 `DELETE /api/sidebar/archived/conversation/{id}` 的副作用（终止 agent、级联 cron / artifacts / snapshots）未变化。
 - `runtime/agent-process-registry.json`（由 aioncore 异步写入）—— 驱逐判活依据。
 - **TODO（环境侧，非代码）**：`~/.codex/config.toml` 中 `service_tier = "priority"` 已临时注释（内置 codex-acp 0.14.0 只认 fast/flex，读到 priority 启动失败）。aioncore 升级捆绑新版 codex-acp 后，恢复该行（文件内有同款 TODO 注释可定位）。
 

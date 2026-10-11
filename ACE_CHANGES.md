@@ -360,3 +360,19 @@ opencode 没有每会话文件——全部数据在 `<XDG_DATA_HOME|~/.local/sha
 - i18n：`history.folderStatusWaiting` / `folderStatusGenerating` / `folderStatusUnread`（13 语言），仅作 `aria-label`。
 - 纯展示，无新交互：不加点击定位、不加批量已读、不改状态来源 / 未读清除 / 持久化 / 侧栏窄模式。
 - 测试：`tests/unit/conversation/folderStatusBadges.test.ts`（聚合规则 11 例）+ `workspaceCollapseBadges.dom.test.tsx`（插槽 5 例），16 例全绿。
+
+## 侧栏恢复直接删除（与归档并列）（2026-10-12）
+
+> 规格：`.omc/specs/deep-interview-restore-direct-delete.md`。
+
+上游 `18e4fddd7`（PR #4126，archive-first）把侧栏会话菜单、项目菜单、批量工具条里的"删除"原地换成了"归档"，想删只能先归档、再去设置的归档页永久删除。现在三处都恢复直接删除，**归档原样保留**，两者并列；只做加法，不回退上游代码。
+
+- `GroupedHistory/hooks/useConversationActions.ts`（marker）：新增 `handleDelete` / `handleBatchDelete` / `handleDeleteProject`，共用 `confirmDelete` + `deleteConversations`。走 `deleteConversationsWithFiles`（先解析本地数据 → `conversation.remove` → 只清理删成功的行），复用上游留下但无人调用的 `removeConversation`（发 `conversation.deleted`、释放 PTY、删当前会话回首页）。单条 remove 抛错时转成 `false`，不让一条失败拖垮整批的本地清理；部分失败提示"成功 N / 失败 M"，不误报全成功。
+- 运行中会话：确认框追加"会中断任务"提示（generating 或等待确认都算）。**不在前端单独 cancel**：aioncore v0.2.2 `ConversationService::delete` 在删行前先跑 `OnConversationDelete` 钩子，`WorkerTaskManagerImpl` 会 kill 该会话的 agent 进程；前端 `conversation.stop` 需要 `activeTurnId`，没打开过的会话拿不到。
+- 删除项目 = 删除该目录分组里的会话。分组只含未归档会话，所以**已归档会话保留**；侧栏项目分组只来自用户选定的 `custom_workspace`，后端只会清理 `<workspace_root>/conversations/**/*-temp-<会话id>` 自动临时目录，**项目目录不会被删**。
+- `GroupedHistory/index.tsx`（marker）：项目菜单加"删除项目"、批量工具条加"批量删除"（独占一行，避免窄侧栏挤压文案）、把运行态判断传给 hook。`ConversationRow.tsx` / `types.ts`（marker）：行菜单"归档"后加"删除"（`onDelete`）。确认框统一用 Arco `Modal.confirm` + danger 按钮，不新增原生交互 HTML。
+- 行菜单去掉 200px 高度上限：Arco 默认 `.arco-dropdown-menu { max-height: 200px; overflow: auto }`，行菜单 6–8 项时最后几项（归档 / 删除）藏在滚动条后面，看起来像"没有删除"。`<Menu className='sider-row-menu'>` + `styles/arco-override.css` 一条作用域规则，照搬 `explorer-context-menu` 的写法，其他下拉不受影响。
+- 删除项用语义色 `text-danger`。注意 `text-[rgb(var(--danger-6))]` 这种任意值写法 UnoCSS **不生成规则**（开发版实测文字是黑的），仓库里另有 7 处同样写法未处理。
+- i18n：复用已有 `deleteTitle` / `deleteConfirm` / `batchDelete*` / `deleteSuccess` / `deleteFailed` / `localFileDeleteFailed`；新增 `history.deleteIrreversibleHint` / `deleteRunningHint` / `deleteRunningCountHint` / `deletePartialFailed` / `deleteProject` / `deleteProjectConfirm`（13 语言）。
+- 测试：`tests/unit/renderer/conversation/useConversationActionsDelete.dom.test.ts`（11 例：确认前不删、DB 优先再清理、删当前会话回首页、运行中提示、批量、项目只删分组行且不调归档、部分失败、全失败、本地文件清理失败提示）+ `ConversationRowCronMenu.dom.test.tsx` 补 1 例（删除项在归档之后）。
+- 开发版实测（CDP 驱动真实侧栏，只操作脚本新建的 `DELTEST-*` 会话，结束自动清理）：行菜单取消不删 / 确认删除、批量删除后退出批量模式、项目删除只删 2 个未归档会话且归档会话与 `/private/tmp` 项目目录仍在，10/10 通过；行菜单删除项无需滚动可见、删除项为红色。运行中会话的中断未实测（需真实发消息起 agent），依据是上面的后端源码。

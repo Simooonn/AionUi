@@ -390,16 +390,18 @@ Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没
 - `useSendBoxSubmitListener.ts`：监听 `emitter` 的 `sendbox.submit`，按会话过滤，收到即 `ack()`，沿用 `onSendHandler` 的忙碌闸门（`!supportsMidturnDelivery && isBusy` → reject），经 `executeCommand` 走既有发送管线（含 `ensureCliResumeBeforeSend`、`markSend*`、team 路由）。
 - `answerClock.ts`：`markAnswered` / `getLastAnsweredAt` / `onAnswered` / `resetAnswerClock`，记录每个会话最近一次成功作答时刻。
 - `submitAskAnswer.ts`：提交策略——实时卡先 `answerAsk`；失败或历史卡则 `confirmation.list` 按题干文本匹配再 `answerAsk`；仍未命中时，**只有存在失败的 `answerAsk` 尝试**（答案可能已送达、仅响应丢失）才只读 `conversation.get` 的 `runtime.has_task`（**不得用 `ensureRuntime` 探活**），`true` 报错交给用户选「重试／作为消息发送」，`false` 才重发；历史卡没有过尝试（答案不可能已送达，且重开会话时 `runtime/ensure` 已拉起新进程令 `has_task` 恒为 true）则直接经 `sendbox.submit` 以普通消息重发（`listenerCount` 为 0 直接报错；10 秒只等 `ack`）；`force: 'message'` 跳过以上判断；重发文案全部走 i18n（`buildResendMessage`）。
+- `answeredAskRows.ts`：纯函数，`collectAnsweredAskRowIds` 找出“仍标记 running 但其后已有用户消息”的 AskUserQuestion 行，`settleAnsweredAskRow` 生成展示用的已完成副本（不改 store），让 View Steps 不再因这类行常驻转圈。
 - `deriveStaleAsk.ts`：纯函数，从历史里尾部未答的 `tool_call{name:'AskUserQuestion', status:'work', content.status:'running'}` 派生 `type:'ask', source:'history'` 卡片；守卫 `hydrated / !isProcessing / !hideSendBox / type==='acp'`、作答后 5 秒窗口、其后无 `position:'right'`、无 `created_at>=q` 的 ask、无同 id 终态 `acp_tool_call`。
 - 测试 `tests/unit/ace-ask-recovery/`：`AcpSendBoxSubmitEvent.dom.test.tsx`（7）、`submitAskAnswer.test.ts`（15）、`MessageQuestion.dom.test.tsx`（9）、`deriveStaleAsk.test.ts`（33，含 1e57be0e / 4ed3b3ce 真实行夹具与 N1 回归）、`MessageListStaleAsk.dom.test.tsx`（5，经真实消息 store）。
 
 ### marker 挂点（均有 `// ace:` marker）
 
 - `renderer/utils/emitter.ts`：`EventTypes['sendbox.submit']`（`conversation_id / input / ack / resolve / reject`）。
+- `packages/shared-scripts/src/prepare-aioncore.js` + `scripts/prepareAioncore.js` 头注释：下载源改为 `AIONUI_BACKEND_OWNER` / `AIONUI_BACKEND_REPO` 环境变量，默认 `Simooonn/AionCore`（带补丁的 fork；fork 无 release，须配 `AIONUI_BACKEND_RUN_ID` 指向 fork 的 Manual Build 运行号，否则脚本直接失败而不是用官方包覆盖补丁二进制）。
 - `renderer/pages/conversation/platforms/acp/AcpSendBox.tsx`：导入并在 `executeCommand` 定义后调用 `useSendBoxSubmitListener`。
 - `common/chat/chatLib.ts`：`IMessageAsk.content.source?: 'live' | 'history'`。
 - `renderer/pages/conversation/Messages/MessageQuestion.tsx` + `.module.css`：提交/拒答改走 `submitAskAnswer`，新增 `submitting` / `failure` / 重试 / 作为消息发送 / 已作为消息发送 / 历史卡顶部提示（testid `message-question-stale-hint|error|retry|resend`）。
-- `renderer/pages/conversation/Messages/MessageList.tsx`：`processedList` 末尾注入 `deriveStaleAsk` 结果；`useMemo` 依赖补 `hydrated / isProcessing / hideSendBox / type / lastAnsweredAt / answerClockTick`；订阅 `onAnswered` 并在 5 秒窗口内挂一次性定时器重算。
+- `renderer/pages/conversation/Messages/MessageList.tsx`：`tool_call` 入组前经 `settleAnsweredAskRow` 替换已答提问行的展示副本；`processedList` 末尾注入 `deriveStaleAsk` 结果；`useMemo` 依赖补 `hydrated / isProcessing / hideSendBox / type / lastAnsweredAt / answerClockTick`；订阅 `onAnswered` 并在 5 秒窗口内挂一次性定时器重算。
 
 ### i18n（`messages` 模块，13 语言）
 
@@ -409,5 +411,5 @@ Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没
 
 - 派生卡片只是显示层启发式；提交永远以后端 `confirmation.list` / `has_task` 为准。
 - 派生卡片显示期间 `lastMessageId` 指向它（与实时问答卡一致），前一条文本上的分叉入口会暂时隐藏。
-- 作答（重发）后该 AskUserQuestion 行按设计仍是 `work/running`，View Steps 分组会持续显示运行中图标。
+- 作答（重发）后该 AskUserQuestion 行在库里仍是 `work/running`；前端把“其后已有用户消息”的这类行视为已结清（`answeredAskRows.ts`），后端启动恢复也会在下次重启时把它结清，View Steps 不再常驻转圈。
 - 规格验收 C 点名的两个存量会话后面已有用户消息，按规则不再出卡（用户已确认改为夹具单测）。

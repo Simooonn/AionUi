@@ -21,8 +21,13 @@ const os = require('os');
 const path = require('path');
 const { verifyBundledAioncoreResources } = require('./verify-bundled-aioncore-resources');
 
-const GITHUB_OWNER = 'iOfficeAI';
-const GITHUB_REPO = 'AionCore';
+// ace:start bundled aioncore comes from the fork that carries the AskUserQuestion keepalive patches
+// Override with AIONUI_BACKEND_OWNER / AIONUI_BACKEND_REPO (e.g. iOfficeAI / AionCore to go back to
+// upstream releases). The fork publishes no GitHub releases on purpose: without AIONUI_BACKEND_RUN_ID
+// (a fork "Manual Build" run id) this script fails loudly instead of silently replacing the patched binary.
+const GITHUB_OWNER = process.env.AIONUI_BACKEND_OWNER || 'Simooonn';
+const GITHUB_REPO = process.env.AIONUI_BACKEND_REPO || 'AionCore';
+// ace:end
 
 const ACTIONS_ARTIFACT_TARGETS = {
   'darwin-arm64': {

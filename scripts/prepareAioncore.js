@@ -13,6 +13,9 @@
  *  - AIONUI_BACKEND_RUN_ID: AionCore Manual Build workflow run id
  *  - AIONUI_BACKEND_VERSION: override the pinned version
  *  - AIONUI_BACKEND_ARCH: target architecture (default: process.arch)
+ *  - AIONUI_BACKEND_OWNER / AIONUI_BACKEND_REPO: GitHub repo to download from
+ *    (ace: defaults to the Simooonn/AionCore fork carrying the AskUserQuestion
+ *    keepalive patches; that fork has no releases, so use AIONUI_BACKEND_RUN_ID)
  *  - GH_TOKEN / GITHUB_TOKEN: GitHub API token (for rate limiting)
  */
 

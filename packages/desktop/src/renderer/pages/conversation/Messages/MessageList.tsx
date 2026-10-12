@@ -51,6 +51,7 @@ import { useAutoScroll } from './useAutoScroll';
 import SelectionReplyButton from './components/SelectionReplyButton';
 // ace:start ask answer recovery: history-derived AskUserQuestion card
 import { getLastAnsweredAt, onAnswered } from '@/renderer/ace/askRecovery/answerClock';
+import { collectAnsweredAskRowIds, settleAnsweredAskRow } from '@/renderer/ace/askRecovery/answeredAskRows';
 import { deriveStaleAsk, STALE_ASK_ANSWER_WINDOW_MS } from '@/renderer/ace/askRecovery/deriveStaleAsk';
 // ace:end
 
@@ -427,6 +428,9 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
       result.push(message);
     };
 
+    // ace:start ask answer recovery: settle pending rows after the user moves on
+    const answeredAskIds = collectAnsweredAskRowIds(list);
+    // ace:end
     for (let i = 0, len = list.length; i < len; i++) {
       const message = list[i];
       // Skip hidden and available_commands messages
@@ -461,7 +465,9 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
         continue;
       }
       if (message.type === 'tool_call') {
-        pushToolList(message);
+        // ace:start ask answer recovery: answered history rows must not keep View Steps running
+        pushToolList(answeredAskIds.has(message.content.call_id) ? settleAnsweredAskRow(message) : message);
+        // ace:end
         continue;
       }
       pushStandaloneMessage(message);

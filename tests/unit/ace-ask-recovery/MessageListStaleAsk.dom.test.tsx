@@ -8,6 +8,9 @@ import type {
   IMessageToolGroup,
   TMessage,
 } from '@/common/chat/chatLib';
+// ace:start ask answer recovery: verify the tool summary running state
+import { hasRunningToolMessages } from '@/common/chat/normalizeToolCall';
+// ace:end
 import { markAnswered, resetAnswerClock } from '@/renderer/ace/askRecovery/answerClock';
 import { STALE_ASK_ANSWER_WINDOW_MS } from '@/renderer/ace/askRecovery/deriveStaleAsk';
 import { ConversationProvider } from '@/renderer/hooks/context/ConversationContext';
@@ -54,11 +57,22 @@ vi.mock('@/renderer/pages/conversation/Messages/useAutoScroll', () => ({
   }),
 }));
 
+// ace:start ask answer recovery: text rendering is outside the summary/card behavior under test
+vi.mock('@/renderer/pages/conversation/Messages/components/MessageText', () => ({
+  default: () => null,
+}));
+// ace:end
+
+// ace:start ask answer recovery: expose normalized running state in the summary mock
 vi.mock('@/renderer/pages/conversation/Messages/components/MessageToolGroupSummary', () => ({
   default: ({ messages }: { messages: Array<IMessageToolGroup | IMessageAcpToolCall | IMessageToolCall> }) => (
-    <div data-testid='tool-summary'>{messages.map((message) => message.id).join(',')}</div>
+    <div data-testid='tool-summary' data-running={String(hasRunningToolMessages(messages))}>
+      {messages.map((message) => message.id).join(',')}
+    </div>
   ),
 }));
+
+// ace:end
 
 vi.mock('@/renderer/pages/conversation/Messages/components/SelectionReplyButton', () => ({
   default: () => null,
@@ -172,6 +186,36 @@ afterEach(() => {
 });
 
 describe('MessageList history-derived ask card', () => {
+  // ace:start ask answer recovery: only a later user message settles a pending history row
+  it.each([false, true])('settles the summary only with a later user message: %s', (hasAnswer) => {
+    const question = askToolCall();
+    renderList([
+      question,
+      ...(hasAnswer
+        ? [
+            {
+              id: 'answer',
+              msg_id: 'answer',
+              conversation_id: CONVERSATION_ID,
+              type: 'text' as const,
+              position: 'right' as const,
+              created_at: 101,
+              content: { content: 'A' },
+            },
+          ]
+        : []),
+    ]);
+
+    expect(screen.getByTestId('tool-summary')).toHaveAttribute('data-running', String(!hasAnswer));
+    if (hasAnswer) {
+      expect(screen.queryByTestId('message-question')).not.toBeInTheDocument();
+    } else {
+      expect(screen.getByTestId('message-question-stale-hint')).toBeInTheDocument();
+    }
+    expect(question.content.status).toBe('running');
+  });
+  // ace:end
+
   it('keeps both the tool_call and the finished acp_tool_call rows and shows no card', () => {
     renderList([]);
 

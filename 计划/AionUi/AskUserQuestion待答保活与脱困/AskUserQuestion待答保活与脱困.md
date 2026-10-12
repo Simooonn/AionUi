@@ -32,7 +32,7 @@
 - [x] 12.（2026-10-12 完成）**登记 ACE_CHANGES.md** —— 新增"功能：AskUserQuestion 待答脱困"一节：新增文件表 + 挂载点表（`MessageList.tsx`、`MessageQuestion.tsx`、`chatLib.ts`、`AcpSendBox.tsx`、`emitter.ts`、`locales/*/messages.json`）。
 - [x] 13.（2026-10-12 完成，见附录三末尾实测记录）**验证与收尾** —— 附录三 A（含基线复现）/ B / D 端到端 + 日志证据；`bunx tsc --noEmit`、`bun run test`、`bun run lint:fix`（后 `git status` 还原越界改动）、`bun run format`。不 push，commit 无 AI 签名。
 - [x] 14.（2026-10-12 执行中发现并完成）**B3 启动恢复保留未答提问** —— aioncore v0.2.2 `startup_recovery` 每次启动把残留 `tool_call` 行结清为 finish/canceled，会让场景 B 的派生卡片永远匹配不上；补丁 `KeepPendingUserPrompt`（AskUserQuestion 且 content.status 非终态的行不改写），commit `31421af2`，3 个单测，二进制已重编替换。见附录三实测记录。
-- [x] 15.（2026-10-12 用户追加并完成）**View Steps 常驻运行图标修复** —— 后端：启动恢复对“其后已有用户消息”的 AskUserQuestion 行改为结清（`has_user_message_after`，2 个集成测试）；前端：`answeredAskRows.ts` 把这类行以已完成副本入组（9 个单测 + MessageList 2 个 DOM 用例）。另：`prepare-aioncore.js` 下载源改为 fork（`AIONUI_BACKEND_OWNER/REPO`），后端分支已推到 `origin`（Simooonn/AionCore）。
+- [x] 15.（2026-10-12 用户追加并完成）**View Steps 常驻运行图标修复** —— 后端：启动恢复对“其后已有用户消息”的 AskUserQuestion 行改为结清（`has_user_message_after`，2 个集成测试）；前端：`answeredAskRows.ts` 把这类行以已完成副本入组（9 个单测 + MessageList 2 个 DOM 用例）。另：`prepare-aioncore.js` 下载源改为 fork（`AIONUI_BACKEND_OWNER/REPO`），后端分支已推到 `origin`（Simooonn/AionCore）。评审遗留项之一也已处理：`claude_conn` 进程退出时清空 `pending_perms`（1 个回归测试）。本地打包改用 `AIONUI_BACKEND_LOCAL_BUNDLE_DIR` 指向仓库外副本，并给脚本加了“不得指向目标目录自身”的守卫。
 
 ---
 
@@ -337,7 +337,7 @@ if pending_user_input > 0 {
   - 捆绑二进制在上游合并前为本地编译版（manifest `local-build`），`prepareAioncore.js` 会覆盖。
   - 规格验收 B/C 的表述按 0a/0b 调整；目录规模按 0c 豁免。
   - 派生卡片在"作答后 5 秒内"与"hydrate 前"主动不显示，可能有不到 1 秒的空白，不会出现误答。
-- **Follow-ups**：（已实施，待办 15）B3 仅当该行之后没有 `position='right'` 消息时才保留，前端同步把已答行视为已结清；`claude_conn` 在 stdout EOF 处未清空 `pending_perms`，叠加 I1 后异常退出的 agent 条目不会被空闲回收（进程已死，仅残留任务项），上游 PR 时一并处理；派生卡重发时 `markSendStarted` 令 `isProcessing=true` 会卸载卡片，发送失败后重挂载时 `failure` 状态丢失，只剩 SendBox 自身提示；`emitter.listenerCount('sendbox.submit')` 是全局计数，多个 SendBox 同时挂载时快速失败退化为等满 10 秒；（新增）B3 已随本次交付（commit 31421af2），上游 PR 需一并提交；View Steps 对保留的 `work/running` AskUserQuestion 行持续显示运行图标，可在前端将“已有后续用户消息”的该类行视为已结清；上游 PR（I1 + B2 + 单测）合并后回归官方 release；若 R1 事件通道在实现中暴露更多问题，切换 R1'；后续可考虑在后端持久化 `ask` 帧以取代前端派生（当前规格 Non-Goal）；验收 A 的基线复现脚本可沉淀为回归用例。
+- **Follow-ups**：（已实施，待办 15）B3 仅当该行之后没有 `position='right'` 消息时才保留，前端同步把已答行视为已结清；（已实施）`claude_conn` 在 stdout EOF 处清空 `pending_perms`；派生卡重发时 `markSendStarted` 令 `isProcessing=true` 会卸载卡片，发送失败后重挂载时 `failure` 状态丢失，只剩 SendBox 自身提示；`emitter.listenerCount('sendbox.submit')` 是全局计数，多个 SendBox 同时挂载时快速失败退化为等满 10 秒；（新增）B3 已随本次交付（commit 31421af2），上游 PR 需一并提交；View Steps 对保留的 `work/running` AskUserQuestion 行持续显示运行图标，可在前端将“已有后续用户消息”的该类行视为已结清；上游 PR（I1 + B2 + 单测）合并后回归官方 release；若 R1 事件通道在实现中暴露更多问题，切换 R1'；后续可考虑在后端持久化 `ask` 帧以取代前端派生（当前规格 Non-Goal）；验收 A 的基线复现脚本可沉淀为回归用例。
 
 ## 变更记录
 

@@ -383,7 +383,7 @@ opencode 没有每会话文件——全部数据在 `<XDG_DATA_HOME|~/.local/sha
 
 Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没作答，aioncore v0.2.2 的孤儿回合看门狗（`background_stream.rs` `ORPHAN_TURN_IDLE_MS`）会把回合标记结束、侧栏等待标记消失；续开回合不推进 turn_gen、status 恒为 Finished，10 分钟后空闲扫描把进程杀掉，之后作答一律 404 "No active agent"，而问答卡片没有 catch，点击静默失败。2026-10-10 全天 8 次提问全部如此。
 
-**后端（AionCore，非本仓库）**：`resources/bundled-aioncore/darwin-arm64/aioncore` 换成本地编译版（manifest `sourceType: local-build`，分支 `fix/pending-ask-keepalive`，基于 `v0.2.2`，commit `23093f23` + `a3fe93da` + `31421af2`）：`collect_idle` 对 `get_confirmations().len() > 0` 的 agent 豁免（`reason=PendingUserInput`）；`BackgroundStreamWatcher` 新增 `pending_probe`（Session agent 的 `Weak` 句柄）与 `orphan_idle`，超时时 pending > 0 则继续喂帧；`startup_recovery` 对未答的 AskUserQuestion 行返回 `KeepPendingUserPrompt` 不再结清（否则重启后派生卡片永远匹配不上）。`node scripts/prepareAioncore.js` 会用官方包覆盖这份二进制，上游 PR 合并前不要跑。
+**后端（AionCore，非本仓库）**：`resources/bundled-aioncore/darwin-arm64/aioncore` 换成本地编译版（manifest `sourceType: local-build`，分支 `fix/pending-ask-keepalive`，基于 `v0.2.2`，commit `23093f23` + `a3fe93da` + `31421af2`）：`collect_idle` 对 `get_confirmations().len() > 0` 的 agent 豁免（`reason=PendingUserInput`）；`BackgroundStreamWatcher` 新增 `pending_probe`（Session agent 的 `Weak` 句柄）与 `orphan_idle`，超时时 pending > 0 则继续喂帧；`startup_recovery` 对未答的 AskUserQuestion 行返回 `KeepPendingUserPrompt` 不再结清（否则重启后派生卡片永远匹配不上），但其后已有用户消息时仍结清；`claude_conn` 在进程退出时清空 `pending_perms`（否则死任务会被空闲豁免永久保留）。`node scripts/prepareAioncore.js` 会用官方包覆盖这份二进制，上游 PR 合并前不要跑。
 
 ### 新增文件（纯新增，`renderer/ace/askRecovery/`）
 
@@ -397,6 +397,7 @@ Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没
 ### marker 挂点（均有 `// ace:` marker）
 
 - `renderer/utils/emitter.ts`：`EventTypes['sendbox.submit']`（`conversation_id / input / ack / resolve / reject`）。
+- `packages/shared-scripts/src/prepare-aioncore.js`：`AIONUI_BACKEND_LOCAL_BUNDLE_DIR` 指向打包目标目录本身时直接报错（脚本会先清空目标目录再复制，指向自身会毁掉补丁二进制）；本地打包用法：`AIONUI_BACKEND_LOCAL_BUNDLE_DIR=/Users/wmm/wmm-code/ace-diy/aioncore-local-bundle/darwin-arm64 bun run build-mac:arm64`。
 - `packages/shared-scripts/src/prepare-aioncore.js` + `scripts/prepareAioncore.js` 头注释：下载源改为 `AIONUI_BACKEND_OWNER` / `AIONUI_BACKEND_REPO` 环境变量，默认 `Simooonn/AionCore`（带补丁的 fork；fork 无 release，须配 `AIONUI_BACKEND_RUN_ID` 指向 fork 的 Manual Build 运行号，否则脚本直接失败而不是用官方包覆盖补丁二进制）。
 - `renderer/pages/conversation/platforms/acp/AcpSendBox.tsx`：导入并在 `executeCommand` 定义后调用 `useSendBoxSubmitListener`。
 - `common/chat/chatLib.ts`：`IMessageAsk.content.source?: 'live' | 'history'`。

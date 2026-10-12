@@ -49,6 +49,10 @@ import MessageThinking from './components/MessageThinking';
 import type { WriteFileResult } from './types';
 import { useAutoScroll } from './useAutoScroll';
 import SelectionReplyButton from './components/SelectionReplyButton';
+// ace:start ask answer recovery: history-derived AskUserQuestion card
+import { getLastAnsweredAt, onAnswered } from '@/renderer/ace/askRecovery/answerClock';
+import { deriveStaleAsk, STALE_ASK_ANSWER_WINDOW_MS } from '@/renderer/ace/askRecovery/deriveStaleAsk';
+// ace:end
 
 type IMessageVO =
   | TMessage
@@ -343,7 +347,9 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
   // While the agent is still streaming, the in-progress turn's last text keeps
   // moving down, so we defer its copy/timestamp row until the turn finishes to
   // avoid the row flashing in and the layout reflowing mid-stream.
-  const { isProcessing } = useConversationRuntimeView(conversationContext?.conversation_id ?? '');
+  // ace:start ask answer recovery: `hydrated` gates the history-derived ask card
+  const { isProcessing, hydrated } = useConversationRuntimeView(conversationContext?.conversation_id ?? '');
+  // ace:end
   const { t } = useTranslation();
   const location = useLocation();
   const locationState = (location.state || {}) as ConversationLocationState;
@@ -353,6 +359,25 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
   const loadingTargetKeyRef = useRef<string>('');
   const scrollerElementRef = useRef<HTMLDivElement | null>(null);
   const contentElementRef = useRef<HTMLDivElement | null>(null);
+  // ace:start ask answer recovery: re-derive the history ask card when an answer lands and when its suppression window ends
+  const answerClockConversationId = conversationContext?.conversation_id ?? '';
+  const [answerClockTick, setAnswerClockTick] = useState(0);
+  const lastAnsweredAt = getLastAnsweredAt(answerClockConversationId);
+  useEffect(
+    () =>
+      onAnswered((answeredConversationId) => {
+        if (answeredConversationId === answerClockConversationId) setAnswerClockTick((tick) => tick + 1);
+      }),
+    [answerClockConversationId]
+  );
+  useEffect(() => {
+    if (lastAnsweredAt == null) return;
+    const remaining = STALE_ASK_ANSWER_WINDOW_MS - (Date.now() - lastAnsweredAt);
+    if (remaining <= 0) return;
+    const timer = window.setTimeout(() => setAnswerClockTick((tick) => tick + 1), remaining + 20);
+    return () => window.clearTimeout(timer);
+  }, [lastAnsweredAt, answerClockTick]);
+  // ace:end
 
   // Pre-process message list to group tool outputs into summary cards
   const processedList = useMemo(() => {
@@ -454,10 +479,34 @@ const MessageList: React.FC<{ className?: string; emptySlot?: React.ReactNode }>
         created_at: artifact.created_at,
       }));
 
+    // ace:start ask answer recovery: unanswered AskUserQuestion of a gone process -> history card.
+    // It shares the tool_call's created_at; the stable sort keeps it after that tool summary.
+    const staleAsk = deriveStaleAsk(list, {
+      hydrated,
+      isProcessing,
+      hideSendBox: conversationContext?.hideSendBox ?? false,
+      conversationType: conversationContext?.type,
+      lastAnsweredAt,
+      now: Date.now(),
+    });
+    if (staleAsk) result.push(staleAsk);
+    // ace:end
+
     return [...result, ...visibleArtifacts].toSorted(
       (a, b) => getProcessedItemCreatedAt(a) - getProcessedItemCreatedAt(b)
     );
-  }, [artifacts, list]);
+  }, [
+    artifacts,
+    list,
+    // ace:start ask answer recovery: inputs of the history-derived ask card (the tick re-reads Date.now())
+    hydrated,
+    isProcessing,
+    conversationContext?.hideSendBox,
+    conversationContext?.type,
+    lastAnsweredAt,
+    answerClockTick,
+    // ace:end
+  ]);
 
   // An AI reply can be split into several messages (thinking / multiple text /
   // tool blocks). The hover copy + timestamp row should appear once per turn,

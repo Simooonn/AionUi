@@ -1,4 +1,5 @@
 {
+  "askResendBlocked": "در حال حاضر ارسال مجدد ممکن نیست: کادر ارسال در دسترس نیست یا عامل مشغول است",
   "fileChanges": "تغییرات فایل",
   "fileChangesCount": "{{count}} تغییر فایل",
   "fileChangesCount_one": "{{count}} تغییر فایل",
@@ -94,6 +95,16 @@
   "askDeclined": "رد شد",
   "askOther": "سایر",
   "askOtherPlaceholder": "پاسخ خود را بنویسید",
+  "askStaleHint": "فرایند اصلی پایان یافته است؛ پاسخ شما به‌صورت پیام ارسال می‌شود",
+  "askAnswerFailed": "ارسال پاسخ ناموفق بود: {{reason}}",
+  "askRetry": "تلاش دوباره",
+  "askResendAsMessage": "ارسال به‌صورت پیام",
+  "askResent": "به‌صورت پیام ارسال شد",
+  "askResendUnconfirmed": "تأیید ارسال در ۱۰ ثانیه دریافت نشد؛ پیش از ارسال دوباره فهرست پیام‌ها را بررسی کنید",
+  "askResendHeader": "پاسخ به پرسش قبلی:",
+  "askResendLine": "«{{question}}»: {{answer}}",
+  "askResendSeparator": "، ",
+  "askResendDecline": "پاسخ نمی‌دهم؛ لطفاً بر اساس قضاوت خودتان ادامه دهید.",
   "requestDetails": "جزئیات درخواست:",
   "delivery": {
     "pending": "خوانده‌نشده"

@@ -1,4 +1,5 @@
 {
+  "askResendBlocked": "Impossible de renvoyer pour le moment : la zone de saisie est indisponible ou l’agent est occupé",
   "fileChanges": "Modifications de fichiers",
   "fileChangesCount": "{{count}} modification(s) de fichiers",
   "fileChangesCount_one": "{{count}} modification de fichiers",
@@ -94,6 +95,16 @@
   "askDeclined": "Ignoré",
   "askOther": "Autre",
   "askOtherPlaceholder": "Saisissez votre réponse",
+  "askStaleHint": "Le processus d’origine s’est arrêté ; votre réponse sera envoyée sous forme de message",
+  "askAnswerFailed": "Échec de l’envoi de la réponse : {{reason}}",
+  "askRetry": "Réessayer",
+  "askResendAsMessage": "Envoyer comme message",
+  "askResent": "Envoyé comme message",
+  "askResendUnconfirmed": "Aucune confirmation d’envoi sous 10 secondes ; vérifiez la liste des messages avant de renvoyer",
+  "askResendHeader": "Réponse à la question précédente :",
+  "askResendLine": "« {{question}} » : {{answer}}",
+  "askResendSeparator": ", ",
+  "askResendDecline": "Je ne réponds pas ; veuillez continuer selon votre propre jugement.",
   "requestDetails": "Détails de la demande :",
   "delivery": {
     "pending": "Non lu"

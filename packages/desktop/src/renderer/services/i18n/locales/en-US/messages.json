@@ -1,4 +1,5 @@
 {
+  "askResendBlocked": "Cannot resend right now: the send box is unavailable or the agent is busy",
   "fileChanges": "File Changes",
   "fileChangesCount": "{{count}} File Changes",
   "fileChangesCount_one": "{{count}} File Change",
@@ -94,6 +95,16 @@
   "askDeclined": "Dismissed",
   "askOther": "Other",
   "askOtherPlaceholder": "Type your answer",
+  "askStaleHint": "The original process has exited; your answer will be sent as a message",
+  "askAnswerFailed": "Failed to submit the answer: {{reason}}",
+  "askRetry": "Retry",
+  "askResendAsMessage": "Send as message",
+  "askResent": "Sent as a message",
+  "askResendUnconfirmed": "No send confirmation within 10 seconds; check the message list before resending",
+  "askResendHeader": "Answer to the previous question:",
+  "askResendLine": "\"{{question}}\": {{answer}}",
+  "askResendSeparator": ", ",
+  "askResendDecline": "I'm not answering; please continue using your own judgment.",
   "requestDetails": "Request details:",
   "delivery": {
     "pending": "Unread"

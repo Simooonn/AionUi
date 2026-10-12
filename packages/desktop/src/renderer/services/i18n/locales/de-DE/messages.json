@@ -1,4 +1,5 @@
 {
+  "askResendBlocked": "Erneutes Senden derzeit nicht möglich: Das Eingabefeld ist nicht verfügbar oder der Agent ist beschäftigt",
   "fileChanges": "Dateiänderungen",
   "fileChangesCount": "{{count}} Dateiänderungen",
   "fileChangesCount_one": "{{count}} Dateiänderung",
@@ -94,6 +95,16 @@
   "askDeclined": "Übersprungen",
   "askOther": "Andere",
   "askOtherPlaceholder": "Antwort eingeben",
+  "askStaleHint": "Der ursprüngliche Prozess wurde beendet; Ihre Antwort wird als Nachricht gesendet",
+  "askAnswerFailed": "Antwort konnte nicht übermittelt werden: {{reason}}",
+  "askRetry": "Erneut versuchen",
+  "askResendAsMessage": "Als Nachricht senden",
+  "askResent": "Als Nachricht gesendet",
+  "askResendUnconfirmed": "Innerhalb von 10 Sekunden keine Sendebestätigung erhalten; prüfen Sie die Nachrichtenliste, bevor Sie erneut senden",
+  "askResendHeader": "Antwort auf die vorherige Frage:",
+  "askResendLine": "„{{question}}“: {{answer}}",
+  "askResendSeparator": ", ",
+  "askResendDecline": "Ich antworte nicht; bitte fahren Sie nach eigenem Ermessen fort.",
   "requestDetails": "Anfragedetails:",
   "delivery": {
     "pending": "Ungelesen"

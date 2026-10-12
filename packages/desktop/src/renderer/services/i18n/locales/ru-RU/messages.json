@@ -1,4 +1,5 @@
 {
+  "askResendBlocked": "Сейчас нельзя отправить повторно: поле отправки недоступно или агент занят",
   "fileChanges": "Изменения файлов",
   "fileChangesCount": "{{count}} изменений файлов",
   "fileChangesCount_one": "{{count}} изменение файлов",
@@ -98,6 +99,16 @@
   "askDeclined": "Пропущено",
   "askOther": "Другое",
   "askOtherPlaceholder": "Введите свой ответ",
+  "askStaleHint": "Исходный процесс завершён; ваш ответ будет отправлен сообщением",
+  "askAnswerFailed": "Не удалось отправить ответ: {{reason}}",
+  "askRetry": "Повторить",
+  "askResendAsMessage": "Отправить сообщением",
+  "askResent": "Отправлено сообщением",
+  "askResendUnconfirmed": "Подтверждение отправки не получено в течение 10 секунд; проверьте список сообщений перед повторной отправкой",
+  "askResendHeader": "Ответ на предыдущий вопрос:",
+  "askResendLine": "«{{question}}»: {{answer}}",
+  "askResendSeparator": ", ",
+  "askResendDecline": "Я не отвечаю; продолжайте на своё усмотрение.",
   "requestDetails": "Детали запроса:",
   "delivery": {
     "pending": "Непрочитано"

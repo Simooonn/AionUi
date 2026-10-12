@@ -40,6 +40,12 @@ interface EventTypes {
   'preview.open': [
     { content: string; contentType: PreviewContentType; metadata?: { title?: string; file_name?: string } },
   ];
+  // ace:start programmatic sends through the active SendBox
+  /** Programmatic send through the active SendBox command pipeline; ack fires on receipt, resolve/reject when the send settles. */
+  'sendbox.submit': [
+    { conversation_id: string; input: string; ack: () => void; resolve: () => void; reject: (error: unknown) => void },
+  ];
+  // ace:end
   // 填充输入框事件 / Fill sendbox input event
   'sendbox.fill': [string]; // prompt text to fill
   'sendbox.reply': [ReplyQuote]; // reply/quote a message

@@ -376,3 +376,38 @@ opencode 没有每会话文件——全部数据在 `<XDG_DATA_HOME|~/.local/sha
 - i18n：复用已有 `deleteTitle` / `deleteConfirm` / `batchDelete*` / `deleteSuccess` / `deleteFailed` / `localFileDeleteFailed`；新增 `history.deleteIrreversibleHint` / `deleteRunningHint` / `deleteRunningCountHint` / `deletePartialFailed` / `deleteProject` / `deleteProjectConfirm`（13 语言）。
 - 测试：`tests/unit/renderer/conversation/useConversationActionsDelete.dom.test.ts`（11 例：确认前不删、DB 优先再清理、删当前会话回首页、运行中提示、批量、项目只删分组行且不调归档、部分失败、全失败、本地文件清理失败提示）+ `ConversationRowCronMenu.dom.test.tsx` 补 1 例（删除项在归档之后）。
 - 开发版实测（CDP 驱动真实侧栏，只操作脚本新建的 `DELTEST-*` 会话，结束自动清理）：行菜单取消不删 / 确认删除、批量删除后退出批量模式、项目删除只删 2 个未归档会话且归档会话与 `/private/tmp` 项目目录仍在，10/10 通过；行菜单删除项无需滚动可见、删除项为红色。运行中会话的中断未实测（需真实发消息起 agent），依据是上面的后端源码。
+
+## AskUserQuestion 待答保活与卡住会话脱困（2026-10-12）
+
+> 规格：`.omc/specs/deep-interview-askuserquestion-stuck.md`；共识计划：`计划/AionUi/AskUserQuestion待答保活与脱困/AskUserQuestion待答保活与脱困.md`（`.omc/plans/askuserquestion-keepalive-consensus-plan.md` 为同内容镜像）。
+
+Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没作答，aioncore v0.2.2 的孤儿回合看门狗（`background_stream.rs` `ORPHAN_TURN_IDLE_MS`）会把回合标记结束、侧栏等待标记消失；续开回合不推进 turn_gen、status 恒为 Finished，10 分钟后空闲扫描把进程杀掉，之后作答一律 404 "No active agent"，而问答卡片没有 catch，点击静默失败。2026-10-10 全天 8 次提问全部如此。
+
+**后端（AionCore，非本仓库）**：`resources/bundled-aioncore/darwin-arm64/aioncore` 换成本地编译版（manifest `sourceType: local-build`，分支 `fix/pending-ask-keepalive`，基于 `v0.2.2`，commit `23093f23` + `a3fe93da` + `31421af2`）：`collect_idle` 对 `get_confirmations().len() > 0` 的 agent 豁免（`reason=PendingUserInput`）；`BackgroundStreamWatcher` 新增 `pending_probe`（Session agent 的 `Weak` 句柄）与 `orphan_idle`，超时时 pending > 0 则继续喂帧；`startup_recovery` 对未答的 AskUserQuestion 行返回 `KeepPendingUserPrompt` 不再结清（否则重启后派生卡片永远匹配不上）。`node scripts/prepareAioncore.js` 会用官方包覆盖这份二进制，上游 PR 合并前不要跑。
+
+### 新增文件（纯新增，`renderer/ace/askRecovery/`）
+
+- `useSendBoxSubmitListener.ts`：监听 `emitter` 的 `sendbox.submit`，按会话过滤，收到即 `ack()`，沿用 `onSendHandler` 的忙碌闸门（`!supportsMidturnDelivery && isBusy` → reject），经 `executeCommand` 走既有发送管线（含 `ensureCliResumeBeforeSend`、`markSend*`、team 路由）。
+- `answerClock.ts`：`markAnswered` / `getLastAnsweredAt` / `onAnswered` / `resetAnswerClock`，记录每个会话最近一次成功作答时刻。
+- `submitAskAnswer.ts`：提交策略——实时卡先 `answerAsk`；失败或历史卡则 `confirmation.list` 按题干文本匹配再 `answerAsk`；仍未命中时，**只有存在失败的 `answerAsk` 尝试**（答案可能已送达、仅响应丢失）才只读 `conversation.get` 的 `runtime.has_task`（**不得用 `ensureRuntime` 探活**），`true` 报错交给用户选「重试／作为消息发送」，`false` 才重发；历史卡没有过尝试（答案不可能已送达，且重开会话时 `runtime/ensure` 已拉起新进程令 `has_task` 恒为 true）则直接经 `sendbox.submit` 以普通消息重发（`listenerCount` 为 0 直接报错；10 秒只等 `ack`）；`force: 'message'` 跳过以上判断；重发文案全部走 i18n（`buildResendMessage`）。
+- `deriveStaleAsk.ts`：纯函数，从历史里尾部未答的 `tool_call{name:'AskUserQuestion', status:'work', content.status:'running'}` 派生 `type:'ask', source:'history'` 卡片；守卫 `hydrated / !isProcessing / !hideSendBox / type==='acp'`、作答后 5 秒窗口、其后无 `position:'right'`、无 `created_at>=q` 的 ask、无同 id 终态 `acp_tool_call`。
+- 测试 `tests/unit/ace-ask-recovery/`：`AcpSendBoxSubmitEvent.dom.test.tsx`（7）、`submitAskAnswer.test.ts`（15）、`MessageQuestion.dom.test.tsx`（9）、`deriveStaleAsk.test.ts`（33，含 1e57be0e / 4ed3b3ce 真实行夹具与 N1 回归）、`MessageListStaleAsk.dom.test.tsx`（5，经真实消息 store）。
+
+### marker 挂点（均有 `// ace:` marker）
+
+- `renderer/utils/emitter.ts`：`EventTypes['sendbox.submit']`（`conversation_id / input / ack / resolve / reject`）。
+- `renderer/pages/conversation/platforms/acp/AcpSendBox.tsx`：导入并在 `executeCommand` 定义后调用 `useSendBoxSubmitListener`。
+- `common/chat/chatLib.ts`：`IMessageAsk.content.source?: 'live' | 'history'`。
+- `renderer/pages/conversation/Messages/MessageQuestion.tsx` + `.module.css`：提交/拒答改走 `submitAskAnswer`，新增 `submitting` / `failure` / 重试 / 作为消息发送 / 已作为消息发送 / 历史卡顶部提示（testid `message-question-stale-hint|error|retry|resend`）。
+- `renderer/pages/conversation/Messages/MessageList.tsx`：`processedList` 末尾注入 `deriveStaleAsk` 结果；`useMemo` 依赖补 `hydrated / isProcessing / hideSendBox / type / lastAnsweredAt / answerClockTick`；订阅 `onAnswered` 并在 5 秒窗口内挂一次性定时器重算。
+
+### i18n（`messages` 模块，13 语言）
+
+`askResendBlocked`、`askStaleHint`、`askAnswerFailed`、`askRetry`、`askResendAsMessage`、`askResent`、`askResendUnconfirmed`、`askResendHeader`、`askResendLine`、`askResendSeparator`、`askResendDecline`。
+
+### 已知边界
+
+- 派生卡片只是显示层启发式；提交永远以后端 `confirmation.list` / `has_task` 为准。
+- 派生卡片显示期间 `lastMessageId` 指向它（与实时问答卡一致），前一条文本上的分叉入口会暂时隐藏。
+- 作答（重发）后该 AskUserQuestion 行按设计仍是 `work/running`，View Steps 分组会持续显示运行中图标。
+- 规格验收 C 点名的两个存量会话后面已有用户消息，按规则不再出卡（用户已确认改为夹具单测）。

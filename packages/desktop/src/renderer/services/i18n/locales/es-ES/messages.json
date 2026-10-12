@@ -1,4 +1,5 @@
 {
+  "askResendBlocked": "No se puede reenviar ahora: el cuadro de envío no está disponible o el agente está ocupado",
   "fileChanges": "Cambios en archivos",
   "fileChangesCount": "{{count}} cambios en archivos",
   "fileChangesCount_one": "{{count}} cambio en archivos",
@@ -94,6 +95,16 @@
   "askDeclined": "Omitido",
   "askOther": "Otro",
   "askOtherPlaceholder": "Escribe tu respuesta",
+  "askStaleHint": "El proceso original ha finalizado; tu respuesta se enviará como mensaje",
+  "askAnswerFailed": "No se pudo enviar la respuesta: {{reason}}",
+  "askRetry": "Reintentar",
+  "askResendAsMessage": "Enviar como mensaje",
+  "askResent": "Enviado como mensaje",
+  "askResendUnconfirmed": "No se recibió confirmación de envío en 10 segundos; revisa la lista de mensajes antes de reenviar",
+  "askResendHeader": "Respuesta a la pregunta anterior:",
+  "askResendLine": "«{{question}}»: {{answer}}",
+  "askResendSeparator": ", ",
+  "askResendDecline": "No voy a responder; continúa según tu propio criterio.",
   "requestDetails": "Detalles de la solicitud:",
   "delivery": {
     "pending": "No leído"

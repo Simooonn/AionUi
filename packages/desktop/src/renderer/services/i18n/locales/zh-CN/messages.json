@@ -1,4 +1,5 @@
 {
+  "askResendBlocked": "当前无法重发：发送框不可用或会话正忙",
   "fileChanges": "文件变更",
   "fileChangesCount": "{{count}} 个文件变更",
   "fileChangesCount_one": "{{count}} 个文件变更",
@@ -94,6 +95,16 @@
   "askDeclined": "已跳过",
   "askOther": "其它",
   "askOtherPlaceholder": "输入你的回答",
+  "askStaleHint": "原进程已退出，提交后将作为消息发送",
+  "askAnswerFailed": "回答提交失败：{{reason}}",
+  "askRetry": "重试",
+  "askResendAsMessage": "作为消息发送",
+  "askResent": "已作为消息发送",
+  "askResendUnconfirmed": "10 秒内未收到发送确认，请先检查消息列表再决定是否重发",
+  "askResendHeader": "对上一个问题的回答：",
+  "askResendLine": "「{{question}}」：{{answer}}",
+  "askResendSeparator": "、",
+  "askResendDecline": "我不作答，请按你的判断继续。",
   "requestDetails": "请求内容：",
   "delivery": {
     "pending": "未读"

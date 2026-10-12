@@ -36,6 +36,9 @@ import {
   useConversationCommandQueue,
   type ConversationCommandQueueItem,
 } from '@/renderer/pages/conversation/platforms/useConversationCommandQueue';
+// ace:start programmatic send listener
+import { useSendBoxSubmitListener } from '@/renderer/ace/askRecovery/useSendBoxSubmitListener';
+// ace:end
 // ace:start CLI-imported conversation resume wiring
 import { ensureCliResumeBeforeSend } from '@/renderer/ace/ensureCliMessagesImported';
 // ace:end
@@ -441,6 +444,10 @@ Please check your local CLI tool authentication status`,
       teamSendMessage,
     ]
   );
+
+  // ace:start route recovery sends through the active command pipeline
+  useSendBoxSubmitListener({ conversation_id, executeCommand, supportsMidturnDelivery, isBusy, t });
+  // ace:end
 
   const {
     items: queuedCommands,

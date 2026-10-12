@@ -321,6 +321,10 @@ export type IMessageAsk = IMessage<
     session_id: string;
     request_id: string;
     questions: IAskQuestion[];
+    // ace:start distinguish live and recovered ask cards
+    /** Where the card came from: a live `ask` frame (default) or a card derived from an unanswered AskUserQuestion tool_call in history. */
+    source?: 'live' | 'history';
+    // ace:end
   }
 >;
 

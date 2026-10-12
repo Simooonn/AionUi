@@ -1,4 +1,5 @@
 {
+  "askResendBlocked": "現在は再送信できません：入力欄が利用できないか、エージェントが処理中です",
   "fileChanges": "ファイル変更",
   "fileChangesCount": "{{count}} 件のファイル変更",
   "fileChangesCount_one": "{{count}} 件のファイル変更",
@@ -94,6 +95,16 @@
   "askDeclined": "スキップ済み",
   "askOther": "その他",
   "askOtherPlaceholder": "回答を入力",
+  "askStaleHint": "元のプロセスは終了しています。回答はメッセージとして送信されます",
+  "askAnswerFailed": "回答の送信に失敗しました：{{reason}}",
+  "askRetry": "再試行",
+  "askResendAsMessage": "メッセージとして送信",
+  "askResent": "メッセージとして送信しました",
+  "askResendUnconfirmed": "10 秒以内に送信の確認が得られませんでした。再送信する前にメッセージ一覧を確認してください",
+  "askResendHeader": "前の質問への回答：",
+  "askResendLine": "「{{question}}」：{{answer}}",
+  "askResendSeparator": "、",
+  "askResendDecline": "回答しません。ご自身の判断で続けてください。",
   "requestDetails": "リクエスト内容:",
   "delivery": {
     "pending": "未読"

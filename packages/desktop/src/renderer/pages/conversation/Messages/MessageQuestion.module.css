@@ -109,3 +109,31 @@
   align-items: center;
   gap: 8px;
 }
+
+/* ace:start ask answer recovery: stale-card hint + submit failure row */
+.staleHint {
+  color: var(--color-text-3);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* The shared feedback row is a single flex line; stack the message above its actions. */
+.failure {
+  flex-direction: column;
+}
+
+.failureText {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+
+.failureActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* ace:end */

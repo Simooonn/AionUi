@@ -1,4 +1,5 @@
 {
+  "askResendBlocked": "目前無法重新傳送：傳送框無法使用或工作階段忙碌中",
   "fileChanges": "檔案變更",
   "fileChangesCount": "{{count}} 個檔案變更",
   "fileChangesCount_one": "{{count}} 個檔案變更",
@@ -94,6 +95,16 @@
   "askDeclined": "已跳過",
   "askOther": "其它",
   "askOtherPlaceholder": "輸入你的回答",
+  "askStaleHint": "原程序已結束，提交後將以訊息傳送",
+  "askAnswerFailed": "回答提交失敗：{{reason}}",
+  "askRetry": "重試",
+  "askResendAsMessage": "以訊息傳送",
+  "askResent": "已以訊息傳送",
+  "askResendUnconfirmed": "10 秒內未收到傳送確認，請先檢查訊息列表再決定是否重新傳送",
+  "askResendHeader": "對上一個問題的回答：",
+  "askResendLine": "「{{question}}」：{{answer}}",
+  "askResendSeparator": "、",
+  "askResendDecline": "我不作答，請依你的判斷繼續。",
   "requestDetails": "請求內容：",
   "delivery": {
     "pending": "未讀"

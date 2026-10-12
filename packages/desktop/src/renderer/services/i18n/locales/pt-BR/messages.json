@@ -1,4 +1,5 @@
 {
+  "askResendBlocked": "Não é possível reenviar agora: a caixa de envio está indisponível ou o agente está ocupado",
   "fileChanges": "Alterações de Arquivo",
   "fileChangesCount": "{{count}} Alterações de Arquivo",
   "fileChangesCount_one": "{{count}} Alteração de Arquivo",
@@ -94,6 +95,16 @@
   "askDeclined": "Ignorado",
   "askOther": "Outro",
   "askOtherPlaceholder": "Digite sua resposta",
+  "askStaleHint": "O processo original foi encerrado; sua resposta será enviada como mensagem",
+  "askAnswerFailed": "Falha ao enviar a resposta: {{reason}}",
+  "askRetry": "Tentar novamente",
+  "askResendAsMessage": "Enviar como mensagem",
+  "askResent": "Enviado como mensagem",
+  "askResendUnconfirmed": "Nenhuma confirmação de envio em 10 segundos; verifique a lista de mensagens antes de reenviar",
+  "askResendHeader": "Resposta à pergunta anterior:",
+  "askResendLine": "\"{{question}}\": {{answer}}",
+  "askResendSeparator": ", ",
+  "askResendDecline": "Não vou responder; continue de acordo com o seu próprio julgamento.",
   "requestDetails": "Detalhes da solicitação:",
   "delivery": {
     "pending": "Não lido"

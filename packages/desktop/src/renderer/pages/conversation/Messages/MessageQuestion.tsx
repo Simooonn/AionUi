@@ -4,7 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { conversation } from '@/common/adapter/ipcBridge';
+// ace:start ask answer recovery (submit strategy replaces the direct answerAsk call)
+import {
+  ASK_ANSWER_FAILED_ERROR,
+  submitAskAnswer,
+  type SubmitAskAnswerInput,
+} from '@/renderer/ace/askRecovery/submitAskAnswer';
+import { Attention } from '@icon-park/react';
+// ace:end
 import type { IAskQuestion, IMessageAsk } from '@/common/chat/chatLib';
 import { Button, Card, Checkbox, Input, Radio } from '@arco-design/web-react';
 import { CheckOne } from '@icon-park/react';
@@ -50,7 +57,15 @@ const MessageQuestion: React.FC<MessageQuestionProps> = React.memo(({ message })
     [content.questions]
   );
   const [drafts, setDrafts] = useState<Draft[]>(() => questions.map(emptyDraft));
-  const [submitted, setSubmitted] = useState<'answered' | 'declined' | null>(null);
+  // ace:start ask answer recovery state ('resent' = the answer went out as a chat message)
+  const [submitted, setSubmitted] = useState<'answered' | 'declined' | 'resent' | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+  const [lastAttempt, setLastAttempt] = useState<{
+    input: SubmitAskAnswerInput;
+    outcome: 'answered' | 'declined';
+  } | null>(null);
+  // ace:end
 
   const updateDraft = useCallback((index: number, patch: Partial<Draft>) => {
     setDrafts((prev) => prev.map((d, i) => (i === index ? { ...d, ...patch } : d)));
@@ -60,6 +75,27 @@ const MessageQuestion: React.FC<MessageQuestionProps> = React.memo(({ message })
   const allAnswered = questions.length > 0 && drafts.every(answered);
 
   const requestId = content.request_id || message.id;
+
+  // ace:start ask answer recovery: both actions go through submitAskAnswer, which
+  // falls back to resending the answer as a chat message when the process is gone
+  const runSubmit = useCallback(
+    async (input: SubmitAskAnswerInput, outcome: 'answered' | 'declined') => {
+      setLastAttempt({ input, outcome });
+      setSubmitting(true);
+      setFailure(null);
+      try {
+        const result = await submitAskAnswer(input);
+        setSubmitted(result.via === 'message' ? 'resent' : outcome);
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        const alreadyWrapped = error instanceof Error && error.name === ASK_ANSWER_FAILED_ERROR;
+        setFailure(alreadyWrapped ? reason : t('messages.askAnswerFailed', { reason }));
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [t]
+  );
 
   const handleSubmit = useCallback(async () => {
     // claude keys its answers map by the question TEXT; a multi-select answer
@@ -72,24 +108,46 @@ const MessageQuestion: React.FC<MessageQuestionProps> = React.memo(({ message })
       if (d.otherSelected && d.other.trim()) labels.push(d.other.trim());
       return { question: q.question, labels };
     });
-    await conversation.answerAsk.invoke({ conversation_id: message.conversation_id, request_id: requestId, answers });
-    setSubmitted('answered');
-  }, [drafts, questions, message.conversation_id, requestId]);
+    await runSubmit(
+      { conversation_id: message.conversation_id, request_id: requestId, questions, answers, source: content.source },
+      'answered'
+    );
+  }, [drafts, questions, message.conversation_id, requestId, content.source, runSubmit]);
 
   const handleDecline = useCallback(async () => {
-    await conversation.answerAsk.invoke({
-      conversation_id: message.conversation_id,
-      request_id: requestId,
-      decline: true,
-    });
-    setSubmitted('declined');
-  }, [message.conversation_id, requestId]);
+    await runSubmit(
+      {
+        conversation_id: message.conversation_id,
+        request_id: requestId,
+        questions,
+        decline: true,
+        source: content.source,
+      },
+      'declined'
+    );
+  }, [questions, message.conversation_id, requestId, content.source, runSubmit]);
+
+  const handleRetry = useCallback(() => {
+    if (lastAttempt) void runSubmit(lastAttempt.input, lastAttempt.outcome);
+  }, [lastAttempt, runSubmit]);
+
+  const handleResendAsMessage = useCallback(() => {
+    if (lastAttempt) void runSubmit({ ...lastAttempt.input, force: 'message' }, lastAttempt.outcome);
+  }, [lastAttempt, runSubmit]);
+  // ace:end
 
   if (!questions.length) return null;
 
   return (
     <Card className={styles.card} bordered={false} data-testid='message-question'>
       <div className={styles.panel}>
+        {/* ace:start history-derived card: the original process is gone */}
+        {content.source === 'history' ? (
+          <div className={own.staleHint} data-testid='message-question-stale-hint'>
+            {t('messages.askStaleHint')}
+          </div>
+        ) : null}
+        {/* ace:end */}
         {questions.map((q, qi) => {
           const d = drafts[qi] ?? emptyDraft();
           // Wire spelling is multi_select (the ws relay snake_cases all keys).
@@ -175,13 +233,22 @@ const MessageQuestion: React.FC<MessageQuestionProps> = React.memo(({ message })
             <Button
               type='primary'
               size='small'
-              disabled={!allAnswered}
+              // ace:start lock both actions while a submit is in flight
+              disabled={!allAnswered || submitting}
+              // ace:end
               onClick={handleSubmit}
               data-testid='message-question-submit'
             >
               {t('messages.askSubmit')}
             </Button>
-            <Button size='small' onClick={handleDecline} data-testid='message-question-decline'>
+            <Button
+              size='small'
+              // ace:start lock both actions while a submit is in flight
+              disabled={submitting}
+              // ace:end
+              onClick={handleDecline}
+              data-testid='message-question-decline'
+            >
               {t('messages.askDecline')}
             </Button>
           </div>
@@ -193,9 +260,43 @@ const MessageQuestion: React.FC<MessageQuestionProps> = React.memo(({ message })
             data-testid='message-question-status'
           >
             <CheckOne theme='outline' size='16' aria-hidden='true' />
-            <span>{submitted === 'answered' ? t('messages.askAnswered') : t('messages.askDeclined')}</span>
+            {/* ace:start resent-as-message status */}
+            <span>
+              {submitted === 'resent' && t('messages.askResent')}
+              {submitted === 'answered' && t('messages.askAnswered')}
+              {submitted === 'declined' && t('messages.askDeclined')}
+            </span>
+            {/* ace:end */}
           </div>
         )}
+        {/* ace:start submit failure: retry the same submit or resend it as a chat message */}
+        {submitted === null && failure !== null ? (
+          <div
+            className={`${styles.feedback} ${styles.error} ${own.failure}`}
+            role='alert'
+            aria-live='assertive'
+            data-testid='message-question-error'
+          >
+            <div className={own.failureText}>
+              <Attention theme='outline' size='16' aria-hidden='true' />
+              <span>{failure}</span>
+            </div>
+            <div className={own.failureActions}>
+              <Button size='mini' disabled={submitting} onClick={handleRetry} data-testid='message-question-retry'>
+                {t('messages.askRetry')}
+              </Button>
+              <Button
+                size='mini'
+                disabled={submitting}
+                onClick={handleResendAsMessage}
+                data-testid='message-question-resend'
+              >
+                {t('messages.askResendAsMessage')}
+              </Button>
+            </div>
+          </div>
+        ) : null}
+        {/* ace:end */}
       </div>
     </Card>
   );

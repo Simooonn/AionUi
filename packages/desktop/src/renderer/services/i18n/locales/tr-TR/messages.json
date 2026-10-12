@@ -1,4 +1,5 @@
 {
+  "askResendBlocked": "Şu anda yeniden gönderilemiyor: gönderim kutusu kullanılamıyor veya ajan meşgul",
   "fileChanges": "Dosya Değişiklikleri",
   "fileChangesCount": "{{count}} Dosya Değişikliği",
   "fileChangesCount_one": "{{count}} Dosya Değişikliği",
@@ -94,6 +95,16 @@
   "askDeclined": "Atlandı",
   "askOther": "Diğer",
   "askOtherPlaceholder": "Yanıtınızı yazın",
+  "askStaleHint": "Özgün süreç sonlandı; yanıtınız mesaj olarak gönderilecek",
+  "askAnswerFailed": "Yanıt gönderilemedi: {{reason}}",
+  "askRetry": "Yeniden dene",
+  "askResendAsMessage": "Mesaj olarak gönder",
+  "askResent": "Mesaj olarak gönderildi",
+  "askResendUnconfirmed": "10 saniye içinde gönderim onayı alınamadı; yeniden göndermeden önce mesaj listesini kontrol edin",
+  "askResendHeader": "Önceki soruya yanıt:",
+  "askResendLine": "\"{{question}}\": {{answer}}",
+  "askResendSeparator": ", ",
+  "askResendDecline": "Yanıt vermiyorum; lütfen kendi değerlendirmenize göre devam edin.",
   "requestDetails": "İstek ayrıntıları:",
   "delivery": {
     "pending": "Okunmadı"

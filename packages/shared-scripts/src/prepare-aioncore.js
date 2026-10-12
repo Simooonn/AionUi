@@ -473,6 +473,15 @@ function prepareAioncore(options) {
     `Preparing aioncore for ${runtimeKey} (${actionsRunId ? `actions run: ${actionsRunId}` : `version: ${tag}`})`
   );
 
+  // ace:start a local bundle dir equal to the target would be wiped below before it is copied
+  const localBundleDirEnv = (process.env.AIONUI_BACKEND_LOCAL_BUNDLE_DIR || '').trim();
+  if (localBundleDirEnv && path.resolve(localBundleDirEnv) === targetDir) {
+    throw new Error(
+      `AIONUI_BACKEND_LOCAL_BUNDLE_DIR must not be the bundle target itself (${targetDir}); point it at a copy kept outside resources/bundled-aioncore`
+    );
+  }
+  // ace:end
+
   removeDirectorySafe(targetDir);
   ensureDirectory(targetDir);
 

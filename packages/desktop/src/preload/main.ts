@@ -18,6 +18,9 @@ import {
   TERMINAL_OUTPUT_CHANNEL,
 } from '../common/adapter/constant';
 import type { TerminalExitPayload, TerminalOutputPayload } from '../common/types/platform/electron';
+// ace:start shared types for the ace IPC surface below (preload has no `@/` alias)
+import type { HudStatuslineParams, HudStatuslineResult } from '../common/ace/types';
+// ace:end
 
 /**
  * @description 注入到renderer进程中, 用于与main进程通信
@@ -72,7 +75,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   larkNotifySaveConfig: (config: unknown) => ipcRenderer.invoke('ace:lark-notify-save-config', config),
   larkNotifyTest: () => ipcRenderer.invoke('ace:lark-notify-test'),
   larkNotifySend: (rows: unknown[]) => ipcRenderer.invoke('ace:lark-notify-send', rows),
-  hudStatusline: (params: { workspace: string; conversationId?: string; modelId?: string; modelLabel?: string }) =>
+  hudStatusline: (params: HudStatuslineParams): Promise<HudStatuslineResult> =>
     ipcRenderer.invoke('ace:hud-statusline', params),
   // ace:end
 });

@@ -113,7 +113,12 @@ const AcpChat: React.FC<{
             ></AcpSendBox>
           )}
           {/* ace:start HUD statusline — very bottom of the conversation column, like the native CLI */}
-          <HudStatusBar conversation_id={conversation_id} workspace={workspace} current_model_id={current_model_id} />
+          <HudStatusBar
+            conversation_id={conversation_id}
+            workspace={workspace}
+            current_model_id={current_model_id}
+            context_limit={messageState.context_limit}
+          />
           {/* ace:end */}
         </div>
       </ConversationArtifactProvider>

@@ -62,8 +62,15 @@ const ContextUsageIndicator: React.FC<ContextUsageIndicatorProps> = ({
       percentage: pct,
       displayTotal: formatTokenCount(total, locale),
       displayLimit: formatTokenCount(context_limit, locale, true),
-      isWarning: pct > 70,
-      isDanger: pct > 90,
+      // ace:start thresholds aligned with the OMC HUD
+      // The OMC HUD ctx element warns at contextWarning 70 and goes critical at
+      // contextCritical 85, both with `>=`, so the same percentage must not be
+      // amber here and blue there. OMC compares the value after `Math.round`
+      // and clamped to 0-100; this ring compares the raw pct without rounding
+      // or clamping, so the two can disagree within half a point at a boundary.
+      isWarning: pct >= 70,
+      isDanger: pct >= 85,
+      // ace:end
     };
   }, [tokenUsage, context_limit, hasWindow, locale]);
 

@@ -138,6 +138,23 @@ describe('ContextUsageIndicator', () => {
     expect(popover).not.toContain('Session cost');
     expect(popover).not.toContain('Input');
   });
+
+  // The OMC HUD paints its ctx element at contextWarning 70 / contextCritical
+  // 85 with `>=`, so the ring must flip exactly on the boundary value — the
+  // same percentage must never be amber in one surface and blue in the other.
+  it.each<[number, string]>([
+    [69_900, 'rgb(var(--primary-6))'],
+    [70_000, 'rgb(var(--warning-6))'],
+    [84_900, 'rgb(var(--warning-6))'],
+    [85_000, 'rgb(var(--danger-6))'],
+  ])('AC5: colors the ring with OMC-aligned thresholds (%i -> %s)', (total, stroke) => {
+    const { container } = render(
+      <ContextUsageIndicator tokenUsage={{ total_tokens: total }} context_limit={100_000} />
+    );
+
+    // [1] is the progress arc; [0] is the background track.
+    expect(container.querySelectorAll('circle')[1].getAttribute('stroke')).toBe(stroke);
+  });
 });
 
 describe('formatTokenCount', () => {

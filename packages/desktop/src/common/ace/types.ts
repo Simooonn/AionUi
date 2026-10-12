@@ -1,6 +1,6 @@
 /**
- * Types for the "import CLI sessions" fork feature.
- * Kept under common/ace so both process and renderer can share them.
+ * Cross-process shared types for the ace fork.
+ * Kept under common/ace so process, preload and renderer can share them.
  */
 
 export type CliSource = 'claude-code' | 'codex' | 'gemini' | 'opencode';
@@ -204,3 +204,22 @@ export type AceLarkNotifySaveConfig = {
   domain?: AceLarkNotifyDomain;
   summary_provider?: { id: string; use_model: string };
 };
+
+/**
+ * Params for the HUD statusline IPC (`ace:hud-statusline`).
+ *
+ * `contextLimit` is the context-window size aioncore reported for this
+ * session — the SAME value the sendbox tooltip uses (one renderer state,
+ * `messageState.context_limit`). The main process never guesses it from the
+ * model name: without it the HUD simply shows no ctx element.
+ */
+export type HudStatuslineParams = {
+  workspace: string;
+  conversationId?: string;
+  modelId?: string;
+  modelLabel?: string;
+  contextLimit?: number;
+};
+
+/** Rendered statusline text, or null when there is nothing to show. */
+export type HudStatuslineResult = { text: string } | null;

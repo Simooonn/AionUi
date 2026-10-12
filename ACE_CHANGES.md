@@ -415,3 +415,26 @@ Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没
 - 派生卡片显示期间 `lastMessageId` 指向它（与实时问答卡一致），前一条文本上的分叉入口会暂时隐藏。
 - 作答（重发）后该 AskUserQuestion 行在库里仍是 `work/running`；前端把“其后已有用户消息”的这类行视为已结清（`answeredAskRows.ts`），后端启动恢复也会在下次重启时把它结清，View Steps 不再常驻转圈。
 - 规格验收 C 点名的两个存量会话后面已有用户消息，按规则不再出卡（用户已确认改为夹具单测）。
+
+## 功能：上下文用量口径统一（HUD ctx% / tooltip）（2026-10-12）
+
+> 共识计划：`.omc/plans/context-usage-correction-consensus-plan.md`；规格：`.omc/specs/deep-interview-context-usage-correction.md`。
+
+发送框上的用量圆环和 sendbox 底部 OMC HUD 的 `ctx:` 段讲的是同一件事，口径却各自一套：HUD 的**分母**按模型 id 猜（文案里有 `[1m]` 才算 1M，否则一律 200K）、**分子**漏掉 output，拿不到本会话 transcript 时还会回放工作区 OMC 缓存里**另一个会话**的整行 HUD；圆环的阈值又是自己的 `>70` / `>90`。同一时刻两处能差出十几个百分点，甚至显示别人的用量。现在统一到 aioncore 的口径：
+
+- **分母**：HUD 不再按模型 id 猜窗口，改用 agent 上报、圆环已经在用的那个 `messageState.context_limit`（`AcpChat.tsx` → `HudStatusBar` → `ace:hud-statusline` IPC 的 `contextLimit` 入参）。窗口未知时 HUD 剥掉 `ctx:` 段，与圆环"窗口未知就不画百分比"一致。
+- **分子**：取 transcript 尾部最后一条主链 assistant 的 `input + cache_creation + cache_read + output` 四项之和（此前漏 output），与 aioncore 算 `used` 同式，并以 `used_percentage` 交给 OMC。
+- **不回放缓存**：没有会话身份（`conversationId` 缺失 / transcript 定位失败）时 IPC 直接返回 `null`、整条 HUD 不显示，不再退回 `.omc/state/hud-stdin-cache.json`——那份缓存属于最后一个活跃会话，会把别人的用量画在当前会话下。
+- **阈值**：圆环改为 `>=70` 警告、`>=85` 危险，对齐 OMC HUD 默认 `contextWarning 70` / `contextCritical 85`。两侧仍有半个百分点内的差异：OMC 比较 `Math.round` 后并 clamp 到 0–100 的值，圆环比较原始值且不 clamp（计划 0a 的知情默认）。
+- i18n：不涉及（没有新文案）。
+- 测试：`tests/unit/renderer/ContextUsageIndicator.dom.test.tsx` 新增 `AC5` 边界 `it.each`（`context_limit` 10 万，69_900 / 70_000 / 84_900 / 85_000 → primary / warning / warning / danger）。
+
+### 现有文件挂载点（均有 `// ace:` marker）
+
+| 文件                                                                         | 改动                                                         | 行                   |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------ | -------------------- |
+| `packages/desktop/src/renderer/components/agent/ContextUsageIndicator.tsx`   | 圆环阈值 `pct >= 70` 警告 / `pct >= 85` 危险（对齐 OMC HUD） | ~65-73               |
+| `packages/desktop/src/preload/main.ts`                                       | `hudStatusline` 入参增加 `contextLimit`                      | `electronAPI` 对象内 |
+| `packages/desktop/src/renderer/pages/conversation/platforms/acp/AcpChat.tsx` | 给 `HudStatusBar` 传 `messageState.context_limit`            | ~116                 |
+
+> HUD 功能本身（`process/ace/hudStatusline.ts`、`renderer/.../hudStatusBar/`）的新增文件尚未在本清单登记，属既有缺口，不在本次范围内。

@@ -1,12 +1,15 @@
 /**
  * ACP chat HUD statusline – E2E verification.
  *
- * Verifies the HUD status bar appears at the bottom of a normal ACP
- * conversation (no toggle needed) with content from the user's statusLine
- * command, and that the IPC chain works end-to-end. Skips gracefully on
+ * Case 1 only verifies the AC6b contract: with no conversation identity the
+ * `hudStatusline` IPC returns null and executes no statusLine command. The
+ * positive leg – actually running the command and showing its output in the
+ * status bar of a real conversation – is case 2, which sends a real message
+ * and is therefore disabled by default. Both cases skip gracefully on
  * machines without a configured statusLine command (e.g. CI).
  */
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { test, expect } from '../fixtures';
 import {
@@ -26,38 +29,57 @@ type HudApi = {
   };
 };
 
+/**
+ * Read the user's statusLine command the same way the main process does
+ * (`hudStatusline.ts`: `claudeConfigDir()` + `readStatuslineCommand()`), so
+ * the gate below and the code under test always read the same settings file —
+ * including on machines that set CLAUDE_CONFIG_DIR.
+ */
+function readConfiguredStatusLine(): string | null {
+  try {
+    const configDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
+    const raw = fs.readFileSync(path.join(configDir, 'settings.json'), 'utf8');
+    const settings = JSON.parse(raw) as { statusLine?: { type?: string; command?: string } };
+    const line = settings.statusLine;
+    if (line?.type === 'command' && typeof line.command === 'string' && line.command.trim()) {
+      return line.command;
+    }
+  } catch {
+    /* missing or unparsable settings → no statusline configured */
+  }
+  return null;
+}
+
 test.describe('ACP chat HUD statusline', () => {
   test.setTimeout(180_000);
 
-  test('hudStatusline IPC runs the statusLine command against this repo', async ({ page }) => {
+  test('hudStatusline IPC returns null without a conversation (AC6b)', async ({ page }) => {
     const projectRoot = path.resolve(__dirname, '../../..');
-    const cachePath = path.join(projectRoot, '.omc', 'state', 'hud-stdin-cache.json');
-    if (!fs.existsSync(cachePath)) {
-      test.skip(true, 'no OMC HUD cache in this checkout');
-      return;
-    }
-
-    const result = await page.evaluate(
-      async (ws) => (await (window as unknown as HudApi).electronAPI?.hudStatusline?.({ workspace: ws })) ?? null,
-      projectRoot
-    );
-
-    if (result === null) {
+    if (!readConfiguredStatusLine()) {
       test.skip(true, 'no statusLine command configured on this machine');
       return;
     }
-    expect(result.text.length).toBeGreaterThan(0);
+
+    const result = await page.evaluate(async (ws) => {
+      const api = (window as unknown as HudApi).electronAPI;
+      if (!api?.hudStatusline) return 'no-api';
+      try {
+        return (await api.hudStatusline({ workspace: ws })) ?? null;
+      } catch (e) {
+        return `threw:${String(e)}`;
+      }
+    }, projectRoot);
+
+    // A missing bridge ('no-api') or a throwing handler ('threw:…') must not be
+    // able to masquerade as the AC6b null, hence the distinguishable values.
+    expect(result).toBeNull();
   });
 
   test('status bar appears at the bottom of a normal claude conversation', async ({ page }) => {
     // Probe first: without a configured statusLine command the bar (correctly)
-    // never appears — skip instead of failing.
-    const projectRoot = path.resolve(__dirname, '../../..');
-    const probe = await page.evaluate(
-      async (ws) => (await (window as unknown as HudApi).electronAPI?.hudStatusline?.({ workspace: ws })) ?? null,
-      projectRoot
-    );
-    if (probe === null) {
+    // never appears — skip instead of failing. Gate on the settings file, not
+    // on an IPC call, because a call without a conversation is always null now.
+    if (!readConfiguredStatusLine()) {
       test.skip(true, 'no statusLine data available on this machine');
       return;
     }

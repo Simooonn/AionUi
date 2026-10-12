@@ -1,6 +1,9 @@
 import { cleanup, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useSendBoxSubmitListener } from '@/renderer/ace/askRecovery/useSendBoxSubmitListener';
+// ace:start conversation-aware SendBox registry
+import { hasSendBoxFor, resetSendBoxRegistry } from '@/renderer/ace/askRecovery/useSendBoxSubmitListener';
+// ace:end
 import { emitter } from '@/renderer/utils/emitter';
 
 const makeProps = () => ({
@@ -21,7 +24,12 @@ const makeRequest = (conversation_id = 'active') => ({
   reject: vi.fn(),
 });
 
-afterEach(cleanup);
+// ace:start reset mounted SendBoxes after hook cleanup
+afterEach(() => {
+  cleanup();
+  resetSendBoxRegistry();
+});
+// ace:end
 
 describe('programmatic SendBox submission', () => {
   it('acknowledges receipt but blocks a busy agent without mid-turn delivery', () => {
@@ -134,3 +142,32 @@ describe('programmatic SendBox submission', () => {
     expect(props.executeCommand).not.toHaveBeenCalled();
   });
 });
+
+// ace:start conversation-aware SendBox availability
+describe('mounted SendBox registry', () => {
+  it('only reports the mounted conversation and clears it on unmount', () => {
+    const { unmount } = renderHook(() => useSendBoxSubmitListener(makeProps()));
+    expect(hasSendBoxFor('active')).toBe(true);
+    expect(hasSendBoxFor('other')).toBe(false);
+    unmount();
+    expect(hasSendBoxFor('active')).toBe(false);
+  });
+
+  it('keeps a conversation available until its last mount is removed', () => {
+    const first = renderHook(() => useSendBoxSubmitListener(makeProps()));
+    const second = renderHook(() => useSendBoxSubmitListener(makeProps()));
+    expect(hasSendBoxFor('active')).toBe(true);
+    first.unmount();
+    expect(hasSendBoxFor('active')).toBe(true);
+    second.unmount();
+    expect(hasSendBoxFor('active')).toBe(false);
+  });
+
+  it('moves registration when the conversation changes', () => {
+    const { rerender } = renderHook(useSendBoxSubmitListener, { initialProps: makeProps() });
+    rerender({ ...makeProps(), conversation_id: 'other' });
+    expect(hasSendBoxFor('active')).toBe(false);
+    expect(hasSendBoxFor('other')).toBe(true);
+  });
+});
+// ace:end

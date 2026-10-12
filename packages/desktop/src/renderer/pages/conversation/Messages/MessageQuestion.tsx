@@ -5,6 +5,7 @@
  */
 
 // ace:start ask answer recovery (submit strategy replaces the direct answerAsk call)
+import { clearAskFailure, rememberAskFailure, takeAskFailure } from '@/renderer/ace/askRecovery/askFailureMemo';
 import {
   ASK_ANSWER_FAILED_ERROR,
   submitAskAnswer,
@@ -60,11 +61,32 @@ const MessageQuestion: React.FC<MessageQuestionProps> = React.memo(({ message })
   // ace:start ask answer recovery state ('resent' = the answer went out as a chat message)
   const [submitted, setSubmitted] = useState<'answered' | 'declined' | 'resent' | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [failure, setFailure] = useState<string | null>(null);
+  // A card re-derived after a failed resend picks up the failure AND the payload
+  // it failed with, so the error row shows at once and Retry / Send-as-message
+  // can re-run it (the memo entry is consumed on mount).
+  const [restored] = useState(() => takeAskFailure(content.request_id || message.id));
+  const [failure, setFailure] = useState<string | null>(restored?.message ?? null);
   const [lastAttempt, setLastAttempt] = useState<{
     input: SubmitAskAnswerInput;
     outcome: 'answered' | 'declined';
-  } | null>(null);
+  } | null>(restored?.attempt ?? null);
+  React.useEffect(() => {
+    // Show the answers the failed attempt carried, so the restored card does not
+    // look blank next to its own error row.
+    const answers = restored?.attempt.input.answers;
+    if (!answers) return;
+    setDrafts(
+      questions.map((q) => {
+        const answer = answers.find((a) => a.question === q.question);
+        if (!answer) return emptyDraft();
+        const known = new Set(q.options.map((o) => o.label));
+        const other = answer.labels.find((label) => !known.has(label)) ?? '';
+        return { labels: answer.labels.filter((label) => known.has(label)), other, otherSelected: other.length > 0 };
+      })
+    );
+    // Mount-only: `restored` is fixed for the card's lifetime.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // ace:end
 
   const updateDraft = useCallback((index: number, patch: Partial<Draft>) => {
@@ -83,18 +105,22 @@ const MessageQuestion: React.FC<MessageQuestionProps> = React.memo(({ message })
       setLastAttempt({ input, outcome });
       setSubmitting(true);
       setFailure(null);
+      clearAskFailure(requestId);
       try {
         const result = await submitAskAnswer(input);
+        clearAskFailure(requestId);
         setSubmitted(result.via === 'message' ? 'resent' : outcome);
       } catch (error) {
         const reason = error instanceof Error ? error.message : String(error);
         const alreadyWrapped = error instanceof Error && error.name === ASK_ANSWER_FAILED_ERROR;
-        setFailure(alreadyWrapped ? reason : t('messages.askAnswerFailed', { reason }));
+        const failureMessage = alreadyWrapped ? reason : t('messages.askAnswerFailed', { reason });
+        rememberAskFailure(requestId, failureMessage, { input, outcome });
+        setFailure(failureMessage);
       } finally {
         setSubmitting(false);
       }
     },
-    [t]
+    [requestId, t]
   );
 
   const handleSubmit = useCallback(async () => {

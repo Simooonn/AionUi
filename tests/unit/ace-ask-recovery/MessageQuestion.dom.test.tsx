@@ -1,4 +1,7 @@
 import React from 'react';
+// ace:start failure memo across card remounts
+import { rememberAskFailure, resetAskFailureMemo, takeAskFailure } from '@/renderer/ace/askRecovery/askFailureMemo';
+// ace:end
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IMessageAsk } from '@/common/chat/chatLib';
@@ -50,6 +53,15 @@ const DECLINE_PAYLOAD: SubmitAskAnswerInput = {
   source: undefined,
 };
 
+const HISTORY_ANSWER_PAYLOAD: SubmitAskAnswerInput = {
+  conversation_id: 'conv-1',
+  request_id: 'req-1',
+  questions: QUESTIONS,
+  answers: [{ question: 'Pick one?', labels: ['B'] }],
+  source: 'history',
+};
+const REMEMBERED_ATTEMPT = { input: HISTORY_ANSWER_PAYLOAD, outcome: 'answered' as const };
+
 const deferred = () => {
   let resolve!: (value: SubmitAskAnswerResult) => void;
   const promise = new Promise<SubmitAskAnswerResult>((res) => {
@@ -60,6 +72,9 @@ const deferred = () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // ace:start isolate remembered card failures
+  resetAskFailureMemo();
+  // ace:end
   mocks.submitAskAnswer.mockResolvedValue({ via: 'ask' });
 });
 
@@ -181,3 +196,102 @@ describe('MessageQuestion submit recovery', () => {
     expect(screen.queryByTestId('message-question-stale-hint')).not.toBeInTheDocument();
   });
 });
+
+// ace:start failure memo across card remounts
+describe('MessageQuestion remembered failures', () => {
+  it('restores the error and recovery actions immediately for a history card', () => {
+    rememberAskFailure('req-1', 'Previous send failed', REMEMBERED_ATTEMPT);
+    render(<MessageQuestion message={makeMessage('history')} />);
+
+    expect(screen.getByTestId('message-question-error')).toHaveTextContent('Previous send failed');
+    expect(screen.getByTestId('message-question-retry')).toBeInTheDocument();
+    expect(screen.getByTestId('message-question-resend')).toBeInTheDocument();
+  });
+
+  it('consumes a remembered failure so the next mount starts clean', () => {
+    rememberAskFailure('req-1', 'Previous send failed', REMEMBERED_ATTEMPT);
+    const first = render(<MessageQuestion message={makeMessage('history')} />);
+    first.unmount();
+    render(<MessageQuestion message={makeMessage('history')} />);
+
+    expect(screen.queryByTestId('message-question-error')).not.toBeInTheDocument();
+    expect(takeAskFailure('req-1')).toBeNull();
+  });
+
+  it('clears a remembered failure when submission starts', async () => {
+    const pending = deferred();
+    mocks.submitAskAnswer.mockReturnValue(pending.promise);
+    render(<MessageQuestion message={makeMessage('history')} />);
+    rememberAskFailure('req-1', 'Previous send failed', REMEMBERED_ATTEMPT);
+    fireEvent.click(screen.getByTestId('message-question-decline'));
+
+    expect(takeAskFailure('req-1')).toBeNull();
+    await act(async () => {
+      pending.resolve({ via: 'message' });
+      await pending.promise;
+    });
+  });
+
+  it('clears a remembered failure when submission succeeds', async () => {
+    const pending = deferred();
+    mocks.submitAskAnswer.mockReturnValue(pending.promise);
+    render(<MessageQuestion message={makeMessage('history')} />);
+    fireEvent.click(screen.getByTestId('message-question-decline'));
+    rememberAskFailure('req-1', 'Previous send failed', REMEMBERED_ATTEMPT);
+
+    await act(async () => {
+      pending.resolve({ via: 'message' });
+      await pending.promise;
+    });
+
+    expect(screen.getByTestId('message-question-status')).toHaveTextContent('messages.askResent');
+    expect(takeAskFailure('req-1')).toBeNull();
+  });
+
+  it('restores a submission failure that settled after the card unmounted', async () => {
+    let reject!: (error: Error) => void;
+    const pending = new Promise<SubmitAskAnswerResult>((_resolve, rejectPromise) => {
+      reject = rejectPromise;
+    });
+    mocks.submitAskAnswer.mockReturnValue(pending);
+    const first = render(<MessageQuestion message={makeMessage('history')} />);
+    fireEvent.click(screen.getByTestId('message-question-decline'));
+    first.unmount();
+
+    await act(async () => {
+      reject(new Error('Send failed after unmount'));
+      await pending.catch(() => undefined);
+    });
+    render(<MessageQuestion message={makeMessage('history')} />);
+
+    expect(screen.getByTestId('message-question-error')).toHaveTextContent('Send failed after unmount');
+    expect(screen.getByTestId('message-question-retry')).toBeInTheDocument();
+    expect(screen.getByTestId('message-question-resend')).toBeInTheDocument();
+  });
+
+  it('retry on a restored card re-runs the remembered payload and shows the restored selection', async () => {
+    rememberAskFailure('req-1', 'Previous send failed', REMEMBERED_ATTEMPT);
+    mocks.submitAskAnswer.mockResolvedValueOnce({ via: 'message' });
+    render(<MessageQuestion message={makeMessage('history')} />);
+
+    // The testid sits on the Arco Radio wrapper; the native input inside carries the checked state.
+    expect(screen.getByTestId('message-question-option-0-B').querySelector('input')).toBeChecked();
+    fireEvent.click(screen.getByTestId('message-question-retry'));
+
+    expect(await screen.findByTestId('message-question-status')).toHaveTextContent('messages.askResent');
+    expect(mocks.submitAskAnswer).toHaveBeenCalledTimes(1);
+    expect(mocks.submitAskAnswer).toHaveBeenCalledWith(HISTORY_ANSWER_PAYLOAD);
+  });
+
+  it('send-as-message on a restored card forces the remembered payload through the chat channel', async () => {
+    rememberAskFailure('req-1', 'Previous send failed', REMEMBERED_ATTEMPT);
+    mocks.submitAskAnswer.mockResolvedValueOnce({ via: 'message' });
+    render(<MessageQuestion message={makeMessage('history')} />);
+
+    fireEvent.click(screen.getByTestId('message-question-resend'));
+
+    expect(await screen.findByTestId('message-question-status')).toHaveTextContent('messages.askResent');
+    expect(mocks.submitAskAnswer).toHaveBeenCalledWith({ ...HISTORY_ANSWER_PAYLOAD, force: 'message' });
+  });
+});
+// ace:end

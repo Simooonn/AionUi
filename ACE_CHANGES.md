@@ -387,9 +387,10 @@ Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没
 
 ### 新增文件（纯新增，`renderer/ace/askRecovery/`）
 
-- `useSendBoxSubmitListener.ts`：监听 `emitter` 的 `sendbox.submit`，按会话过滤，收到即 `ack()`，沿用 `onSendHandler` 的忙碌闸门（`!supportsMidturnDelivery && isBusy` → reject），经 `executeCommand` 走既有发送管线（含 `ensureCliResumeBeforeSend`、`markSend*`、team 路由）。
+- `useSendBoxSubmitListener.ts`：挂载时按会话登记（`hasSendBoxFor` / `registerSendBox`，替代全局 `listenerCount`），监听 `emitter` 的 `sendbox.submit`，按会话过滤，收到即 `ack()`，沿用 `onSendHandler` 的忙碌闸门（`!supportsMidturnDelivery && isBusy` → reject），经 `executeCommand` 走既有发送管线（含 `ensureCliResumeBeforeSend`、`markSend*`、team 路由）。
 - `answerClock.ts`：`markAnswered` / `getLastAnsweredAt` / `onAnswered` / `resetAnswerClock`，记录每个会话最近一次成功作答时刻。
-- `submitAskAnswer.ts`：提交策略——实时卡先 `answerAsk`；失败或历史卡则 `confirmation.list` 按题干文本匹配再 `answerAsk`；仍未命中时，**只有存在失败的 `answerAsk` 尝试**（答案可能已送达、仅响应丢失）才只读 `conversation.get` 的 `runtime.has_task`（**不得用 `ensureRuntime` 探活**），`true` 报错交给用户选「重试／作为消息发送」，`false` 才重发；历史卡没有过尝试（答案不可能已送达，且重开会话时 `runtime/ensure` 已拉起新进程令 `has_task` 恒为 true）则直接经 `sendbox.submit` 以普通消息重发（`listenerCount` 为 0 直接报错；10 秒只等 `ack`）；`force: 'message'` 跳过以上判断；重发文案全部走 i18n（`buildResendMessage`）。
+- `askFailureMemo.ts`：派生卡片重发失败时记住错误文案和失败的提交载荷；卡片因发送管线置忙而卸载、再派生时立即恢复错误行、两个按钮和已选答案，重试可直接重跑。
+- `submitAskAnswer.ts`：提交策略——实时卡先 `answerAsk`；失败或历史卡则 `confirmation.list` 按题干文本匹配再 `answerAsk`；仍未命中时，**只有存在失败的 `answerAsk` 尝试**（答案可能已送达、仅响应丢失）才只读 `conversation.get` 的 `runtime.has_task`（**不得用 `ensureRuntime` 探活**），`true` 报错交给用户选「重试／作为消息发送」，`false` 才重发；历史卡没有过尝试（答案不可能已送达，且重开会话时 `runtime/ensure` 已拉起新进程令 `has_task` 恒为 true）则直接经 `sendbox.submit` 以普通消息重发（目标会话没有登记的发送框时直接报错；10 秒只等 `ack`）；`force: 'message'` 跳过以上判断；重发文案全部走 i18n（`buildResendMessage`）。
 - `answeredAskRows.ts`：纯函数，`collectAnsweredAskRowIds` 找出“仍标记 running 但其后已有用户消息”的 AskUserQuestion 行，`settleAnsweredAskRow` 生成展示用的已完成副本（不改 store），让 View Steps 不再因这类行常驻转圈。
 - `deriveStaleAsk.ts`：纯函数，从历史里尾部未答的 `tool_call{name:'AskUserQuestion', status:'work', content.status:'running'}` 派生 `type:'ask', source:'history'` 卡片；守卫 `hydrated / !isProcessing / !hideSendBox / type==='acp'`、作答后 5 秒窗口、其后无 `position:'right'`、无 `created_at>=q` 的 ask、无同 id 终态 `acp_tool_call`。
 - 测试 `tests/unit/ace-ask-recovery/`：`AcpSendBoxSubmitEvent.dom.test.tsx`（7）、`submitAskAnswer.test.ts`（15）、`MessageQuestion.dom.test.tsx`（9）、`deriveStaleAsk.test.ts`（33，含 1e57be0e / 4ed3b3ce 真实行夹具与 N1 回归）、`MessageListStaleAsk.dom.test.tsx`（5，经真实消息 store）。

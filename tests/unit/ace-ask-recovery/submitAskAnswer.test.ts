@@ -8,6 +8,9 @@ import {
   submitAskAnswer,
   type AskAnswer,
 } from '@/renderer/ace/askRecovery/submitAskAnswer';
+// ace:start conversation-aware SendBox registry
+import { registerSendBox, resetSendBoxRegistry } from '@/renderer/ace/askRecovery/useSendBoxSubmitListener';
+// ace:end
 import { emitter } from '@/renderer/utils/emitter';
 
 const mocks = vi.hoisted(() => ({
@@ -65,6 +68,9 @@ const pendingAsk = (call_id: string, questions: IAskQuestion[]): IConfirmation<u
 
 /** Register a SendBox stand-in; `behave` decides how (and whether) it settles. */
 const listenSendBox = (behave: (request: SendBoxSubmit) => void): SendBoxSubmit[] => {
+  // ace:start register the stand-in for the target conversation
+  registerSendBox('conv-1');
+  // ace:end
   const received: SendBoxSubmit[] = [];
   emitter.on('sendbox.submit', (request) => {
     received.push(request);
@@ -81,6 +87,9 @@ const ackAndResolve = (request: SendBoxSubmit) => {
 beforeEach(() => {
   vi.clearAllMocks();
   resetAnswerClock();
+  // ace:start isolate the mounted SendBox registry
+  resetSendBoxRegistry();
+  // ace:end
   mocks.answerAsk.mockResolvedValue(undefined);
   mocks.confirmationList.mockResolvedValue([]);
   mocks.getConversation.mockResolvedValue({ id: 'conv-1', runtime: { has_task: false } });
@@ -206,11 +215,28 @@ describe('submitAskAnswer — resend as message', () => {
     expect(received).toHaveLength(1);
   });
 
-  it('rejects with askResendBlocked when no SendBox is listening', async () => {
+  // ace:start require a SendBox registered for the target conversation
+  it('rejects with askResendBlocked when no SendBox is registered', async () => {
+    const received = vi.fn();
+    emitter.on('sendbox.submit', received);
+
     await expect(submitAskAnswer({ ...BASE, force: 'message' })).rejects.toThrow('messages.askResendBlocked');
 
+    expect(received).not.toHaveBeenCalled();
     expect(getLastAnsweredAt('conv-1')).toBeNull();
   });
+
+  it('rejects without emitting when only a different conversation has a SendBox', async () => {
+    registerSendBox('conv-other');
+    const received = vi.fn();
+    emitter.on('sendbox.submit', received);
+
+    await expect(submitAskAnswer({ ...BASE, force: 'message' })).rejects.toThrow('messages.askResendBlocked');
+
+    expect(received).not.toHaveBeenCalled();
+    expect(getLastAnsweredAt('conv-1')).toBeNull();
+  });
+  // ace:end
 
   it('propagates a SendBox rejection without recording an answer', async () => {
     listenSendBox((request) => {

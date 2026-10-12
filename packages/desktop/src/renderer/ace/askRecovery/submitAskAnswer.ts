@@ -8,7 +8,7 @@
  *     can change when the ask is re-raised);
  *  3. probe liveness read-only (never spawns a process) — a live process means
  *     the answer may have landed, so surface the error instead of resending;
- *  4. resend the answer as a normal chat message through the active SendBox.
+ *  4. resend the answer as a normal chat message through the target conversation's mounted SendBox.
  */
 
 import i18next from 'i18next';
@@ -16,6 +16,7 @@ import { conversation } from '@/common/adapter/ipcBridge';
 import type { IAskQuestion, IConfirmation } from '@/common/chat/chatLib';
 import { emitter } from '@/renderer/utils/emitter';
 import { markAnswered } from './answerClock';
+import { hasSendBoxFor } from './useSendBoxSubmitListener';
 
 export type AskAnswer = { question: string; labels: string[] };
 
@@ -78,7 +79,8 @@ async function hasLiveTask(conversation_id: string): Promise<boolean> {
 }
 
 function resendViaSendBox(conversation_id: string, input: string): Promise<void> {
-  if (emitter.listenerCount('sendbox.submit') === 0) {
+  // A listener for another conversation cannot acknowledge this send.
+  if (!hasSendBoxFor(conversation_id)) {
     return Promise.reject(new Error(i18next.t('messages.askResendBlocked')));
   }
   return new Promise<void>((resolve, reject) => {

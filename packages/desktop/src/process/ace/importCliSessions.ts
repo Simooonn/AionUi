@@ -15,11 +15,14 @@
  *    conversations (the list endpoint happened to return 500 at that moment).
  *  - `extra.backend` ('claude'|'codex') drives the sidebar icon; the presence of
  *    `cli_session_id` marks the conversation read-only in the renderer.
+ *  - Sessions whose ORIGINAL cwd lies in an AionUi-internal dir (`.aionui*`
+ *    segment, or the resolved `Library/Application Support/AionUi*` form) are
+ *    dropped before scan and import.
  */
 
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { join, posix } from 'node:path';
 import { ipcBridge } from '@/common';
 import type {
   CliSessionMeta,
@@ -168,8 +171,44 @@ function buildCreateParams(meta: CliSessionMeta): CreateParams {
   return { type: 'acp', name: meta.title, extra } as unknown as CreateParams;
 }
 
+// AionUi-internal workspaces must never be imported: the app's own ACP transcripts
+// and the shared live-verification workspace (~/.aionui/live-verify) live there.
+// claudeParser drops such project dirs by name marker; this is the backend-agnostic
+// twin applied to the ORIGINAL cwd of every parsed session (codex / gemini /
+// opencode carry no marker). Two path forms exist on macOS because `~/.aionui` is
+// a symlink created by getDataPath (process/utils/utils.ts):
+//   logical   …/.aionui*/…                              (as passed, e.g. codex)
+//   resolved  …/Library/Application Support/AionUi*/…  (realpath, e.g. claude/opencode)
+const AIONUI_DOT_DIR_PREFIX = '.aionui';
+const AIONUI_APP_SUPPORT_PARENTS = ['Library', 'Application Support'] as const;
+const AIONUI_APP_SUPPORT_PREFIX = 'AionUi';
+
+/** True when the original CLI cwd lies in an AionUi-internal dir, in either path form. */
+export function isAionUiInternalWorkspace(workspace: string | undefined): boolean {
+  if (!workspace) return false;
+  // Pure: normalise separators and `..` without touching the filesystem.
+  const segments = posix.normalize(workspace.replace(/\\/g, '/')).split('/').filter(Boolean);
+  return segments.some(
+    (segment, i) =>
+      segment.startsWith(AIONUI_DOT_DIR_PREFIX) ||
+      (segment === AIONUI_APP_SUPPORT_PARENTS[0] &&
+        segments[i + 1] === AIONUI_APP_SUPPORT_PARENTS[1] &&
+        (segments[i + 2]?.startsWith(AIONUI_APP_SUPPORT_PREFIX) ?? false))
+  );
+}
+
+/** Drop sessions whose original cwd is AionUi-internal; pure, shared by scan and import. */
+export function filterImportableSessions(metas: readonly CliSessionMeta[]): CliSessionMeta[] {
+  return metas.filter((meta) => !isAionUiInternalWorkspace(meta.workspace));
+}
+
 function parseAllCliSessions(): CliSessionMeta[] {
-  return [...parseClaudeCodeSessions(), ...parseCodexSessions(), ...parseGeminiSessions(), ...parseOpencodeSessions()];
+  return filterImportableSessions([
+    ...parseClaudeCodeSessions(),
+    ...parseCodexSessions(),
+    ...parseGeminiSessions(),
+    ...parseOpencodeSessions(),
+  ]);
 }
 
 /**

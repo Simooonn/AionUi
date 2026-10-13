@@ -72,6 +72,12 @@ bun run test              # run all tests
 bun run test:coverage     # with coverage report
 ```
 
+<!-- ace:start live-verify -->
+
+Live checks against a running app must use the shared workspace `~/.aionui/live-verify/` — never a per-scenario temp dir. See the `testing` skill.
+
+<!-- ace:end live-verify -->
+
 See the `testing` skill (`.claude/skills/testing/SKILL.md`) for complete workflow and quality rules.
 
 ## Workflow

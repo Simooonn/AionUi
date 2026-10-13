@@ -41,6 +41,38 @@ tests/
 | `node` (default) | Main process, utilities, services | `*.test.ts`     |
 | `jsdom`          | DOM/browser-dependent code        | `*.dom.test.ts` |
 
+<!-- ace:start live-verify -->
+
+## Live Verification Workspace
+
+When a check needs a real conversation (dev app, aioncore HTTP API, CDP), create it
+in the single shared workspace `~/.aionui/live-verify/`. Never `mkdtemp` a
+per-scenario directory, and never create verification conversations in the
+installed production app.
+
+- One cwd for every scenario. Distinguish scenarios by unique file names
+  (`hello-parity.txt`), not sub-directories — a sub-directory is a new workspace,
+  which becomes a new sidebar project once imported.
+- On macOS the installed app creates `~/.aionui` as a symlink into
+  `~/Library/Application Support/AionUi/aionui` (`ensureCliSafeSymlink`,
+  `packages/desktop/src/process/utils/utils.ts`). If `~/.aionui` already exists
+  (normally that symlink), `mkdir -p ~/.aionui/live-verify`. If it is missing
+  (dev-only machine), do NOT create a real directory there — the app would then
+  never create its symlink; create the same link the app would:
+  `mkdir -p "$HOME/Library/Application Support/AionUi/aionui" && ln -s "$HOME/Library/Application Support/AionUi/aionui" ~/.aionui`.
+  On Linux/Windows the app creates no such symlink; a plain `mkdir -p` is fine.
+- Why: every distinct cwd becomes its own CLI project dir and, after
+  "Import CLI sessions", its own sidebar project. On 2026-10-13, 26 `$TMPDIR/live-*`
+  runs turned into 26 fake projects.
+- The importer drops any session whose original cwd is AionUi-internal in either
+  path form (`.aionui*` segment, or `Library/Application Support/AionUi*`) —
+  `isAionUiInternalWorkspace` in `packages/desktop/src/process/ace/importCliSessions.ts` —
+  so sessions in this workspace never reach the sidebar.
+- Sandboxed runs with a fake `HOME` are exempt (nothing lands in the real
+  `~/.claude/projects`).
+
+<!-- ace:end live-verify -->
+
 ## Workflow
 
 ### Step 1: Identify What to Test

@@ -438,3 +438,32 @@ Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没
 | `packages/desktop/src/renderer/pages/conversation/platforms/acp/AcpChat.tsx` | 给 `HudStatusBar` 传 `messageState.context_limit`            | ~116                 |
 
 > HUD 功能本身（`process/ace/hudStatusline.ts`、`renderer/.../hudStatusBar/`）的新增文件尚未在本清单登记，属既有缺口，不在本次范围内。
+
+## 侧栏项目内会话分页 + 项目批量展开/收起（2026-10-13）
+
+> 计划正本：`计划/AionUi/侧栏项目内会话分页计划/侧栏项目内会话分页计划.md`（评审态草案 `.omc/plans/sidebar-project-conversation-paging-consensus-plan.md`）；规格：`.omc/specs/deep-interview-sidebar-project-conversation-paging.md`。
+
+"项目"与"置顶项目"分区里，每个项目文件夹展开后只渲染活跃时间降序的前 5 条会话，底部一行"更多（还有 N 条）"每点一次再显示 5 条，N 为 0 时消失；收起再展开回到 5 条。搜索弹层打开第 6 条以后的会话时，先把该项目的已加载条数推进到覆盖它（取 5 的整数倍）再滚动定位；Ctrl+Tab 的可见会话列表走同一份切片，不会跳到未渲染的行。"项目"分区标题行右侧、刷新按钮左边新增"展开全部项目 / 收起全部项目"两枚图标按钮，作用于全部项目（含置顶），分区自身被折叠时点"展开全部"也会重新打开分区。重启后所有项目默认收起：删除了首次自动全展开（#1156）和 `aionui_workspace_expansion` 的 localStorage 读写，展开状态与已加载条数只在本次运行内有效。
+
+### 现有文件挂载点
+
+| 文件                                                                                            | 改动                                                                                                                                                                                                                 | 备注                       |
+| ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `packages/desktop/src/renderer/pages/conversation/GroupedHistory/index.tsx`                     | `renderProjectGroup` 按 `loadedCounts` 切片（窄侧栏不切）+ 底部"更多"行（`role='button'`，`onPointerDown` 阻断置顶项目的拖拽 listeners）+ "项目"分区标题的两枚批量按钮；徽标与批量全选仍收全量 `group.conversations` | `// ace:` marker           |
+| `packages/desktop/src/renderer/pages/conversation/GroupedHistory/hooks/useConversations.ts`     | 新增 `loadedCounts` state 与 `handleShowMoreConversations` / `handleExpandAllProjects` / `handleCollapseAllProjects`；reveal effect 同批推进条数并同时重开 `projects` + `pinned-projects` 分区；删自动全展开与持久化 | 整体改写，无 marker        |
+| `packages/desktop/src/renderer/pages/conversation/GroupedHistory/hooks/useWorkspaceExpansionState.ts` | 改为模块级 `WorkspaceViewSnapshot` store + `useSyncExternalStore`；不再读写 localStorage                                                                                                                       | 整体改写，无 marker        |
+| `packages/desktop/src/renderer/pages/conversation/GroupedHistory/hooks/useVisibleConversationIds.ts` | 透传 `loadedCounts` 给 `buildVisibleConversationIds`                                                                                                                                                             |                            |
+| `packages/desktop/src/renderer/pages/conversation/GroupedHistory/utils/visibleConversationOrder.ts` | 分页原语 `PROJECT_PAGE_SIZE` / `getProjectLoadedCount` / `sliceLoadedConversations` / `loadedCountCovering`；`buildVisibleConversationIds` 按已加载条数截断                                                       |                            |
+| `packages/desktop/src/renderer/services/i18n/locales/*/conversation.json`                       | `conversation.history.{showMore,expandAllProjects,collapseAllProjects}`（13 语言）                                                                                                                                 | JSON 无 marker             |
+
+### 新增文件（纯新增）
+
+`tests/unit/conversation/sidebar/`：`visibleConversationOrder.test.ts`（node，分页原语与可见 id 截断）、`useConversationsProjectPaging.dom.test.tsx`（hook：默认/+5/收起重置、reveal 推进、快照通道、冷启动全收起、批量展开收起）、`groupedHistoryProjectPaging.dom.test.tsx`（组件：更多行、批量按钮、徽标/全选不受切片影响、更多行 pointerdown 不触发拖拽）。源码侧零新增文件（`GroupedHistory/` 已满 10 个子项）。
+
+### 已知边界（有意为之）
+
+- "展开全部"会把已展开到 10/15 条的项目缩回 5 条（规格 AC6 字面要求，DOM 用例钉死）。
+- 全部项目都置顶时"项目"分区标题不渲染，两枚批量按钮随之消失。
+- 打开普通项目的会话也会展开被折叠的"置顶项目"分区（hook 拿不到置顶名单，无法区分）。
+- 窄侧栏全量显示；切回宽侧栏时按 `loadedCounts` 收回。
+- 老用户 localStorage 里残留的 `aionui_workspace_expansion` 无人读写，不做清理。

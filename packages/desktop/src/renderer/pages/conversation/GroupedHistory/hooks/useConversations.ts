@@ -9,11 +9,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useConversationHistoryContext } from '@/renderer/hooks/context/ConversationHistoryContext';
 import type { TimelineSection } from '../types';
-import {
-  dispatchWorkspaceExpansionChange,
-  readExpandedWorkspaces,
-  WORKSPACE_EXPANSION_STORAGE_KEY,
-} from './useWorkspaceExpansionState';
+import { getProjectLoadedCount, loadedCountCovering, PROJECT_PAGE_SIZE } from '../utils/visibleConversationOrder';
+import { dispatchWorkspaceExpansionChange } from './useWorkspaceExpansionState';
 
 // Persist section collapsed state across reloads.
 const COLLAPSED_SECTIONS_KEY = 'grouped-history-collapsed-sections';
@@ -31,7 +28,12 @@ const readCollapsedSections = (): Set<string> => {
 
 // Where an active conversation lives, so we can expand the right containers
 // before scrolling it into view.
-type ConversationLocation = { section: 'pinned' | 'projects' | 'conversations'; workspace?: string };
+type ConversationLocation = {
+  section: 'pinned' | 'projects' | 'conversations';
+  workspace?: string;
+  /** Position inside the workspace group, in the group's activity order. */
+  indexInWorkspace?: number;
+};
 
 const locateConversation = (
   id: string,
@@ -42,8 +44,9 @@ const locateConversation = (
   for (const section of sections) {
     for (const item of section.items) {
       if (item.type === 'workspace' && item.workspaceGroup) {
-        if (item.workspaceGroup.conversations.some((c) => c.id === id)) {
-          return { section: 'projects', workspace: item.workspaceGroup.workspace };
+        const indexInWorkspace = item.workspaceGroup.conversations.findIndex((c) => c.id === id);
+        if (indexInWorkspace >= 0) {
+          return { section: 'projects', workspace: item.workspaceGroup.workspace, indexInWorkspace };
         }
       } else if (item.type === 'conversation' && item.conversation?.id === id) {
         return { section: 'conversations' };
@@ -53,8 +56,27 @@ const locateConversation = (
   return null;
 };
 
+/** Every project workspace in the grouped history, in section order. */
+const listWorkspaces = (sections: TimelineSection[]): string[] =>
+  sections.flatMap((section) =>
+    section.items.flatMap((item) =>
+      item.type === 'workspace' && item.workspaceGroup ? [item.workspaceGroup.workspace] : []
+    )
+  );
+
+/** `prev` without `keys`; returns `prev` itself when nothing changes so React bails out. */
+const withoutSections = (prev: Set<string>, keys: string[]): Set<string> => {
+  if (!keys.some((key) => prev.has(key))) return prev;
+  const next = new Set(prev);
+  keys.forEach((key) => next.delete(key));
+  return next;
+};
+
 export const useConversations = () => {
-  const [expandedWorkspaces, setExpandedWorkspaces] = useState<string[]>(() => readExpandedWorkspaces());
+  // Projects start collapsed on every launch and each one at the default page
+  // size — neither is persisted (spec AC7).
+  const [expandedWorkspaces, setExpandedWorkspaces] = useState<string[]>([]);
+  const [loadedCounts, setLoadedCounts] = useState<Record<string, number>>({});
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => readCollapsedSections());
   const { id } = useParams();
   const {
@@ -73,10 +95,7 @@ export const useConversations = () => {
 
   const { pinnedConversations, timelineSections } = groupedHistory;
 
-  // Track whether auto-expand has already been performed to avoid
-  // re-expanding workspaces after a user manually collapses them (#1156)
-  const hasAutoExpandedRef = useRef(false);
-  // Guard so the auto-expand + scroll for a given active id runs only once.
+  // Guard so the reveal + scroll for a given active id runs only once.
   // Reset when the active id changes so navigating back to a conversation
   // re-triggers, but manual collapses afterwards are not fought.
   const revealedIdRef = useRef<string | null>(null);
@@ -113,17 +132,25 @@ export const useConversations = () => {
     if (!location) return; // data not loaded yet; effect re-runs when it arrives
     revealedIdRef.current = id;
 
-    // Expand the containing section if collapsed.
-    setCollapsedSections((prev) => {
-      if (!prev.has(location.section)) return prev;
-      const next = new Set(prev);
-      next.delete(location.section);
-      return next;
-    });
-    // Expand the containing project folder if collapsed.
+    // Expand the containing section if collapsed. `locateConversation` reports
+    // every workspace conversation as 'projects', but a pinned project renders
+    // under the 'pinned-projects' section and this hook cannot tell the two
+    // apart, so both keys are reopened.
+    setCollapsedSections((prev) =>
+      withoutSections(prev, location.section === 'projects' ? ['projects', 'pinned-projects'] : [location.section])
+    );
+    // Expand the containing project folder if collapsed, and reveal enough
+    // pages to include the target row.
     if (location.workspace) {
       const workspace = location.workspace;
       setExpandedWorkspaces((prev) => (prev.includes(workspace) ? prev : [...prev, workspace]));
+      const targetIndex = location.indexInWorkspace ?? 0;
+      setLoadedCounts((prev) => {
+        // Monotonic: a later, shorter list must not shrink what is revealed.
+        const needed = loadedCountCovering(targetIndex);
+        const current = getProjectLoadedCount(prev, workspace);
+        return needed <= current ? prev : { ...prev, [workspace]: needed };
+      });
     }
 
     let cancelled = false;
@@ -145,16 +172,10 @@ export const useConversations = () => {
     };
   }, [clearCompletionUnread, clearManualUnread, id, setActiveConversation, pinnedConversations, timelineSections]);
 
-  // Persist workspace expansion state
+  // Publish the project-view snapshot to the subscribers (nothing is persisted).
   useEffect(() => {
-    try {
-      localStorage.setItem(WORKSPACE_EXPANSION_STORAGE_KEY, JSON.stringify(expandedWorkspaces));
-    } catch {
-      // ignore
-    }
-
-    dispatchWorkspaceExpansionChange(expandedWorkspaces);
-  }, [expandedWorkspaces]);
+    dispatchWorkspaceExpansionChange({ expandedWorkspaces, loadedCounts });
+  }, [expandedWorkspaces, loadedCounts]);
 
   // Persist section collapsed state
   useEffect(() => {
@@ -165,41 +186,17 @@ export const useConversations = () => {
     }
   }, [collapsedSections]);
 
-  // Auto-expand all workspaces on first load only (#1156)
-  useEffect(() => {
-    if (hasAutoExpandedRef.current) return;
-    if (expandedWorkspaces.length > 0) {
-      hasAutoExpandedRef.current = true;
-      return;
-    }
-    const allWorkspaces: string[] = [];
-    timelineSections.forEach((section) => {
-      section.items.forEach((item) => {
-        if (item.type === 'workspace' && item.workspaceGroup) {
-          allWorkspaces.push(item.workspaceGroup.workspace);
-        }
-      });
-    });
-    if (allWorkspaces.length > 0) {
-      setExpandedWorkspaces(allWorkspaces);
-      hasAutoExpandedRef.current = true;
-    }
-  }, [timelineSections]);
-
   // Remove stale workspace entries that no longer exist in the data
   useEffect(() => {
-    const currentWorkspaces = new Set<string>();
-    timelineSections.forEach((section) => {
-      section.items.forEach((item) => {
-        if (item.type === 'workspace' && item.workspaceGroup) {
-          currentWorkspaces.add(item.workspaceGroup.workspace);
-        }
-      });
-    });
+    const currentWorkspaces = new Set(listWorkspaces(timelineSections));
     if (currentWorkspaces.size === 0) return;
     setExpandedWorkspaces((prev) => {
       const filtered = prev.filter((ws) => currentWorkspaces.has(ws));
       return filtered.length === prev.length ? prev : filtered;
+    });
+    setLoadedCounts((prev) => {
+      const kept = Object.entries(prev).filter(([ws]) => currentWorkspaces.has(ws));
+      return kept.length === Object.keys(prev).length ? prev : Object.fromEntries(kept);
     });
   }, [timelineSections]);
 
@@ -210,6 +207,32 @@ export const useConversations = () => {
       }
       return [...prev, workspace];
     });
+    // Collapsing a project drops its paging, so re-expanding starts at one page.
+    setLoadedCounts((prev) => {
+      if (!(workspace in prev)) return prev;
+      const next = { ...prev };
+      delete next[workspace];
+      return next;
+    });
+  }, []);
+
+  const handleShowMoreConversations = useCallback((workspace: string) => {
+    setLoadedCounts((prev) => ({ ...prev, [workspace]: getProjectLoadedCount(prev, workspace) + PROJECT_PAGE_SIZE }));
+  }, []);
+
+  const handleExpandAllProjects = useCallback(() => {
+    setExpandedWorkspaces(listWorkspaces(timelineSections));
+    setLoadedCounts({});
+    // Without this, expanding every project has no visible effect while the
+    // section itself is collapsed.
+    setCollapsedSections((prev) => withoutSections(prev, ['projects', 'pinned-projects']));
+  }, [timelineSections]);
+
+  const handleCollapseAllProjects = useCallback(() => {
+    // Collapsing every project is not the same as collapsing the sections, so
+    // `collapsedSections` is left alone.
+    setExpandedWorkspaces([]);
+    setLoadedCounts({});
   }, []);
 
   return {
@@ -221,9 +244,13 @@ export const useConversations = () => {
     markManualUnread,
     clearManualUnread,
     expandedWorkspaces,
+    loadedCounts,
     pinnedConversations,
     timelineSections,
     handleToggleWorkspace,
+    handleShowMoreConversations,
+    handleExpandAllProjects,
+    handleCollapseAllProjects,
     hasLoadedOnce, // ace: pinned-project orphan pruning gates on a confirmed load
     collapsedSections,
     toggleSection,

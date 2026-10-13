@@ -9,13 +9,14 @@ Vitest unit tests for the renderer-side conversation feature (`packages/desktop/
 
 ## Subdirectories
 
-| Directory | Purpose                                                                                                                             |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| runtime   | Tests for conversation runtime view state, command-queue execution gating, and sidebar stream-sync guards (see `runtime/AGENTS.md`) |
+| Directory | Purpose                                                                                                                                                         |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| runtime   | Tests for conversation runtime view state, command-queue execution gating, and sidebar stream-sync guards (see `runtime/AGENTS.md`)                             |
+| sidebar   | Tests for the grouped-history sidebar: per-project conversation paging, the workspace-view snapshot channel, and bulk expand/collapse (see `sidebar/AGENTS.md`) |
 
 ## For AI Agents
 
-- These are renderer tests: subjects import from `@/renderer/pages/conversation/...`, so keep them DOM-free pure-function tests (no Node APIs, no real Electron/IPC).
+- These are renderer tests: subjects import from `@/renderer/pages/conversation/...`, never Node APIs or real Electron/IPC. Keep the node project's `*.test.ts` files pure-function and DOM-free; component and hook tests belong in a `*.dom.test.tsx` file, which is what the jsdom project picks up (a plain `*.test.tsx` matches no project and is silently skipped).
 - Tests exercise pure reducers/selectors exported alongside hooks (e.g. `conversationRuntimeViewStore`, `getCommandQueueExecutionGate`, `getSidebarStreamGuardDecision`) — assert on returned snapshots, not React behavior.
 - Use the `@/` path alias and the standard `import { describe, expect, it } from 'vitest'` form; mirror the existing Apache-2.0 license header on new files.
 - Runtime summaries are built via small `runtime({ ...overrides })` factories with sensible idle defaults — follow that pattern instead of constructing full `TConversationRuntimeSummary` objects inline.

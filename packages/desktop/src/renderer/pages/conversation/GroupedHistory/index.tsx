@@ -15,7 +15,7 @@ import { restrictToVerticalAxis } from '@/renderer/utils/ui/dndModifiers';
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Button, Dropdown, Empty, Input, Menu, Message, Modal, Spin, Tooltip } from '@arco-design/web-react';
-import { Attention, FolderClose, MoreOne, Pin, Plus, Refresh, Right } from '@icon-park/react';
+import { Attention, DoubleDown, DoubleUp, FolderClose, MoreOne, Pin, Plus, Refresh, Right } from '@icon-park/react';
 // ace:start direct delete alongside archive
 import { DeleteOne } from '@icon-park/react';
 // ace:end
@@ -34,6 +34,7 @@ import { useConversations } from './hooks/useConversations';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { usePinnedProjects, usePinnedProjectDragAndDrop } from './hooks/usePinnedProjects';
 import type { ConversationRowProps, WorkspaceGroupedHistoryProps } from './types';
+import { getProjectLoadedCount, sliceLoadedConversations } from './utils/visibleConversationOrder';
 // ace:start folder-level status badges
 import { collectFolderStatuses, type FolderStatusKind } from './utils/folderStatusBadges';
 
@@ -69,9 +70,13 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     markManualUnread,
     clearManualUnread,
     expandedWorkspaces,
+    loadedCounts,
     pinnedConversations,
     timelineSections,
     handleToggleWorkspace,
+    handleShowMoreConversations,
+    handleExpandAllProjects,
+    handleCollapseAllProjects,
     hasLoadedOnce, // ace: pinned-project orphan pruning gates on a confirmed load
     collapsedSections,
     toggleSection,
@@ -416,6 +421,14 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     const isStale = staleWorkspaces.has(group.workspace);
     // ace:end
     const pinned = isPinned(group.workspace);
+    // ace:start reveal one page of conversations at a time; a collapsed sider
+    // renders every row, so paging only applies to the expanded sidebar.
+    const loadedCount = getProjectLoadedCount(loadedCounts, group.workspace);
+    const visibleConversations = collapsed
+      ? group.conversations
+      : sliceLoadedConversations(group.conversations, loadedCount);
+    const remaining = group.conversations.length - visibleConversations.length;
+    // ace:end
     const projectMenu = (
       <Menu
         onClickMenuItem={(key) => {
@@ -536,7 +549,33 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
       >
         <div className={classNames('flex flex-col min-w-0', { 'mt-1px': !collapsed })}>
           {/* ace:start gray child rows of a stale project */}
-          {group.conversations.map((conversation) => renderConversation(conversation, true, isStale))}
+          {visibleConversations.map((conversation) => renderConversation(conversation, true, isStale))}
+          {/* ace:end */}
+          {/* ace:start reveal the next page — styled like a conversation row so it
+              pixel-aligns with them; stops pointerdown so a pinned project's drag
+              listeners (spread over the whole block) never see the click */}
+          {remaining > 0 && (
+            <div
+              role='button'
+              tabIndex={0}
+              aria-label={t('conversation.history.showMore', { count: remaining })}
+              className='h-34px mt-2px rd-8px flex items-center ps-34px pe-16px shrink-0 cursor-pointer text-13px text-t-tertiary hover:text-t-primary hover:bg-fill-3 transition-colors select-none min-w-0'
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShowMoreConversations(group.workspace);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleShowMoreConversations(group.workspace);
+                }
+              }}
+            >
+              {t('conversation.history.showMore', { count: remaining })}
+            </div>
+          )}
           {/* ace:end */}
         </div>
       </WorkspaceCollapse>
@@ -765,43 +804,79 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
               <SectionLabel
                 sectionKey='projects'
                 label={t('conversation.history.projectsSection')}
-                // ace:start refresh button: re-check all project dirs without restarting the app
+                // ace:start bulk expand/collapse + refresh button: re-check all project dirs without restarting the app
                 trailing={
-                  <Tooltip content={t('conversation.history.refreshProjects')} position='top'>
-                    <span
-                      role='button'
-                      tabIndex={workspacesChecking ? -1 : 0}
-                      aria-label={t('conversation.history.refreshProjects')}
-                      aria-disabled={workspacesChecking}
-                      className={classNames(
-                        'flex-center transition-colors size-20px rd-4px sider-action-btn group-hover/label:opacity-100',
-                        // keep the spinner visible while checking even without label hover
-                        workspacesChecking
-                          ? 'opacity-100 cursor-default text-t-tertiary'
-                          : 'opacity-0 cursor-pointer text-t-tertiary hover:text-t-primary'
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (workspacesChecking) return;
-                        recheckWorkspaces();
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
+                  <span className='flex items-center gap-2px'>
+                    {[
+                      {
+                        label: t('conversation.history.expandAllProjects'),
+                        Icon: DoubleDown,
+                        run: handleExpandAllProjects,
+                      },
+                      {
+                        label: t('conversation.history.collapseAllProjects'),
+                        Icon: DoubleUp,
+                        run: handleCollapseAllProjects,
+                      },
+                    ].map(({ label, Icon, run }) => (
+                      <Tooltip key={label} content={label} position='top'>
+                        <span
+                          role='button'
+                          tabIndex={0}
+                          aria-label={label}
+                          className='flex-center transition-colors size-20px rd-4px sider-action-btn group-hover/label:opacity-100 opacity-0 cursor-pointer text-t-tertiary hover:text-t-primary'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            run();
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              run();
+                            }
+                          }}
+                        >
+                          <Icon theme='outline' size='14' fill='currentColor' className='block leading-none' />
+                        </span>
+                      </Tooltip>
+                    ))}
+                    <Tooltip content={t('conversation.history.refreshProjects')} position='top'>
+                      <span
+                        role='button'
+                        tabIndex={workspacesChecking ? -1 : 0}
+                        aria-label={t('conversation.history.refreshProjects')}
+                        aria-disabled={workspacesChecking}
+                        className={classNames(
+                          'flex-center transition-colors size-20px rd-4px sider-action-btn group-hover/label:opacity-100',
+                          // keep the spinner visible while checking even without label hover
+                          workspacesChecking
+                            ? 'opacity-100 cursor-default text-t-tertiary'
+                            : 'opacity-0 cursor-pointer text-t-tertiary hover:text-t-primary'
+                        )}
+                        onClick={(e) => {
                           e.stopPropagation();
                           if (workspacesChecking) return;
                           recheckWorkspaces();
-                        }
-                      }}
-                    >
-                      <Refresh
-                        theme='outline'
-                        size='14'
-                        fill='currentColor'
-                        className={classNames('block leading-none', { 'animate-spin': workspacesChecking })}
-                      />
-                    </span>
-                  </Tooltip>
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (workspacesChecking) return;
+                            recheckWorkspaces();
+                          }
+                        }}
+                      >
+                        <Refresh
+                          theme='outline'
+                          size='14'
+                          fill='currentColor'
+                          className={classNames('block leading-none', { 'animate-spin': workspacesChecking })}
+                        />
+                      </span>
+                    </Tooltip>
+                  </span>
                 }
                 // ace:end
               />

@@ -75,6 +75,7 @@
     "earlier": "Früher",
     "projectsSection": "Projekte",
     "conversationsSection": "Unterhaltungen",
+    "recentSection": "Zuletzt verwendet",
     "showMore": "Mehr anzeigen (noch {{count}})",
     "expandAllProjects": "Alle Projekte ausklappen",
     "collapseAllProjects": "Alle Projekte einklappen",

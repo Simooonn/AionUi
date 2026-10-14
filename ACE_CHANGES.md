@@ -476,3 +476,40 @@ Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没
 - 打开普通项目的会话也会展开被折叠的"置顶项目"分区（hook 拿不到置顶名单，无法区分）。
 - 窄侧栏全量显示；切回宽侧栏时按 `loadedCounts` 收回。
 - 老用户 localStorage 里残留的 `aionui_workspace_expansion` 无人读写，不做清理。
+
+## 侧栏「最近会话」分区（2026-10-14）
+
+> 计划正本：`计划/AionUi/侧栏最近会话分区计划/侧栏最近会话分区计划.md`（评审态草案 `.omc/plans/sidebar-recent-conversations-consensus-plan.md`）；规格：`.omc/specs/deep-interview-sidebar-recent-conversations.md`（含 2026-10-14 经用户确认的定位规则修订）。
+
+侧栏「置顶项目」之后、团队插槽之前新增「最近会话」分区：把置顶会话、置顶项目、普通项目、无项目会话合在一起按活跃时间倒序排列，不限时间，默认 5 条，底部「更多（还有 N 条）」每次再加 5 条；折叠分区或重启后回到 5 条，分区折叠状态沿用 `grouped-history-collapsed-sections`。每行标题后跟灰色项目名（无项目会话不显示），行根 id 用 `rc-<id>`、右键菜单 key 用 `rc-<id>`，与原位置的行互不干扰。窄侧栏、批量模式、无候选时整个分区不渲染；失效（目录已删）项目的会话不进入分区。定位规则：最近会话里没有当前会话 → 原逻辑；有 → 任一行已完全可见就不动，原位置的行已渲染就走原逻辑（Ctrl+Tab 跟随不变），否则只滚最近会话那一行；任何情况下都不会因最近会话而展开项目。
+
+### 新增文件（纯新增）
+
+| 文件                                                                                           | 作用                                                                                                                                    |
+| ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/desktop/src/renderer/pages/conversation/GroupedHistory/utils/recentConversations.ts` | `buildRecentConversations`（合并三类来源、排序、失效排除、项目名）、`getProjectWorkspace`、`RECENT_SECTION_KEY`、`RECENT_ROW_ID_PREFIX` |
+| `tests/unit/conversation/sidebar/recentConversations.test.ts`                                  | node：来源 / 排序 / 失效 / 项目名                                                                                                       |
+| `tests/unit/conversation/sidebar/useConversationsRecentSection.dom.test.tsx`                   | hook：最近会话分页与三条定位路径                                                                                                        |
+| `tests/unit/conversation/sidebar/conversationRowRecentProps.dom.test.tsx`                      | 真实行组件：`domIdPrefix` / `projectLabel`                                                                                              |
+| `tests/unit/conversation/sidebar/groupedHistoryRecentSection.dom.test.tsx`                     | 组件：位置、分页、隐藏、失效检查列表、`rc-` id 唯一、菜单互斥、整组件定位                                                               |
+
+### 现有文件挂载点
+
+| 文件                                                                                        | 改动                                                                                                                                                                                                                                                                                        | 备注                                        |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `packages/desktop/src/renderer/pages/conversation/GroupedHistory/index.tsx`                 | 渲染分区（置顶项目区块之后、`afterPinnedContent` 之前）；`getRecentRowProps` 给最近会话行的菜单 key 加 `rc-` 前缀；`useStaleWorkspaces` 的检查列表并入置顶会话的项目工作区；项目「更多」行抽成 `renderShowMoreRow(remaining, onShowMore, indented)`，项目内仍 `ps-34px`、最近会话 `ps-10px` | `// ace:` marker（`recent-section`）        |
+| `packages/desktop/src/renderer/pages/conversation/GroupedHistory/ConversationRow.tsx`       | 可选 `projectLabel`（标题后灰色项目名，`me-16px` / `group-hover:me-16px` 给悬停菜单按钮让位）与 `domIdPrefix`（行根 id 前缀，默认 `c-`）；不传时 DOM 与改动前一致                                                                                                                           | `// ace:` marker                            |
+| `packages/desktop/src/renderer/pages/conversation/GroupedHistory/types.ts`                  | `ConversationRowProps` 增加上述两个可选 props                                                                                                                                                                                                                                               | `// ace:` marker                            |
+| `packages/desktop/src/renderer/pages/conversation/GroupedHistory/hooks/useConversations.ts` | `recentLoadedCount` / `handleShowMoreRecent`（`toggleSection('recent')` 时重置）；定位 effect 先走 `resolveRevealPath`（`isFullyVisible` 以最近的 `overflow-y: auto/scroll` 祖先为视口）；双 RAF 滚动抽成 `scrollIntoViewAfterPaint`                                                        | 文件本已整体改写；新增块带 `// ace:` marker |
+| `packages/desktop/src/renderer/services/i18n/locales/*/conversation.json`                   | `conversation.history.recentSection`（13 语言）                                                                                                                                                                                                                                             | JSON 无 marker                              |
+| `packages/desktop/src/renderer/services/i18n/i18n-keys.d.ts`                                | `bun run i18n:types` 生成                                                                                                                                                                                                                                                                   | 生成文件                                    |
+| `tests/unit/conversation/sidebar/groupedHistoryProjectPaging.dom.test.tsx`                  | 行 mock 改为尊重 `domIdPrefix`；`collapse-all` 用例的两处全局计数只数 `c-` 行（最近会话不受全部收起影响）                                                                                                                                                                                   | 测试                                        |
+
+### 已知边界（有意为之）
+
+- 移动端点击会话时侧栏在同一批更新里折叠，分区不渲染，于是走原逻辑展开项目——延迟可见（再次打开抽屉时项目已展开），与改动前行为一致。
+- 失效集合是异步的：冷启动 / 重挂载时，失效项目里的当前会话可能先命中最近会话行并锁定一次性定位；失效集合返回后它从最近会话消失、项目也未展开。
+- 仅经最近会话定位过的会话，若之后掉出已加载的条数（其他会话更活跃），侧栏里暂时看不到它（定位只做一次，不与用户的手动折叠较劲）。
+- 最近会话行可见、原位置的行在屏外时，Ctrl+Tab 切到它不会把原位置的行滚进视野（当前会话仍在最近会话里高亮）。
+- `isFullyVisible` 不扣除 sticky 分区标题 / 项目标题的遮挡；原逻辑的 `scrollIntoView` 有同样的限制。
+- 置顶会话所在工作区若无任何非置顶会话，现在也会进入失效检查列表；刷新按钮的检查范围随之包含它。

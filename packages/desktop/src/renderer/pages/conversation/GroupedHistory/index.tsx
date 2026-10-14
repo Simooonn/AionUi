@@ -35,6 +35,15 @@ import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { usePinnedProjects, usePinnedProjectDragAndDrop } from './hooks/usePinnedProjects';
 import type { ConversationRowProps, WorkspaceGroupedHistoryProps } from './types';
 import { getProjectLoadedCount, sliceLoadedConversations } from './utils/visibleConversationOrder';
+// ace:start recent-section
+import {
+  buildRecentConversations,
+  getProjectWorkspace,
+  RECENT_ROW_ID_PREFIX,
+  RECENT_SECTION_KEY,
+  type RecentConversation,
+} from './utils/recentConversations';
+// ace:end
 // ace:start folder-level status badges
 import { collectFolderStatuses, type FolderStatusKind } from './utils/folderStatusBadges';
 
@@ -80,6 +89,10 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     hasLoadedOnce, // ace: pinned-project orphan pruning gates on a confirmed load
     collapsedSections,
     toggleSection,
+    // ace:start recent-section
+    recentLoadedCount,
+    handleShowMoreRecent,
+    // ace:end
   } = useConversations();
 
   const SectionLabel = useCallback(
@@ -311,11 +324,44 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
   }, [timelineSections]);
 
   // ace:start gray out projects whose workspace directory no longer exists; recheck() + checking for the refresh button
+  // recent-section: pinned conversations' projects are checked too, so the
+  // recent section can drop a pinned conversation whose project is gone.
+  const staleCheckWorkspaces = useMemo(() => {
+    const workspaces = new Set(projectGroups.map((g) => g.workspace));
+    for (const conversation of pinnedConversations) {
+      const workspace = getProjectWorkspace(conversation);
+      if (workspace) workspaces.add(workspace);
+    }
+    return [...workspaces];
+  }, [projectGroups, pinnedConversations]);
   const {
     stale: staleWorkspaces,
     recheck: recheckWorkspaces,
     checking: workspacesChecking,
-  } = useStaleWorkspaces(projectGroups.map((g) => g.workspace));
+  } = useStaleWorkspaces(staleCheckWorkspaces);
+  // ace:end
+
+  // ace:start recent-section — every sidebar conversation, newest first, one page at a time
+  const recentConversations = useMemo(
+    () => buildRecentConversations({ pinnedConversations, timelineSections }, staleWorkspaces, t),
+    [pinnedConversations, timelineSections, staleWorkspaces, t]
+  );
+  const showRecentSection = !collapsed && !batchMode && recentConversations.length > 0;
+  const visibleRecentConversations = sliceLoadedConversations(recentConversations, recentLoadedCount);
+  const recentRemaining = recentConversations.length - visibleRecentConversations.length;
+  // Per-row UI state stays per row: the recent copy has its own DOM id prefix and
+  // keys its dropdown under it, so it never shares state with the original row.
+  const getRecentRowProps = ({ conversation, projectLabel }: RecentConversation): ConversationRowProps => {
+    const menuKey = RECENT_ROW_ID_PREFIX + conversation.id;
+    return {
+      ...getConversationRowProps(conversation),
+      menuVisible: dropdownVisibleId === menuKey,
+      onOpenMenu: () => handleMenuVisibleChange(menuKey, true),
+      onMenuVisibleChange: (_conversationId, visible) => handleMenuVisibleChange(menuKey, visible),
+      projectLabel,
+      domIdPrefix: RECENT_ROW_ID_PREFIX,
+    };
+  };
   // ace:end
 
   // Split projects into pinned (config-driven, ordered by the pin array index) and the rest.
@@ -406,6 +452,40 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
           </span>
         ))}
       </span>
+    );
+  };
+  // ace:end
+
+  // ace:start reveal the next page — styled like a conversation row so it
+  // pixel-aligns with them (indented inside a project folder, flush in the
+  // recent section); stops pointerdown so a pinned project's drag listeners
+  // (spread over the whole block) never see the click
+  const renderShowMoreRow = (remaining: number, onShowMore: () => void, indented: boolean) => {
+    if (remaining <= 0) return null;
+    return (
+      <div
+        role='button'
+        tabIndex={0}
+        aria-label={t('conversation.history.showMore', { count: remaining })}
+        className={classNames(
+          'h-34px mt-2px rd-8px flex items-center pe-16px shrink-0 cursor-pointer text-13px text-t-tertiary hover:text-t-primary hover:bg-fill-3 transition-colors select-none min-w-0',
+          indented ? 'ps-34px' : 'ps-10px'
+        )}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          onShowMore();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.stopPropagation();
+            onShowMore();
+          }
+        }}
+      >
+        {t('conversation.history.showMore', { count: remaining })}
+      </div>
     );
   };
   // ace:end
@@ -551,31 +631,8 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
           {/* ace:start gray child rows of a stale project */}
           {visibleConversations.map((conversation) => renderConversation(conversation, true, isStale))}
           {/* ace:end */}
-          {/* ace:start reveal the next page — styled like a conversation row so it
-              pixel-aligns with them; stops pointerdown so a pinned project's drag
-              listeners (spread over the whole block) never see the click */}
-          {remaining > 0 && (
-            <div
-              role='button'
-              tabIndex={0}
-              aria-label={t('conversation.history.showMore', { count: remaining })}
-              className='h-34px mt-2px rd-8px flex items-center ps-34px pe-16px shrink-0 cursor-pointer text-13px text-t-tertiary hover:text-t-primary hover:bg-fill-3 transition-colors select-none min-w-0'
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleShowMoreConversations(group.workspace);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleShowMoreConversations(group.workspace);
-                }
-              }}
-            >
-              {t('conversation.history.showMore', { count: remaining })}
-            </div>
-          )}
+          {/* ace:start reveal the next page of this project */}
+          {renderShowMoreRow(remaining, () => handleShowMoreConversations(group.workspace), true)}
           {/* ace:end */}
         </div>
       </WorkspaceCollapse>
@@ -793,6 +850,22 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
             )}
           </div>
         )}
+
+        {/* ace:start recent-section — every conversation, newest first, above the Team slot */}
+        {showRecentSection && (
+          <div className='min-w-0' data-testid='recent-conversations-section'>
+            <SectionLabel sectionKey={RECENT_SECTION_KEY} label={t('conversation.history.recentSection')} />
+            {!collapsedSections.has(RECENT_SECTION_KEY) && (
+              <div className='flex flex-col min-w-0'>
+                {visibleRecentConversations.map((entry) => (
+                  <ConversationRow key={entry.conversation.id} {...getRecentRowProps(entry)} />
+                ))}
+                {renderShowMoreRow(recentRemaining, handleShowMoreRecent, false)}
+              </div>
+            )}
+          </div>
+        )}
+        {/* ace:end */}
 
         {/* Slot 由父级（Sider）填入：例如 Team / CronJob sections，位于「置顶」之后、「项目」之前 */}
         {afterPinnedContent}

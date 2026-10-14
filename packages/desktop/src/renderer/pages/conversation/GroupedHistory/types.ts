@@ -81,6 +81,12 @@ export type ConversationRowProps = {
   // ace:end
   /** Hover-reveal drag handle overlaying the leading icon; supplied by the sortable wrapper for reorderable (pinned) rows. */
   dragHandle?: ReactNode;
+  // ace:start recent-section
+  /** Gray project name rendered after the title (recent section only). */
+  projectLabel?: string;
+  /** DOM id prefix of the row root; defaults to `c-`. The recent section uses its own prefix so `#c-<id>` stays unique. */
+  domIdPrefix?: string;
+  // ace:end
 };
 
 export type WorkspaceGroupedHistoryProps = {

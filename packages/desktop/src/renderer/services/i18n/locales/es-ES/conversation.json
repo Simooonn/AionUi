@@ -75,6 +75,7 @@
     "earlier": "Anterior",
     "projectsSection": "Proyectos",
     "conversationsSection": "Conversaciones",
+    "recentSection": "Recientes",
     "showMore": "Ver más ({{count}} restantes)",
     "expandAllProjects": "Expandir todos los proyectos",
     "collapseAllProjects": "Contraer todos los proyectos",

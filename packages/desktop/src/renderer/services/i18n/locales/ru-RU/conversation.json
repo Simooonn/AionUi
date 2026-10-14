@@ -79,6 +79,7 @@
     "earlier": "Ранее",
     "projectsSection": "Проекты",
     "conversationsSection": "Беседы",
+    "recentSection": "Недавние",
     "showMore": "Показать ещё (осталось {{count}})",
     "expandAllProjects": "Развернуть все проекты",
     "collapseAllProjects": "Свернуть все проекты",

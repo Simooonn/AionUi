@@ -75,6 +75,7 @@
     "deleteFailed": "Silme başarısız oldu",
     "projectsSection": "Projeler",
     "conversationsSection": "Konuşmalar",
+    "recentSection": "Son konuşmalar",
     "showMore": "Daha fazla ({{count}} kaldı)",
     "expandAllProjects": "Tüm projeleri genişlet",
     "collapseAllProjects": "Tüm projeleri daralt",

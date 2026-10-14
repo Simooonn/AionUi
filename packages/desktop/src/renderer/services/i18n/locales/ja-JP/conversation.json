@@ -75,6 +75,7 @@
     "deleteFailed": "削除に失敗しました",
     "projectsSection": "プロジェクト",
     "conversationsSection": "会話",
+    "recentSection": "最近の会話",
     "showMore": "さらに表示（残り {{count}} 件）",
     "expandAllProjects": "すべてのプロジェクトを展開",
     "collapseAllProjects": "すべてのプロジェクトを折りたたむ",

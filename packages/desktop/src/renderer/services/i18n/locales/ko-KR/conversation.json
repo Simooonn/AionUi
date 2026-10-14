@@ -75,6 +75,7 @@
     "deleteFailed": "삭제에 실패했습니다",
     "projectsSection": "프로젝트",
     "conversationsSection": "대화",
+    "recentSection": "최근 대화",
     "showMore": "더 보기 ({{count}}개 남음)",
     "expandAllProjects": "모든 프로젝트 펼치기",
     "collapseAllProjects": "모든 프로젝트 접기",

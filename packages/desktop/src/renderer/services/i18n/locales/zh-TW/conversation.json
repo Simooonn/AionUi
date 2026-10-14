@@ -75,6 +75,7 @@
     "deleteFailed": "刪除失敗",
     "projectsSection": "專案",
     "conversationsSection": "對話",
+    "recentSection": "最近對話",
     "showMore": "更多（還有 {{count}} 筆）",
     "expandAllProjects": "展開全部專案",
     "collapseAllProjects": "收起全部專案",

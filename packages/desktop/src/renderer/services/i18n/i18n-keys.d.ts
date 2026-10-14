@@ -763,6 +763,7 @@ export type I18nKey =
   | 'conversation.history.pinnedSection'
   | 'conversation.history.projectsSection'
   | 'conversation.history.recent7Days'
+  | 'conversation.history.recentSection'
   | 'conversation.history.recents'
   | 'conversation.history.refreshProjects'
   | 'conversation.history.rename'

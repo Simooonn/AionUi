@@ -10,6 +10,9 @@ import { useParams } from 'react-router-dom';
 import { useConversationHistoryContext } from '@/renderer/hooks/context/ConversationHistoryContext';
 import type { TimelineSection } from '../types';
 import { getProjectLoadedCount, loadedCountCovering, PROJECT_PAGE_SIZE } from '../utils/visibleConversationOrder';
+// ace:start recent-section
+import { RECENT_ROW_ID_PREFIX, RECENT_SECTION_KEY } from '../utils/recentConversations';
+// ace:end
 import { dispatchWorkspaceExpansionChange } from './useWorkspaceExpansionState';
 
 // Persist section collapsed state across reloads.
@@ -72,11 +75,71 @@ const withoutSections = (prev: Set<string>, keys: string[]): Set<string> => {
   return next;
 };
 
+// ace:start recent-section — the legacy reveal's double-RAF scroll, extracted
+// unchanged so the recent-section path can reuse it
+/**
+ * Scroll a sidebar row into view once newly expanded content (and async
+ * siblings like CronJobSiderSection) has rendered — hence the double RAF.
+ * Returns the cancel for the effect cleanup.
+ */
+const scrollIntoViewAfterPaint = (elementId: string): (() => void) => {
+  let cancelled = false;
+  let innerRafId: number;
+  const outerRafId = requestAnimationFrame(() => {
+    innerRafId = requestAnimationFrame(() => {
+      if (cancelled) return;
+      document.getElementById(elementId)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  });
+  return () => {
+    cancelled = true;
+    cancelAnimationFrame(outerRafId);
+    cancelAnimationFrame(innerRafId);
+  };
+};
+
+/** Whether the element's whole box sits inside its scroll viewport; a zero-height box never counts. */
+const isFullyVisible = (element: HTMLElement): boolean => {
+  const rect = element.getBoundingClientRect();
+  if (rect.height <= 0) return false;
+  let viewport: { top: number; bottom: number } = { top: 0, bottom: window.innerHeight };
+  for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+    const { overflowY } = window.getComputedStyle(parent);
+    if (overflowY === 'auto' || overflowY === 'scroll') {
+      viewport = parent.getBoundingClientRect();
+      break;
+    }
+  }
+  return rect.top >= viewport.top && rect.bottom <= viewport.bottom;
+};
+
+/**
+ * How to reveal the active conversation. Only a conversation the recent section
+ * currently renders leaves the legacy expand-and-scroll path: with any of its
+ * rows already in view nothing moves; with its own row rendered the legacy path
+ * scrolls to that row; otherwise only the recent row is scrolled to. Either way
+ * the recent section never expands a project.
+ *
+ * Reads the committed DOM, so the recent rows must be rendered by the same
+ * component that calls this hook (they are then committed before the effect runs).
+ */
+const resolveRevealPath = (id: string): 'legacy' | 'none' | 'recent' => {
+  const recentRow = document.getElementById(RECENT_ROW_ID_PREFIX + id);
+  if (!recentRow) return 'legacy';
+  const row = document.getElementById('c-' + id);
+  if (isFullyVisible(recentRow) || (row !== null && isFullyVisible(row))) return 'none';
+  return row ? 'legacy' : 'recent';
+};
+// ace:end
+
 export const useConversations = () => {
   // Projects start collapsed on every launch and each one at the default page
   // size — neither is persisted (spec AC7).
   const [expandedWorkspaces, setExpandedWorkspaces] = useState<string[]>([]);
   const [loadedCounts, setLoadedCounts] = useState<Record<string, number>>({});
+  // ace:start recent-section — revealed rows of the recent section; not persisted
+  const [recentLoadedCount, setRecentLoadedCount] = useState(PROJECT_PAGE_SIZE);
+  // ace:end
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => readCollapsedSections());
   const { id } = useParams();
   const {
@@ -107,6 +170,9 @@ export const useConversations = () => {
       else next.add(key);
       return next;
     });
+    // ace:start recent-section — folding the recent section either way restarts it at one page
+    if (key === RECENT_SECTION_KEY) setRecentLoadedCount(PROJECT_PAGE_SIZE);
+    // ace:end
   }, []);
 
   // Reveal + scroll the active conversation into view.
@@ -127,6 +193,14 @@ export const useConversations = () => {
     clearManualUnread(id);
 
     if (revealedIdRef.current === id) return;
+
+    // ace:start recent-section
+    const revealPath = resolveRevealPath(id);
+    if (revealPath !== 'legacy') {
+      revealedIdRef.current = id;
+      return revealPath === 'recent' ? scrollIntoViewAfterPaint(RECENT_ROW_ID_PREFIX + id) : undefined;
+    }
+    // ace:end
 
     const location = locateConversation(id, pinnedConversations, timelineSections);
     if (!location) return; // data not loaded yet; effect re-runs when it arrives
@@ -153,23 +227,9 @@ export const useConversations = () => {
       });
     }
 
-    let cancelled = false;
-    let outerRafId: number;
-    let innerRafId: number;
-    outerRafId = requestAnimationFrame(() => {
-      innerRafId = requestAnimationFrame(() => {
-        if (cancelled) return;
-        const element = document.getElementById('c-' + id);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-      });
-    });
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(outerRafId);
-      cancelAnimationFrame(innerRafId);
-    };
+    // ace:start recent-section — same double-RAF scroll as before, via the shared helper
+    return scrollIntoViewAfterPaint('c-' + id);
+    // ace:end
   }, [clearCompletionUnread, clearManualUnread, id, setActiveConversation, pinnedConversations, timelineSections]);
 
   // Publish the project-view snapshot to the subscribers (nothing is persisted).
@@ -235,6 +295,12 @@ export const useConversations = () => {
     setLoadedCounts({});
   }, []);
 
+  // ace:start recent-section
+  const handleShowMoreRecent = useCallback(() => {
+    setRecentLoadedCount((count) => count + PROJECT_PAGE_SIZE);
+  }, []);
+  // ace:end
+
   return {
     conversations,
     isConversationGenerating,
@@ -254,5 +320,9 @@ export const useConversations = () => {
     hasLoadedOnce, // ace: pinned-project orphan pruning gates on a confirmed load
     collapsedSections,
     toggleSection,
+    // ace:start recent-section
+    recentLoadedCount,
+    handleShowMoreRecent,
+    // ace:end
   };
 };

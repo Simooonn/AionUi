@@ -94,9 +94,11 @@ vi.mock('@/common/config/configService', () => ({
 }));
 
 // Default export: a bare object mock renders as "Element type is invalid".
+// Honours `domIdPrefix`, so the recent section's copies (`rc-<id>`) never
+// collide with the `#c-<id>` rows these cases look up.
 vi.mock('@/renderer/pages/conversation/GroupedHistory/ConversationRow', () => ({
-  default: ({ conversation }: { conversation: TChatConversation }) => (
-    <div id={'c-' + conversation.id} data-testid='conversation-row'>
+  default: ({ conversation, domIdPrefix }: { conversation: TChatConversation; domIdPrefix?: string }) => (
+    <div id={(domIdPrefix ?? 'c-') + conversation.id} data-testid='conversation-row'>
       {conversation.id}
     </div>
   ),
@@ -147,6 +149,9 @@ const projectRoot = (displayName: string): HTMLElement => {
 const expandProject = (displayName: string) => fireEvent.click(screen.getByText(displayName));
 
 const rowsOf = (displayName: string) => within(projectRoot(displayName)).queryAllByTestId('conversation-row');
+
+/** Rows of every project; the recent section's `rc-` copies are not project rows. */
+const projectRows = () => document.querySelectorAll('[data-testid="conversation-row"][id^="c-"]');
 
 const moreRowOf = (displayName: string): HTMLElement | null =>
   within(projectRoot(displayName))
@@ -276,10 +281,10 @@ describe('GroupedHistory bulk expand/collapse buttons (AC6)', () => {
   it('collapse-all closes every project', async () => {
     await renderHistory();
     fireEvent.click(bulkButton('expandAllProjects'));
-    expect(screen.queryAllByTestId('conversation-row').length).toBeGreaterThan(0);
+    expect(projectRows().length).toBeGreaterThan(0);
 
     fireEvent.click(bulkButton('collapseAllProjects'));
-    expect(screen.queryAllByTestId('conversation-row')).toHaveLength(0);
+    expect(projectRows()).toHaveLength(0);
     expect(screen.getByText('project-a')).toBeInTheDocument();
   });
 

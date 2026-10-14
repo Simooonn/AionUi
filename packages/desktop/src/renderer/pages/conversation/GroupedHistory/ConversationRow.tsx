@@ -63,6 +63,10 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
     stale = false,
     // ace:end
     dragHandle,
+    // ace:start recent-section
+    projectLabel,
+    domIdPrefix = 'c-',
+    // ace:end
   } = props;
   const logos = useAgentLogos();
   const layout = useLayoutContext();
@@ -203,7 +207,9 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
       position='right'
     >
       <div
-        id={'c-' + conversation.id}
+        // ace:start recent-section — the recent section passes its own prefix
+        id={domIdPrefix + conversation.id}
+        // ace:end
         className={classNames(
           'chat-history__item h-34px rd-8px flex items-center group cursor-pointer relative overflow-hidden shrink-0 conversation-item [&.conversation-item+&.conversation-item]:mt-2px min-w-0 transition-colors',
           collapsed ? 'justify-center px-0' : 'justify-start gap-8px pe-16px',
@@ -295,6 +301,22 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
                   </span>
                 </Tooltip>
               )}
+              {/* ace:start recent-section — project name after the title; its end
+                  margin clears the absolutely positioned menu button, so the title
+                  truncates first (the name div is content-box: padding there would
+                  not shrink its content) */}
+              {projectLabel && (
+                <span
+                  className={classNames(
+                    'shrink-0 max-w-96px truncate text-12px font-[400] text-t-tertiary',
+                    isMobile || menuVisible ? 'me-16px' : 'group-hover:me-16px'
+                  )}
+                  data-testid='conversation-project-label'
+                >
+                  {projectLabel}
+                </span>
+              )}
+              {/* ace:end */}
             </div>
           </Tooltip>
         </FlexFullContainer>

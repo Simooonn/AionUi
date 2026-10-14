@@ -75,6 +75,7 @@
     "earlier": "更早",
     "projectsSection": "项目",
     "conversationsSection": "对话",
+    "recentSection": "最近会话",
     "showMore": "更多（还有 {{count}} 条）",
     "expandAllProjects": "展开全部项目",
     "collapseAllProjects": "收起全部项目",

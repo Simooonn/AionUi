@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-10-13 | Updated: 2026-10-13 -->
+<!-- Generated: 2026-10-13 | Updated: 2026-10-14 -->
 
 # sidebar
 
@@ -10,7 +10,10 @@ conversations a project folder reveals (default one page of 5, grown one page at
 a time), how revealing the active conversation opens its project and section,
 how that state reaches the Ctrl+Tab visible-id list, and the bulk
 expand-all / collapse-all actions. Nothing here is persisted, so a cold start
-must show every project collapsed.
+must show every project collapsed. Also covers the "recent conversations"
+section: which conversations it lists and in what order, its paging, its
+visibility rules, its `rc-` row copies (own DOM id, own dropdown key, project
+label) and how revealing a conversation it renders avoids expanding projects.
 
 ## Key Files
 
@@ -19,6 +22,10 @@ must show every project collapsed.
 | `visibleConversationOrder.test.ts`           | node project. Exercises the paging primitives `PROJECT_PAGE_SIZE`, `getProjectLoadedCount`, `sliceLoadedConversations`, `loadedCountCovering` plus `buildVisibleConversationIds`: default slice of 5, the 5 → 10 → 12 walk of a 12-conversation project, the `loadedCountCovering` boundaries (index 4 → 5, 5 → 10, 12 → 15), collapsed workspaces contributing nothing, and the `siderCollapsed` full-list bypass.                                                                                                                                                                                                                                                                                             |
 | `useConversationsProjectPaging.dom.test.tsx` | dom project. Drives `useConversations` and `useVisibleConversationIds` through `renderHook`: default/+5/collapse-reset counts, the reveal of an active conversation (count raised before `scrollIntoView`, other projects untouched, the pinned-projects section reopened), the snapshot channel round-trip, the startup-collapsed rule, and bulk expand/collapse.                                                                                                                                                                                                                                                                                                                                              |
 | `groupedHistoryProjectPaging.dom.test.tsx`   | dom project. Renders `GroupedHistory/index.tsx`: the 5 rendered rows plus the "more" row, its remaining count and its 34px height, the 5 → 10 → 12 click-through, the collapse/re-expand reset, the two bulk buttons beside the refresh button in the "projects" section label (expand-all reopens a collapsed section and re-pages to 5, collapse-all closes everything, the pinned-projects label stays bare, both buttons vanish when every project is pinned), and that paging leaves the rest alone: the folder badge still comes from the full list, select-all still counts every conversation, and the "more" row's pointerdown never reaches the pinned-project drag handler while a plain row's does. |
+| `recentConversations.test.ts`                | node project. `buildRecentConversations` / `getProjectWorkspace`: three-source merge newest first (`created_at` fallback, stable ties), stale exclusion for group members (judged by the group workspace, fixtures carry no `extra`) and for pinned conversations, label resolution (group name / pinned via the group map / path fallback / none for free rows), empty input.                                                                                                                                                                                                                                                                                                                                  |
+| `useConversationsRecentSection.dom.test.tsx` | dom project. `useConversations` recent paging (5 → 10 → 15, reset on every `toggleSection('recent')`, fold persisted) and the three reveal paths with hand-built DOM: `recent` (only an `rc-` row, zero rect: scroll it, expand nothing), `none` (a row fully inside a mocked `overflow-y:auto` viewport), `legacy` (own row rendered but out of view), plus the no-`rc-` control.                                                                                                                                                                                                                                                                                                                              |
+| `conversationRowRecentProps.dom.test.tsx`    | dom project. Real `ConversationRow`: `domIdPrefix` (default `c-`), the `projectLabel` span and its `group-hover:me-16px` / `me-16px` margin classes, and an unchanged name container without a label.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `groupedHistoryRecentSection.dom.test.tsx`   | dom project. Renders `GroupedHistory/index.tsx`: section placement (pinned projects → recent → Team slot → projects), 5 → 10 → 12 paging with a flush 34px more-row, fold reset, hidden in the narrow sider / batch mode / when every row is stale, the stale-check list including pinned conversations' projects, `rc-` ids with `#c-<id>` still unique, labels, dropdown opening only on its own row, and the whole-component reveal (recent path with the project left collapsed; project expanded when the section is folded).                                                                                                                                                                              |
 
 ## For AI Agents
 
@@ -47,6 +54,15 @@ must show every project collapsed.
   calls `useThemeContext()`, which throws outside `ThemeProvider` — and
   `ConversationRow` / `SortablePinnedProject` mocked as `{ default: … }`
   (a bare object mock renders as "Element type is invalid").
+- The recent section renders a second copy of up to 5 rows above the projects.
+  Row mocks must honour `domIdPrefix` (`id={(domIdPrefix ?? 'c-') + id}`) or
+  `#c-<id>` lookups hit the recent copy, and must not render `projectLabel` as
+  text or `getByText('<project name>')` matches several elements. Global row
+  counts now include the recent rows — scope them (e.g. `[id^="c-"]`).
+- Reveal cases need a mutable `useParams` and a `rerender`; jsdom rects are all
+  zero, which `isFullyVisible` treats as out of view. Mock
+  `getBoundingClientRect` on the row and on an `overflow-y:auto` ancestor to
+  exercise the in-view path.
 - Pinned projects are seeded one microtask after mount through
   `configService.whenReady()`, so flush with `await act(async () => {})` after
   `render` or the pinned-projects section is still absent.
@@ -56,6 +72,8 @@ must show every project collapsed.
 ### Internal
 
 - `@/renderer/pages/conversation/GroupedHistory/utils/visibleConversationOrder`
+- `@/renderer/pages/conversation/GroupedHistory/utils/recentConversations`
+- `@/renderer/pages/conversation/GroupedHistory/ConversationRow` (real component, `conversationRowRecentProps` only)
 - `@/renderer/pages/conversation/GroupedHistory/index` (`WorkspaceGroupedHistory`)
 - `@/renderer/pages/conversation/GroupedHistory/hooks/useConversations`
 - `@/renderer/pages/conversation/GroupedHistory/hooks/useVisibleConversationIds`

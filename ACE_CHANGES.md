@@ -513,3 +513,26 @@ Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没
 - 最近会话行可见、原位置的行在屏外时，Ctrl+Tab 切到它不会把原位置的行滚进视野（当前会话仍在最近会话里高亮）。
 - `isFullyVisible` 不扣除 sticky 分区标题 / 项目标题的遮挡；原逻辑的 `scrollIntoView` 有同样的限制。
 - 置顶会话所在工作区若无任何非置顶会话，现在也会进入失效检查列表；刷新按钮的检查范围随之包含它。
+
+## Agents 设置页筛选 tab：「不可用」拆成「未安装」+「其他」（2026-10-14）
+
+> 规格：`.omc/specs/deep-interview-agent-filter-tabs.md`。
+
+上游的筛选只有「可用 / 不可用」两类，把需登录、离线、未检测和未安装混在一起。现在官方 Agent 列表的 tab 是「全部 / 可用 / 未安装 / 其他」：可用 = `status === 'online'`，未安装 = `status === 'missing'`，其他 = 两者都不是（`offline`，含卡片显示为「需登录」的 `auth_required`；`unchecked`；没有 status）。三类互斥，可用 + 未安装 + 其他 = 全部。「其他」为 0 时 tab 照常显示，列表走原有空状态文案。
+
+### 现有文件挂载点
+
+| 文件                                                                         | 改动                                                                                                                         | 备注                             |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| `packages/desktop/src/renderer/pages/settings/AgentSettings/agentFilters.ts` | `AgentAvailabilityFilter` 改为 `'all' \| 'available' \| 'missing' \| 'other'`，统计返回 `{ all, available, missing, other }` | `// ace:` marker（文件主体整段） |
+| `packages/desktop/src/renderer/pages/settings/AgentSettings/LocalAgents.tsx` | tabs 数组里 `unavailable` 换成 `missing` + `other`                                                                           | `// ace:` marker                 |
+| `packages/desktop/src/renderer/services/i18n/locales/*/settings.json`        | `settings.agentManagement.filterUnavailable` 删除，新增 `filterMissing` / `filterOther`（13 语言）                           | JSON 无 marker                   |
+| `packages/desktop/src/renderer/services/i18n/i18n-keys.d.ts`                 | `bun run i18n:types` 生成                                                                                                    | 生成文件                         |
+| `tests/unit/settings/agentFilters.test.ts`                                   | 覆盖 online / offline / missing / unchecked / 无 status，断言三类之和等于全部                                                | `// ace:` marker                 |
+| `tests/unit/renderer/LocalAgents.dom.test.tsx`                               | tab 顺序与 testid、未安装 / 其他的筛选结果、「其他」为 0 时的空状态与自定义区不受影响                                        | `// ace:` marker                 |
+
+### 已知边界（有意为之）
+
+- 卡片上的状态标签不变：`offline` 仍显示「不可用」，`auth_required` 仍显示「需登录」。
+- 自定义 Agents 区块不受 tab 筛选影响（与上游一致）。
+- 启动时健康检查跑完前，所有 Agent 都是 `unchecked`，会暂时都算在「其他」里。

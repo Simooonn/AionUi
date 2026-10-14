@@ -254,11 +254,18 @@ const LocalAgents: React.FC = () => {
             label: t('settings.agentManagement.filterAvailable', { defaultValue: 'Available' }),
             count: officialFilterStats.available,
           },
+          // ace:start agent filter tabs: missing + other (other stays visible at 0)
           {
-            key: 'unavailable',
-            label: t('settings.agentManagement.filterUnavailable', { defaultValue: 'Unavailable' }),
-            count: officialFilterStats.unavailable,
+            key: 'missing',
+            label: t('settings.agentManagement.filterMissing', { defaultValue: 'Not installed' }),
+            count: officialFilterStats.missing,
           },
+          {
+            key: 'other',
+            label: t('settings.agentManagement.filterOther', { defaultValue: 'Other' }),
+            count: officialFilterStats.other,
+          },
+          // ace:end
         ]}
         activeTab={agentFilter}
         onTabChange={(key) => setAgentFilter(key as AgentAvailabilityFilter)}

@@ -421,7 +421,67 @@ describe('LocalAgents', () => {
     expect(refreshCatalog).not.toHaveBeenCalled();
   });
 
+  // ace:start agent filter tabs: missing + other
   it('renders the availability filter as underline tabs and switches the visible official agents', () => {
+    useManagedAgents.mockReturnValue({
+      agents: [
+        ...makeAgents(),
+        {
+          id: 'acp-codex',
+          name: 'Codex',
+          agent_type: 'acp',
+          agent_source: 'builtin',
+          backend: 'codex',
+          enabled: true,
+          available: false,
+          installed: true,
+          status: 'offline',
+          last_check_error_code: 'auth_required',
+        },
+      ],
+      revalidate: vi.fn(),
+      refreshCatalog: vi.fn(),
+    });
+
+    render(<LocalAgents />);
+
+    // Filter tabs render as buttons (underline-tab style), not an Arco radio group, in this order.
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs.map((tab) => tab.getAttribute('data-testid'))).toEqual([
+      'settings-tab-all',
+      'settings-tab-available',
+      'settings-tab-missing',
+      'settings-tab-other',
+    ]);
+    expect(tabs[0].tagName).toBe('BUTTON');
+    expect(screen.getByText('settings.agentManagement.filterMissing')).toBeInTheDocument();
+    expect(screen.getByText('settings.agentManagement.filterOther')).toBeInTheDocument();
+
+    // Default "all": every official agent is visible.
+    expect(screen.getByText('Aion CLI')).toBeInTheDocument();
+    expect(screen.getByText('Claude Code')).toBeInTheDocument();
+    expect(screen.getByText('Codex')).toBeInTheDocument();
+
+    // "available" keeps only the online agent.
+    fireEvent.click(screen.getByTestId('settings-tab-available'));
+    expect(screen.getByText('Aion CLI')).toBeInTheDocument();
+    expect(screen.queryByText('Claude Code')).toBeNull();
+    expect(screen.queryByText('Codex')).toBeNull();
+
+    // "missing" keeps only the not-installed agent.
+    fireEvent.click(screen.getByTestId('settings-tab-missing'));
+    expect(screen.queryByText('Aion CLI')).toBeNull();
+    expect(screen.getByText('Claude Code')).toBeInTheDocument();
+    expect(screen.queryByText('Codex')).toBeNull();
+
+    // "other" keeps the installed-but-not-online agent (here: needs sign-in).
+    fireEvent.click(screen.getByTestId('settings-tab-other'));
+    expect(screen.queryByText('Aion CLI')).toBeNull();
+    expect(screen.queryByText('Claude Code')).toBeNull();
+    expect(screen.getByText('Codex')).toBeInTheDocument();
+  });
+
+  it('keeps the other tab visible with an empty list when no official agent falls into it', () => {
     useManagedAgents.mockReturnValue({
       agents: makeAgents(),
       revalidate: vi.fn(),
@@ -430,24 +490,15 @@ describe('LocalAgents', () => {
 
     render(<LocalAgents />);
 
-    // Filter tabs render as buttons (underline-tab style), not an Arco radio group.
-    const allTab = screen.getByTestId('settings-tab-all');
-    const availableTab = screen.getByTestId('settings-tab-available');
-    const unavailableTab = screen.getByTestId('settings-tab-unavailable');
-    expect(allTab.tagName).toBe('BUTTON');
+    const otherTab = screen.getByTestId('settings-tab-other');
+    expect(otherTab).toHaveTextContent('0');
 
-    // Default "all": both official agents visible (Aion CLI online, Claude Code missing).
-    expect(screen.getByText('Aion CLI')).toBeInTheDocument();
-    expect(screen.getByText('Claude Code')).toBeInTheDocument();
-
-    // "available" keeps only the online agent.
-    fireEvent.click(availableTab);
-    expect(screen.getByText('Aion CLI')).toBeInTheDocument();
-    expect(screen.queryByText('Claude Code')).toBeNull();
-
-    // "unavailable" keeps only the non-online agent.
-    fireEvent.click(unavailableTab);
+    fireEvent.click(otherTab);
     expect(screen.queryByText('Aion CLI')).toBeNull();
-    expect(screen.getByText('Claude Code')).toBeInTheDocument();
+    expect(screen.queryByText('Claude Code')).toBeNull();
+    expect(screen.getByText('settings.agentManagement.localAgentsEmpty')).toBeInTheDocument();
+    // The custom section is not filtered by the tabs.
+    expect(screen.getByText('My Agent')).toBeInTheDocument();
   });
+  // ace:end
 });

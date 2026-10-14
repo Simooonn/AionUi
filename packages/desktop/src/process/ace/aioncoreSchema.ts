@@ -54,14 +54,19 @@ export function hasCoupledSchema(db: SqliteDb, table: CoupledTable): boolean {
 // Kept separate from ACE_AIONCORE_COUPLED_SCHEMA on purpose: that list gates
 // activity touch / backfill / local-file resolution, and widening it would let
 // one schema drift disable unrelated features (e.g. permanent-delete file
-// cleanup). The baseline read only needs conversations.extra; the cleanup
-// query additionally needs ranking, archive state and live-turn / cron checks.
+// cleanup). The baseline read needs conversations.extra plus acp_session.session_id;
+// the cleanup query additionally needs ranking, archive state, native ownership
+// and live-turn / cron checks.
 
-/** Columns the "already imported" baseline read touches. */
-export const ACE_IMPORT_BASELINE_SCHEMA = { conversations: ['id', 'extra'] } as const;
-/** Columns the duplicate cleanup query touches (ranking, archive state, live turns, cron bindings). */
+/** Columns the baseline read touches: imported sids + sids aioncore bound to any conversation. */
+export const ACE_IMPORT_BASELINE_SCHEMA = {
+  conversations: ['id', 'extra'],
+  acp_session: ['session_id'],
+} as const;
+/** Columns the duplicate cleanup query touches (ranking, archive state, native ownership, live turns, cron bindings). */
 export const ACE_IMPORT_DEDUPE_SCHEMA = {
   conversations: ['id', 'user_id', 'extra', 'created_at', 'archived_at'],
+  acp_session: ['conversation_id', 'session_id'],
   messages: ['id', 'conversation_id'],
   cron_jobs: ['id', 'conversation_id'],
 } as const;
@@ -104,7 +109,27 @@ export function readImportedCliSessionIds(db: SqliteQueryDb): Set<string> {
   return new Set(rows.map((r) => r.sid));
 }
 
-/** A later duplicate row of an already-imported CLI session, with the facts that protect it. */
+/**
+ * Every CLI session id aioncore currently points a conversation at (native or
+ * resumed import), ORPHAN rows included. acp_session.session_id is a CURRENT
+ * resume pointer, not a ledger: aioncore rewrites and clears it in place. Orphan
+ * rows survive only because aioncore's conversation delete removes the row
+ * first and its acp_session delete then matches nothing.
+ */
+export const ACP_SESSION_IDS_SQL = `SELECT session_id AS sid
+  FROM acp_session
+  WHERE typeof(session_id) = 'text'
+    AND session_id <> ''`;
+
+export function readAcpSessionIds(db: SqliteQueryDb): Set<string> {
+  const rows = db.prepare(ACP_SESSION_IDS_SQL).all() as Array<{ sid: string }>;
+  return new Set(rows.map((r) => r.sid));
+}
+
+/**
+ * An imported copy that loses to the session's owner (a native conversation,
+ * or the earliest import), with the facts that protect it.
+ */
 export type DuplicateImportLoser = {
   id: string;
   cliSessionId: string;
@@ -116,29 +141,46 @@ export type DuplicateImportLoser = {
 };
 
 /**
- * Duplicate groups: same user, same non-empty text cli_session_id, excluding
- * server-minted fork copies (extra.fork). The survivor is the EARLIEST import
- * (created_at, then rowid); every later row is a loser. Protection flags are
- * computed in the OUTER query so they can never change who the survivor is.
- * Output order is fixed so callers/tests can rely on it.
+ * Duplicate groups: same user, same non-empty text session id, claimed by
+ * imported rows (extra.cli_session_id, fork copies excluded) or by native rows
+ * (their acp_session pointer). The survivor is a native claimant, else the
+ * EARLIEST import (created_at, then rowid); only imports are ever losers.
+ * Protection flags are computed in the OUTER query so they can never change who
+ * the survivor is. Output order is fixed so callers/tests can rely on it.
  */
-export const DUPLICATE_IMPORT_LOSERS_SQL = `SELECT r.id, r.sid AS cliSessionId,
+export const DUPLICATE_IMPORT_LOSERS_SQL = `WITH claims AS (
+    SELECT c.id, c.user_id, c.archived_at, c.created_at, c.rowid AS rid,
+           json_extract(c.extra, '$.cli_session_id') AS sid, 1 AS imported
+      FROM conversations c
+     WHERE json_type(c.extra, '$.cli_session_id') = 'text'
+       AND json_extract(c.extra, '$.cli_session_id') <> ''
+       AND json_extract(c.extra, '$.fork') IS NULL
+    UNION ALL
+    -- The JOIN drops orphan acp_session rows (nothing left to protect); the
+    -- json_type guard drops every imported conversation's own acp_session row,
+    -- so an import never claims for itself even after aioncore re-points it.
+    SELECT c.id, c.user_id, c.archived_at, c.created_at, c.rowid,
+           a.session_id, 0
+      FROM acp_session a
+      JOIN conversations c ON c.id = a.conversation_id
+     WHERE typeof(a.session_id) = 'text'
+       AND a.session_id <> ''
+       AND json_type(c.extra, '$.cli_session_id') IS NOT 'text'
+  )
+SELECT r.id, r.sid AS cliSessionId,
        (r.archived_at IS NOT NULL) AS archived,
        EXISTS (SELECT 1 FROM messages m WHERE m.conversation_id = r.id AND m.id NOT LIKE 'cli-%') AS hasLiveTurns,
        EXISTS (SELECT 1 FROM cron_jobs j WHERE j.conversation_id = r.id) AS hasCronJobs
   FROM (
-    SELECT id, user_id, archived_at,
-           json_extract(extra, '$.cli_session_id') AS sid,
+    SELECT claims.*,
            ROW_NUMBER() OVER (
-             PARTITION BY user_id, json_extract(extra, '$.cli_session_id')
-             ORDER BY created_at ASC, rowid ASC
+             PARTITION BY user_id, sid
+             ORDER BY imported ASC, created_at ASC, rid ASC
            ) AS rn
-      FROM conversations
-     WHERE json_type(extra, '$.cli_session_id') = 'text'
-       AND json_extract(extra, '$.cli_session_id') <> ''
-       AND json_extract(extra, '$.fork') IS NULL
+      FROM claims
   ) AS r
  WHERE r.rn > 1
+   AND r.imported = 1
  ORDER BY r.user_id, r.sid, r.rn`;
 
 export function findDuplicateImportLosers(db: SqliteQueryDb): DuplicateImportLoser[] {

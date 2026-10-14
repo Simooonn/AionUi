@@ -82,6 +82,7 @@ import {
   findDuplicateImportLosers,
   hasCoupledSchema,
   hasImportSchema,
+  readAcpSessionIds,
   readImportedCliSessionIds,
 } from '@process/ace/aioncoreSchema';
 import { hasOpenTerminalIn, importCliSessions, scanCliSessions } from '@process/ace/importCliSessions';
@@ -123,7 +124,8 @@ const FULL_DDL = `CREATE TABLE conversations (
     id TEXT PRIMARY KEY, user_id TEXT NOT NULL DEFAULT 'u1', extra TEXT NOT NULL DEFAULT '{}',
     created_at INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL DEFAULT 0, archived_at INTEGER);
   CREATE TABLE messages (id TEXT PRIMARY KEY, conversation_id TEXT NOT NULL);
-  CREATE TABLE cron_jobs (id TEXT PRIMARY KEY, conversation_id TEXT NOT NULL)`;
+  CREATE TABLE cron_jobs (id TEXT PRIMARY KEY, conversation_id TEXT NOT NULL);
+  CREATE TABLE acp_session (conversation_id TEXT PRIMARY KEY, session_id TEXT)`;
 
 type SeedRow = { id: string; extra: unknown; user?: string; created?: number; archived?: number | null };
 
@@ -137,12 +139,18 @@ function seedBackendDb(rows: SeedRow[], ddl: string = FULL_DDL): void {
   db.close();
 }
 
-/** Extra on-disk rows (messages / cron_jobs) for the cleanup fixtures. */
-function seedRelated(opts: { liveMessageFor?: string[]; cliMessageFor?: string[]; cronFor?: string[] }): void {
+/** Extra on-disk rows (messages / cron_jobs / acp_session pointers) for the cleanup fixtures. */
+function seedRelated(opts: {
+  liveMessageFor?: string[];
+  cliMessageFor?: string[];
+  cronFor?: string[];
+  acp?: Array<[conversationId: string, sessionId: string | null]>;
+}): void {
   const db = new DatabaseSync(DB_FILE());
   for (const id of opts.liveMessageFor ?? []) db.prepare('INSERT INTO messages VALUES (?, ?)').run(`live-${id}`, id);
   for (const id of opts.cliMessageFor ?? []) db.prepare('INSERT INTO messages VALUES (?, ?)').run(`cli-${id}-1`, id);
   for (const id of opts.cronFor ?? []) db.prepare('INSERT INTO cron_jobs VALUES (?, ?)').run(`job-${id}`, id);
+  for (const [cid, sid] of opts.acp ?? []) db.prepare('INSERT INTO acp_session VALUES (?, ?)').run(cid, sid);
   db.close();
 }
 
@@ -201,15 +209,17 @@ describe('aioncoreSchema import schema gates', () => {
     expect([...ACE_AIONCORE_COUPLED_SCHEMA.conversations]).toEqual(['id', 'updated_at', 'extra']);
   });
 
-  it('old-style fixture: shared gate true, baseline gate true, dedupe gate false (no created_at)', () => {
+  it('old-style fixture: shared gate true; baseline gate false until acp_session exists; dedupe gate false (no created_at)', () => {
     const db = new DatabaseSync(':memory:');
     db.exec(`CREATE TABLE conversations (id TEXT PRIMARY KEY, updated_at INTEGER NOT NULL, extra TEXT);
              CREATE TABLE messages (id TEXT PRIMARY KEY, conversation_id TEXT);
              CREATE TABLE cron_jobs (id TEXT PRIMARY KEY, conversation_id TEXT)`);
     const a = adapt(db);
     expect(hasCoupledSchema(a, 'conversations')).toBe(true);
-    expect(hasImportSchema(a, ACE_IMPORT_BASELINE_SCHEMA)).toBe(true);
+    expect(hasImportSchema(a, ACE_IMPORT_BASELINE_SCHEMA)).toBe(false);
     expect(hasImportSchema(a, ACE_IMPORT_DEDUPE_SCHEMA)).toBe(false);
+    db.exec('CREATE TABLE acp_session (conversation_id TEXT, session_id TEXT)');
+    expect(hasImportSchema(a, ACE_IMPORT_BASELINE_SCHEMA)).toBe(true);
   });
 
   it('full fixture: both gates true; dropping cron_jobs only breaks the dedupe gate', () => {
@@ -219,6 +229,14 @@ describe('aioncoreSchema import schema gates', () => {
     expect(hasImportSchema(a, ACE_IMPORT_DEDUPE_SCHEMA)).toBe(true);
     db.exec('DROP TABLE cron_jobs');
     expect(hasImportSchema(a, ACE_IMPORT_BASELINE_SCHEMA)).toBe(true);
+    expect(hasImportSchema(a, ACE_IMPORT_DEDUPE_SCHEMA)).toBe(false);
+  });
+
+  it('dropping only acp_session breaks both gates (baseline and dedupe both read it)', () => {
+    const db = makeFullDb();
+    const a = adapt(db);
+    db.exec('DROP TABLE acp_session');
+    expect(hasImportSchema(a, ACE_IMPORT_BASELINE_SCHEMA)).toBe(false);
     expect(hasImportSchema(a, ACE_IMPORT_DEDUPE_SCHEMA)).toBe(false);
   });
 
@@ -249,6 +267,23 @@ describe('readImportedCliSessionIds (baseline includes archived rows)', () => {
     insertConversation(db, 'c1', { cli_session_id: 'same', cli_source: 'claude-code' });
     insertConversation(db, 'c2', { cli_session_id: 'same', cli_source: 'codex' });
     expect(readImportedCliSessionIds(adapt(db)).size).toBe(1);
+  });
+});
+
+describe('readAcpSessionIds (every session aioncore points a conversation at, orphans included)', () => {
+  it('counts native, archived-native and orphan pointers; ignores NULL, empty and BLOB values', () => {
+    const db = makeFullDb();
+    insertConversation(db, 'N', { backend: 'claude' });
+    insertConversation(db, 'NA', { backend: 'claude' }, { archived: 1791621840771 });
+    const acp = db.prepare('INSERT INTO acp_session VALUES (?, ?)');
+    acp.run('N', 's-native');
+    acp.run('NA', 's-archived');
+    acp.run('gone', 's-orphan'); // conversation row already deleted
+    acp.run('null-pointer', null);
+    acp.run('empty-pointer', '');
+    // TEXT affinity stores a number as text, so the typeof guard only ever filters BLOB / NULL.
+    db.exec(`INSERT INTO acp_session VALUES ('blob-pointer', x'4142')`);
+    expect([...readAcpSessionIds(adapt(db))].toSorted()).toEqual(['s-archived', 's-native', 's-orphan']);
   });
 });
 
@@ -292,7 +327,11 @@ describe('importCliSessions baseline (read-only DB, archived rows included)', ()
   });
 
   it('aborts with schema-mismatch when conversations lacks the extra column', async () => {
-    seedBackendDb([], 'CREATE TABLE conversations (id TEXT PRIMARY KEY, updated_at INTEGER NOT NULL)');
+    seedBackendDb(
+      [],
+      `CREATE TABLE conversations (id TEXT PRIMARY KEY, updated_at INTEGER NOT NULL);
+       CREATE TABLE acp_session (conversation_id TEXT PRIMARY KEY, session_id TEXT)`
+    );
     setSessions([meta('claude-code', 'a1')]);
     const res = await importCliSessions(NO_TERMINAL);
     expect(res.failed).toBe(1);
@@ -356,6 +395,80 @@ describe('importCliSessions baseline (read-only DB, archived rows included)', ()
     });
     expect(createInvoke()).toHaveBeenCalledTimes(2);
   });
+
+  it('production branch: imported rows exist, so native-owned sids are skipped without consulting the list', async () => {
+    seedBackendDb([
+      { id: 'A', extra: { cli_session_id: 'A' } },
+      { id: 'N', extra: { backend: 'claude' } },
+    ]);
+    seedRelated({ acp: [['N', 'S']] });
+    setSessions([meta('claude-code', 'A'), meta('claude-code', 'S'), meta('codex', 'B')]);
+    const res = await importCliSessions(NO_TERMINAL);
+    expect(res).toMatchObject({ imported: 1, skipped: 2, failed: 0 });
+    expect(
+      createInvoke().mock.calls.map((c) => (c[0] as { extra: { cli_session_id: string } }).extra.cli_session_id)
+    ).toEqual(['B']);
+    expect(listInvoke()).not.toHaveBeenCalled();
+  });
+
+  it('skips the session of a native conversation (no imported rows yet)', async () => {
+    seedBackendDb([{ id: 'N', extra: { backend: 'claude' } }]);
+    seedRelated({ acp: [['N', 'S']] });
+    setSessions([meta('claude-code', 'S')]);
+    const res = await importCliSessions(NO_TERMINAL);
+    expect(res).toMatchObject({ imported: 0, skipped: 1, failed: 0 });
+    expect(createInvoke()).not.toHaveBeenCalled();
+  });
+
+  it('skips the session of a DELETED conversation whose orphan acp_session row survives', async () => {
+    seedBackendDb([]);
+    seedRelated({ acp: [['gone', 'S2']] });
+    setSessions([meta('claude-code', 'S2')]);
+    const res = await importCliSessions(NO_TERMINAL);
+    expect(res).toMatchObject({ imported: 0, skipped: 1, failed: 0 });
+    expect(createInvoke()).not.toHaveBeenCalled();
+  });
+
+  it('tripwire is not masked by acp_session: no imported rows + list reports imported rows → baseline-suspect', async () => {
+    seedBackendDb([{ id: 'N', extra: { backend: 'claude' } }]);
+    seedRelated({ acp: [['N', 'S']] });
+    listInvoke().mockResolvedValue({ items: [{ id: 'x', extra: { cli_session_id: 'ghost' } }] });
+    setSessions([meta('claude-code', 'a1')]);
+    const res = await importCliSessions(NO_TERMINAL);
+    expect(res.errors.join('\n')).toContain('baseline-suspect');
+    expect(createInvoke()).not.toHaveBeenCalled();
+  });
+
+  it('no imported rows, empty list, non-empty acp_session → proceeds after exactly one list check', async () => {
+    seedBackendDb([]);
+    seedRelated({ acp: [['gone', 'S']] });
+    setSessions([meta('claude-code', 'S'), meta('gemini', 'B')]);
+    const res = await importCliSessions(NO_TERMINAL);
+    expect(res).toMatchObject({ imported: 1, skipped: 1, failed: 0 });
+    expect(listInvoke()).toHaveBeenCalledTimes(1);
+  });
+
+  it('an import re-pointed by aioncore keeps both its own sid and the new pointer out of the import', async () => {
+    seedBackendDb([{ id: 'X', extra: { cli_session_id: 'T' } }]);
+    seedRelated({ acp: [['X', 'T2']] });
+    setSessions([meta('claude-code', 'T'), meta('claude-code', 'T2')]);
+    const res = await importCliSessions(NO_TERMINAL);
+    expect(res).toMatchObject({ imported: 0, skipped: 2, failed: 0 });
+    expect(createInvoke()).not.toHaveBeenCalled();
+  });
+
+  it('aborts with schema-mismatch when acp_session is missing (fail closed, never duplicate)', async () => {
+    seedBackendDb(
+      [],
+      `CREATE TABLE conversations (id TEXT PRIMARY KEY, user_id TEXT NOT NULL DEFAULT 'u1', extra TEXT NOT NULL DEFAULT '{}',
+        created_at INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL DEFAULT 0, archived_at INTEGER)`
+    );
+    setSessions([meta('claude-code', 'a1')]);
+    const res = await importCliSessions(NO_TERMINAL);
+    expect(res.failed).toBe(1);
+    expect(res.errors.join('\n')).toContain('schema-mismatch');
+    expect(createInvoke()).not.toHaveBeenCalled();
+  });
 });
 
 describe('scanCliSessions shares the baseline', () => {
@@ -374,6 +487,22 @@ describe('scanCliSessions shares the baseline', () => {
   it('does not count an archived (already imported) session as new', async () => {
     seedBackendDb([{ id: 'c-arch', extra: { cli_session_id: 'A' }, archived: 1 }]);
     setSessions([meta('codex', 'A'), meta('codex', 'B')]);
+    const scan = await scanCliSessions();
+    expect(scan).toEqual({ total: 1, bySource: { 'claude-code': 0, codex: 1, gemini: 0, opencode: 0 } });
+  });
+
+  it('does not count native-owned or orphan-owned sessions as new', async () => {
+    seedBackendDb([
+      { id: 'A', extra: { cli_session_id: 'A' } },
+      { id: 'N', extra: { backend: 'claude' } },
+    ]);
+    seedRelated({
+      acp: [
+        ['N', 'S'],
+        ['gone', 'S2'],
+      ],
+    });
+    setSessions([meta('claude-code', 'A'), meta('claude-code', 'S'), meta('claude-code', 'S2'), meta('codex', 'B')]);
     const scan = await scanCliSessions();
     expect(scan).toEqual({ total: 1, bySource: { 'claude-code': 0, codex: 1, gemini: 0, opencode: 0 } });
   });
@@ -420,6 +549,51 @@ describe('findDuplicateImportLosers (same user + sid, earliest import survives, 
     insertConversation(db, 'a', { cli_session_id: 'x' }, { created: 1 });
     insertConversation(db, 'b', { cli_session_id: 'y' }, { created: 2, archived: 1 });
     expect(findDuplicateImportLosers(adapt(db))).toEqual([]);
+  });
+
+  it('a native acp_session owner outranks every import; natives, orphans, self-pointers, forks and other users never lose', () => {
+    const db = makeFullDb();
+    const native = { backend: 'claude' };
+    const acp = db.prepare('INSERT INTO acp_session VALUES (?, ?)');
+    // S: the native N was created AFTER I1, yet still survives; I1 carries its own NULL pointer row.
+    insertConversation(db, 'N', native, { created: 5 });
+    acp.run('N', 'S');
+    insertConversation(db, 'I1', { cli_session_id: 'S' }, { created: 1 });
+    acp.run('I1', null);
+    insertConversation(db, 'I2', { cli_session_id: 'S' }, { created: 2 });
+    db.prepare('INSERT INTO messages VALUES (?, ?)').run('live-i2', 'I2');
+    // Q: two natives claim the same session; only the import loses.
+    insertConversation(db, 'N1', native, { created: 1 });
+    insertConversation(db, 'N2', native, { created: 2 });
+    acp.run('N1', 'Q');
+    acp.run('N2', 'Q');
+    insertConversation(db, 'ZQ', { cli_session_id: 'Q' }, { created: 3 });
+    // W: an archived native still owns its session; the active copy loses.
+    insertConversation(db, 'NA', native, { created: 1, archived: 1 });
+    acp.run('NA', 'W');
+    insertConversation(db, 'ZA', { cli_session_id: 'W' }, { created: 2 });
+    // T: an import's own pointer row never makes it claim against itself.
+    insertConversation(db, 'X', { cli_session_id: 'T' }, { created: 1 });
+    acp.run('X', 'T');
+    // U: an orphan pointer (conversation deleted) protects nothing and deletes nothing. A LEFT JOIN
+    // would pass too (the orphan's NULL user_id forms its own partition): this pins behaviour, not the JOIN.
+    insertConversation(db, 'Y', { cli_session_id: 'U' }, { created: 1 });
+    acp.run('gone', 'U');
+    // V: a native of another user never outranks this user's import.
+    insertConversation(db, 'NU2', native, { user: 'u2', created: 0 });
+    acp.run('NU2', 'V');
+    insertConversation(db, 'Z', { cli_session_id: 'V' }, { created: 1 });
+    // R: a fork of an import (extra.fork) neither claims nor loses, even with its own pointer.
+    insertConversation(db, 'F', { cli_session_id: 'R', fork: { from: 'IR' } }, { created: 2 });
+    acp.run('F', 'R');
+    insertConversation(db, 'IR', { cli_session_id: 'R' }, { created: 1 });
+
+    expect(findDuplicateImportLosers(adapt(db))).toEqual([
+      { id: 'ZQ', cliSessionId: 'Q', archived: false, hasLiveTurns: false, hasCronJobs: false },
+      { id: 'I1', cliSessionId: 'S', archived: false, hasLiveTurns: false, hasCronJobs: false },
+      { id: 'I2', cliSessionId: 'S', archived: false, hasLiveTurns: true, hasCronJobs: false },
+      { id: 'ZA', cliSessionId: 'W', archived: false, hasLiveTurns: false, hasCronJobs: false },
+    ]);
   });
 });
 
@@ -540,12 +714,51 @@ describe('importCliSessions duplicate cleanup (protected, backend endpoints only
     expect(res.removedIds).toEqual(['reimported']);
   });
 
+  it('removes an imported copy of a NATIVE conversation through conversation.remove only; the native survives', async () => {
+    seedBackendDb([
+      { id: 'N', extra: { backend: 'claude' }, created: 5 },
+      { id: 'C', extra: { cli_session_id: 'S' }, created: 1 },
+    ]);
+    // C was opened once, so aioncore also points C's own row at the shared session.
+    seedRelated({
+      acp: [
+        ['N', 'S'],
+        ['C', 'S'],
+      ],
+    });
+    const res = await importCliSessions(NO_TERMINAL);
+    expect(removeInvoke()).toHaveBeenCalledTimes(1);
+    expect(removeInvoke()).toHaveBeenCalledWith({ id: 'C' });
+    expect(res).toMatchObject({ duplicatesRemoved: 1, duplicatesSkipped: 0, removedIds: ['C'], errors: [] });
+    expectSidebarUntouchedExcept();
+    expectNoLocalFileChannelTouched();
+  });
+
+  it('keeps an imported copy of a native conversation that has in-app turns', async () => {
+    seedBackendDb([
+      { id: 'N', extra: { backend: 'claude' }, created: 5 },
+      { id: 'C', extra: { cli_session_id: 'S' }, created: 1 },
+    ]);
+    seedRelated({
+      acp: [
+        ['N', 'S'],
+        ['C', 'S'],
+      ],
+      liveMessageFor: ['C'],
+    });
+    const res = await importCliSessions(NO_TERMINAL);
+    expect(removeInvoke()).not.toHaveBeenCalled();
+    expect(res).toMatchObject({ duplicatesRemoved: 0, duplicatesSkipped: 1, removedIds: [] });
+    expectNoLocalFileChannelTouched();
+  });
+
   it('cleanup-side schema mismatch degrades to an errors entry while the import itself proceeds', async () => {
     seedBackendDb(
       [],
       `CREATE TABLE conversations (id TEXT PRIMARY KEY, user_id TEXT NOT NULL DEFAULT 'u1', extra TEXT NOT NULL DEFAULT '{}',
         created_at INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL DEFAULT 0, archived_at INTEGER);
-       CREATE TABLE messages (id TEXT PRIMARY KEY, conversation_id TEXT NOT NULL)`
+       CREATE TABLE messages (id TEXT PRIMARY KEY, conversation_id TEXT NOT NULL);
+       CREATE TABLE acp_session (conversation_id TEXT PRIMARY KEY, session_id TEXT)`
     );
     setSessions([meta('claude-code', 'a1')]);
     const res = await importCliSessions(NO_TERMINAL);

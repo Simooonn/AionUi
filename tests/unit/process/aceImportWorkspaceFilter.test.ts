@@ -59,6 +59,7 @@ vi.mock('@process/ace/aioncoreSchema', () => ({
   ACE_IMPORT_DEDUPE_SCHEMA: {},
   hasImportSchema: () => h.schemaOk,
   readImportedCliSessionIds: () => new Set<string>(),
+  readAcpSessionIds: () => new Set<string>(),
   findDuplicateImportLosers: () => [],
   backfillImportedConversationActivity: () => undefined,
 }));

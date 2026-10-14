@@ -9,10 +9,15 @@
  *    straight from the aioncore sqlite file (read-only), so ARCHIVED rows count.
  *    The HTTP list endpoint excludes archived rows and once let archived sessions
  *    be re-imported as duplicates. Re-running imports nothing new.
+ *  - Sessions aioncore points ANY conversation at (acp_session.session_id, orphan
+ *    rows included) are AionUi's own and are never imported: a native
+ *    conversation's CLI session lives in the user's project dir and was once
+ *    imported as a duplicate of it.
  *  - A baseline that cannot be read — or that is empty while the HTTP list still
  *    reports imported rows — aborts the import with the reason: treating a missing
  *    baseline as "nothing imported yet" once mass-duplicated all 379 imported
  *    conversations (the list endpoint happened to return 500 at that moment).
+ *    The tripwire keys on the imported half only.
  *  - `extra.backend` ('claude'|'codex') drives the sidebar icon; the presence of
  *    `cli_session_id` marks the conversation read-only in the renderer.
  *  - Sessions whose ORIGINAL cwd lies in an AionUi-internal dir (`.aionui*`
@@ -38,6 +43,7 @@ import {
   findDuplicateImportLosers,
   hasImportSchema,
   type ImportSchemaRequirement,
+  readAcpSessionIds,
   readImportedCliSessionIds,
   type SqliteQueryDb,
 } from './aioncoreSchema';
@@ -121,15 +127,25 @@ type BaselineFailureReason = DbFailureReason | 'baseline-suspect' | 'list-failed
 type BaselineResult = { ok: true; ids: Set<string> } | { ok: false; reason: BaselineFailureReason; detail: string };
 
 /**
- * The cli_session_ids already imported (archived rows included), or the reason
- * the import must NOT proceed. An EMPTY baseline is cross-checked against the
- * HTTP list: if the list still reports imported rows the DB read is lying
- * (schema/semantic drift) — a true first import has both sides empty.
+ * The CLI session ids that must not be imported — already imported (archived
+ * rows included) or pointed at by aioncore for any conversation (acp_session,
+ * orphan rows included) — or the reason the import must NOT proceed. An EMPTY
+ * imported half is cross-checked against the HTTP list: if the list still
+ * reports imported rows the DB read is lying (schema/semantic drift) — a true
+ * first import has both sides empty.
  */
 async function readImportBaseline(): Promise<BaselineResult> {
-  const res = await withBackendDb(ACE_IMPORT_BASELINE_SCHEMA, readImportedCliSessionIds);
+  const res = await withBackendDb(ACE_IMPORT_BASELINE_SCHEMA, (db) => ({
+    imported: readImportedCliSessionIds(db),
+    owned: readAcpSessionIds(db),
+  }));
   if (res.ok === false) return res;
-  if (res.value.size > 0) return { ok: true, ids: res.value };
+  const { imported, owned } = res.value;
+  const ids = new Set([...imported, ...owned]);
+  console.info('[ace:import] baseline', { imported: imported.size, owned: owned.size, union: ids.size });
+  // The tripwire keys on the IMPORTED half only: a non-empty acp_session must
+  // never mask a conversations read that silently returns nothing.
+  if (imported.size > 0) return { ok: true, ids };
   try {
     const list = await ipcBridge.database.getUserConversations.invoke({ limit: 10000 });
     const suspect = (list?.items ?? []).some((c) => {
@@ -146,7 +162,7 @@ async function readImportBaseline(): Promise<BaselineResult> {
   } catch (e) {
     return { ok: false, reason: 'list-failed', detail: errorText(e) };
   }
-  return { ok: true, ids: res.value };
+  return { ok: true, ids };
 }
 
 // The backend rejects acp conversations whose workspace path no longer exists
@@ -236,7 +252,9 @@ export async function scanCliSessions(): Promise<ScanCliSessionsResult | null> {
 }
 
 /**
- * Remove later duplicate rows of already-imported sessions (same user + cli_session_id).
+ * Remove imported copies of a session that is already shown: a later import of
+ * the same cli_session_id, or any import of a session a native conversation owns
+ * through acp_session (the native row always survives).
  * Only data-less copies go: a loser with in-app turns, a cron binding or an open
  * terminal is kept and counted in `duplicatesSkipped`. Deletion goes through the
  * backend's single-item endpoints only — NEVER through sessionFiles /

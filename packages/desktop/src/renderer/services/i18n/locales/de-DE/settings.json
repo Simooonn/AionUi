@@ -1415,5 +1415,15 @@
   "crossSessionMessageDesc": "Erlaubt Agenten, Nachrichten an Ihre anderen Unterhaltungen zu senden. Beim Ausschalten wird auch die @@-Erwähnung im Eingabefeld deaktiviert.",
   "crossSessionMessageDisabledBanner": "Nachrichten zwischen Unterhaltungen sind aus, die @@-Erwähnung ist nicht verfügbar.",
   "crossSessionMessageResume": "Wieder einschalten",
-  "crossSessionMessageUpdateFailed": "Einstellung konnte nicht aktualisiert werden"
+  "crossSessionMessageUpdateFailed": "Einstellung konnte nicht aktualisiert werden",
+  "openWith": {
+    "title": "Öffnen mit",
+    "description": "Apps für das Menü „Öffnen mit“ des Arbeitsbereichs. Es werden nur auf diesem Mac installierte Apps angezeigt.",
+    "editor": "Editor",
+    "terminal": "Terminal",
+    "browser": "Browser",
+    "editorDefault": "Standard (code-Befehl von VS Code)",
+    "terminalDefault": "Standard (Terminal)",
+    "builtinBrowser": "Integrierter Browser"
+  }
 }

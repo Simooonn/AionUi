@@ -1440,5 +1440,15 @@
   "crossSessionMessageDesc": "允許 Agent 向你的其他對話傳送訊息。關閉後，輸入框的 @@ 對話提及與投遞功能會同時停用。",
   "crossSessionMessageDisabledBanner": "跨對話訊息已關閉，輸入框的 @@ 對話提及不可用。",
   "crossSessionMessageResume": "重新開啟",
-  "crossSessionMessageUpdateFailed": "跨對話訊息設定更新失敗"
+  "crossSessionMessageUpdateFailed": "跨對話訊息設定更新失敗",
+  "openWith": {
+    "title": "開啟方式",
+    "description": "工作區「開啟方式」選單使用的應用程式，只列出本機已安裝的應用程式。",
+    "editor": "編輯器",
+    "terminal": "終端機",
+    "browser": "瀏覽器",
+    "editorDefault": "預設（VS Code 的 code 指令）",
+    "terminalDefault": "預設（終端機）",
+    "builtinBrowser": "內建瀏覽器"
+  }
 }

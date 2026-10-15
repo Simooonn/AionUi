@@ -9,14 +9,14 @@ Unit tests for the renderer Settings area: assistant/appearance/tools utility fu
 
 ## Key Files
 
-| File                              | Description                                                                                                                                                                                        |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `assistantUtils.test.ts`          | Pure helpers from `AssistantSettings/assistantUtils`: `isEmoji`, `resolveAvatarImageSrc`, `sortAssistants`, `filterAssistants` (search + status/source + i18n locale), `groupAssistantsByEnabled`. |
-| `backgroundUtils.test.ts`         | `AppearanceSettings/backgroundUtils.injectBackgroundCssBlock` — injecting/replacing/removing the marked background CSS block around existing CSS.                                                  |
-| `mcpJsonImport.test.ts`           | `ToolsSettings/mcpJsonImport.parseMcpJsonImport` — parsing `mcpServers`/array configs, stdio arg normalization, `streamable_http`→`http` mapping, and validation error keys.                       |
-| `managedNodeRuntimeI18n.test.ts`  | Reads `settings.json`/`conversation.json` locale files (en-US, zh-CN) to assert managed-Node-runtime error/warmup copy does not wrongly tell users to install Node.js.                             |
-| `SystemModalContent.dom.test.tsx` | DOM test of `SettingsModal/contents/SystemModalContent`: directory picker, persisting log/work dirs via `updateSystemInfo`, restart flow, failure messages, manual-restart hint, tooltips.         |
-| `SystemSettings.dom.test.tsx`     | DOM test of `pages/settings/SystemSettings`: route-based rendering of System vs About modal content and `contentClassName` for the about page.                                                     |
+| File                              | Description                                                                                                                                                                                                 |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `assistantUtils.test.ts`          | Pure helpers from `AssistantSettings/assistantUtils`: `isEmoji`, `resolveAvatarImageSrc`, `sortAssistants`, `filterAssistants` (search + status/source + i18n locale), `groupAssistantsByEnabled`.          |
+| `backgroundUtils.test.ts`         | `AppearanceSettings/backgroundUtils.injectBackgroundCssBlock` — injecting/replacing/removing the marked background CSS block around existing CSS.                                                           |
+| `mcpJsonImport.test.ts`           | `ToolsSettings/mcpJsonImport.parseMcpJsonImport` — parsing `mcpServers`/array configs, stdio arg normalization, `streamable_http`→`http` mapping, and validation error keys.                                |
+| `managedNodeRuntimeI18n.test.ts`  | Reads `settings.json`/`conversation.json` locale files (en-US, zh-CN) to assert managed-Node-runtime error/warmup copy does not wrongly tell users to install Node.js.                                      |
+| `SystemModalContent.dom.test.tsx` | DOM test of `SettingsModal/contents/SystemModalContent`: directory picker, persisting log/work dirs via `updateSystemInfo`, restart flow, failure messages, manual-restart hint, tooltips.                  |
+| `SystemSettings.dom.test.tsx`     | DOM test of `pages/settings/SystemSettings`: route-based rendering of System vs About modal content, `contentClassName` for the about page, and the ace Open With section mounting on the system page only. |
 
 ## For AI Agents
 

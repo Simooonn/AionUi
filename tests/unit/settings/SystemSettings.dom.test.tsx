@@ -31,6 +31,10 @@ vi.mock('@/renderer/pages/settings/components/SettingsPageWrapper', () => ({
   ),
 }));
 
+vi.mock('@/renderer/ace/settings/OpenWithSettings', () => ({
+  default: () => <div data-testid='open-with-settings'>OpenWithSettings</div>,
+}));
+
 describe('SystemSettings', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -62,6 +66,17 @@ describe('SystemSettings', () => {
     render(<SystemSettings />);
     const wrapper = screen.getByTestId('settings-page-wrapper');
     expect(wrapper).not.toHaveAttribute('data-content-class');
+  });
+
+  it('mounts the ace Open With section on the system page only', () => {
+    mockUseLocation.mockReturnValue({ pathname: '/settings/system' });
+    const { unmount } = render(<SystemSettings />);
+    expect(screen.getByTestId('open-with-settings')).toBeInTheDocument();
+    unmount();
+
+    mockUseLocation.mockReturnValue({ pathname: '/settings/about' });
+    render(<SystemSettings />);
+    expect(screen.queryByTestId('open-with-settings')).not.toBeInTheDocument();
   });
 
   it('wraps content in SettingsPageWrapper', () => {

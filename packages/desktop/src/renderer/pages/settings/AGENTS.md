@@ -16,7 +16,7 @@ Route-mounted settings pages for the renderer's `/settings/*` section. Most page
 | `ExtensionSettingsPage.tsx` | `/settings/ext/:tabId` page that hosts extension-contributed settings UIs in an `<iframe>` (local) or `WebviewHost` (external URL); does `postMessage` locale init (`aion:init`) and activity-snapshot bridging.                        |
 | `PetSettings.tsx`           | Desktop-pet preferences (enable, size, DND, confirm bubble) using `configService.setLocal` + `systemSettings.*` IPC with optimistic rollback; shows a "desktop only" notice on non-Electron.                                            |
 | `ModeSettings.tsx`          | Thin wrapper around `ModelModalContent` (model/provider config).                                                                                                                                                                        |
-| `SystemSettings.tsx`        | Renders `SystemModalContent`, or `AboutModalContent` when path is `/settings/about`.                                                                                                                                                    |
+| `SystemSettings.tsx`        | Renders `SystemModalContent` plus ace sections from `renderer/ace/settings/` (CLI import, Open With), or `AboutModalContent` when path is `/settings/about`.                                                                            |
 | `WebuiSettings.tsx`         | Thin wrapper around `WebuiModalContent`.                                                                                                                                                                                                |
 
 ## Subdirectories

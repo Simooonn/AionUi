@@ -1415,5 +1415,15 @@
   "crossSessionMessageDesc": "به عامل‌ها اجازه می‌دهد به گفتگوهای دیگر شما پیام بفرستند. با خاموش کردن، منشن @@ در کادر ورودی نیز غیرفعال می‌شود.",
   "crossSessionMessageDisabledBanner": "پیام‌های بین گفتگوها خاموش است، منشن @@ در دسترس نیست.",
   "crossSessionMessageResume": "روشن کردن دوباره",
-  "crossSessionMessageUpdateFailed": "به‌روزرسانی تنظیم پیام‌های بین گفتگوها ناموفق بود"
+  "crossSessionMessageUpdateFailed": "به‌روزرسانی تنظیم پیام‌های بین گفتگوها ناموفق بود",
+  "openWith": {
+    "title": "باز کردن با",
+    "description": "برنامه‌هایی که منوی «باز کردن با» فضای کار از آن‌ها استفاده می‌کند. فقط برنامه‌های نصب‌شده روی این Mac نمایش داده می‌شوند.",
+    "editor": "ویرایشگر",
+    "terminal": "ترمینال",
+    "browser": "مرورگر",
+    "editorDefault": "پیش‌فرض (فرمان code در VS Code)",
+    "terminalDefault": "پیش‌فرض (ترمینال)",
+    "builtinBrowser": "مرورگر داخلی"
+  }
 }

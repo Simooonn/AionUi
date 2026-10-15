@@ -20,6 +20,7 @@ import {
 import type { TerminalExitPayload, TerminalOutputPayload } from '../common/types/platform/electron';
 // ace:start shared types for the ace IPC surface below (preload has no `@/` alias)
 import type { HudStatuslineParams, HudStatuslineResult } from '../common/ace/types';
+import type { OpenWithInstalledApp, OpenWithLaunchRequest, OpenWithLaunchResult } from '../common/ace/openWithApps';
 // ace:end
 
 /**
@@ -77,6 +78,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   larkNotifySend: (rows: unknown[]) => ipcRenderer.invoke('ace:lark-notify-send', rows),
   hudStatusline: (params: HudStatuslineParams): Promise<HudStatuslineResult> =>
     ipcRenderer.invoke('ace:hud-statusline', params),
+  // Configurable "Open with" apps (macOS): installed presets, real app icons, launch
+  openWithListApps: (): Promise<OpenWithInstalledApp[]> => ipcRenderer.invoke('ace:open-with-list-apps'),
+  openWithAppIcon: (appId: string): Promise<string | null> => ipcRenderer.invoke('ace:open-with-app-icon', appId),
+  openWithLaunch: (request: OpenWithLaunchRequest): Promise<OpenWithLaunchResult> =>
+    ipcRenderer.invoke('ace:open-with-launch', request),
   // ace:end
 });
 

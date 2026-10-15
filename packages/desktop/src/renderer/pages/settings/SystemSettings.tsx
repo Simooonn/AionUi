@@ -9,8 +9,9 @@ import { useLocation } from 'react-router-dom';
 import SystemModalContent from '@/renderer/components/settings/SettingsModal/contents/SystemModalContent';
 import AboutModalContent from '@/renderer/components/settings/SettingsModal/contents/AboutModalContent';
 import SettingsPageWrapper from './components/SettingsPageWrapper';
-// ace:start CLI session import entry
-import ImportCliSessionsButton from '@/renderer/ace/ImportCliSessionsButton';
+// ace:start ace settings sections (CLI import, Open With)
+import ImportCliSessionsButton from '@/renderer/ace/settings/ImportCliSessionsButton';
+import OpenWithSettings from '@/renderer/ace/settings/OpenWithSettings';
 // ace:end
 
 const SystemSettings: React.FC = () => {
@@ -24,8 +25,9 @@ const SystemSettings: React.FC = () => {
       ) : (
         <>
           <SystemModalContent />
-          {/* ace:start CLI session import entry */}
+          {/* ace:start ace settings sections (CLI import, Open With) */}
           <ImportCliSessionsButton />
+          <OpenWithSettings />
           {/* ace:end */}
         </>
       )}

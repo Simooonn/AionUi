@@ -1441,5 +1441,15 @@
   "crossSessionMessageDesc": "Permite que agentes enviem mensagens para suas outras conversas. Desativar também desliga a menção @@ na caixa de entrada.",
   "crossSessionMessageDisabledBanner": "As mensagens entre conversas estão desativadas, a menção @@ não está disponível.",
   "crossSessionMessageResume": "Ativar novamente",
-  "crossSessionMessageUpdateFailed": "Falha ao atualizar a configuração de mensagens entre conversas"
+  "crossSessionMessageUpdateFailed": "Falha ao atualizar a configuração de mensagens entre conversas",
+  "openWith": {
+    "title": "Abrir com",
+    "description": "Apps usados pelo menu \"Abrir com\" do espaço de trabalho. Só aparecem os apps instalados neste Mac.",
+    "editor": "Editor",
+    "terminal": "Terminal",
+    "browser": "Navegador",
+    "editorDefault": "Padrão (comando code do VS Code)",
+    "terminalDefault": "Padrão (Terminal)",
+    "builtinBrowser": "Navegador integrado"
+  }
 }

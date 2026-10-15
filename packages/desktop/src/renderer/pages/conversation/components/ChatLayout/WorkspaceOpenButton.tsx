@@ -5,6 +5,10 @@ import { Browser, Command, Down, FolderOpen, Terminal } from '@icon-park/react';
 import { Button, Dropdown, Tooltip } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+// ace:start configurable open-with apps (renderer/ace/settings/)
+import { launchOpenWithApp } from '@/renderer/ace/settings/useOpenWithApps';
+import { useOpenWithOverrides } from '@/renderer/ace/settings/useOpenWithOverrides';
+// ace:end
 
 /**
  * `browser` 打开的是应用内浏览器（预览面板里的 tab），其余三个是拉起外部程序。
@@ -91,11 +95,15 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
   const handleOpenWith = useCallback(
     async (tool: ToolType) => {
       try {
-        if (isExternalTool(tool)) {
+        // ace:start configurable open-with: try the configured macOS app first; upstream branches unchanged
+        if (await launchOpenWithApp(tool, workspacePath)) {
+          // Handled by the configured app (renderer/ace/settings/useOpenWithApps.ts).
+        } else if (isExternalTool(tool)) {
           await ipcBridge.shell.openFolderWith.invoke({ folder_path: workspacePath, tool });
         } else {
           openBrowserTab?.();
         }
+        // ace:end
         // Save preference
         localStorage.setItem(STORAGE_KEY, tool);
         setPreferredTool(tool);
@@ -139,8 +147,11 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
     [t, isTemporary, vscodeInstalled, openBrowserTab]
   );
 
+  // ace:start configurable open-with: decorated options (configured app name / real icon)
+  const openWith = useOpenWithOverrides(toolOptions, { isTemporary, dropdownOpen });
   // Filter only available tools
-  const availableOptions = useMemo(() => toolOptions.filter((opt) => opt.available), [toolOptions]);
+  const availableOptions = useMemo(() => openWith.options.filter((opt) => opt.available), [openWith.options]);
+  // ace:end
 
   // Determine current tool: preferred > first available > browser
   const currentTool: ToolType = useMemo(() => {
@@ -210,7 +221,9 @@ const WorkspaceOpenButton: React.FC<WorkspaceOpenButtonProps> = ({ workspacePath
           className='workspace-open-button__btn flex items-center gap-4px ps-8px pe-4px'
           onClick={() => handleOpenWith(currentTool)}
         >
-          {currentIcon}
+          {/* ace:start configured app icon */}
+          {openWith.iconForTool(currentTool) ?? currentIcon}
+          {/* ace:end */}
         </Button>
       </Tooltip>
 

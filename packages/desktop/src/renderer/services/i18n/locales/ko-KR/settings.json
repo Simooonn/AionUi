@@ -1440,5 +1440,15 @@
   "crossSessionMessageDesc": "에이전트가 다른 대화로 메시지를 보낼 수 있게 합니다. 끄면 입력창의 @@ 대화 멘션도 비활성화됩니다.",
   "crossSessionMessageDisabledBanner": "대화 간 메시지가 꺼져 있어 입력창의 @@ 대화 멘션을 사용할 수 없습니다.",
   "crossSessionMessageResume": "다시 켜기",
-  "crossSessionMessageUpdateFailed": "대화 간 메시지 설정 업데이트에 실패했습니다"
+  "crossSessionMessageUpdateFailed": "대화 간 메시지 설정 업데이트에 실패했습니다",
+  "openWith": {
+    "title": "열기 앱",
+    "description": "작업 공간의 '열기' 메뉴에서 사용할 앱입니다. 이 Mac에 설치된 앱만 표시됩니다.",
+    "editor": "편집기",
+    "terminal": "터미널",
+    "browser": "브라우저",
+    "editorDefault": "기본값 (VS Code의 code 명령)",
+    "terminalDefault": "기본값 (터미널)",
+    "builtinBrowser": "내장 브라우저"
+  }
 }

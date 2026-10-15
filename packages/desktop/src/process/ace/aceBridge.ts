@@ -3,7 +3,10 @@
  * Registered by a side-effect import from process/bridge/index.ts.
  */
 
-import { ipcMain } from 'electron';
+import { execFile } from 'node:child_process';
+import { realpath, stat } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { ipcMain, nativeImage } from 'electron';
 import type {
   AceLarkNotifyConfig,
   AceLarkNotifyMaskedConfig,
@@ -17,6 +20,12 @@ import type {
 } from '@/common/ace/types';
 import { LARK_NOTIFY_STATUS_WEIGHT } from '@/common/ace/types';
 import { LARK_NOTIFY_SUMMARY_INPUT_CAP } from '@/common/ace/larkNotify';
+import {
+  OPEN_WITH_LAUNCH_TIMEOUT_MS,
+  createOpenWithService,
+  type OpenWithInstalledApp,
+  type OpenWithLaunchResult,
+} from '@/common/ace/openWithApps';
 import { ProcessConfig } from '@process/utils/initStorage';
 // Direct module import on purpose: the `@process/bridge` barrel side-effect-imports
 // this file, so going through it would create an import cycle.
@@ -289,5 +298,62 @@ ipcMain.handle('ace:lark-notify-send', async (_event, rows: unknown): Promise<{ 
   } catch (e) {
     console.warn('[larkNotify] send handler error:', e instanceof Error ? e.message : e);
     return { ok: false, reason: 'error' };
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Configurable "Open with" apps (macOS). The renderer only sends a registry id
+// and the workspace path; app paths are resolved here and `open` runs with an
+// argv array (no shell). See common/ace/openWithApps.ts.
+// ---------------------------------------------------------------------------
+
+const openWithService = createOpenWithService({
+  platform: process.platform,
+  homeDir: homedir(),
+  isDirectory: async (p) => {
+    try {
+      return (await stat(p)).isDirectory();
+    } catch {
+      return false;
+    }
+  },
+  realpath: (p) => realpath(p),
+  // app.getFileIcon returns the same generic icon for every .app on macOS;
+  // QuickLook thumbnails give the real one.
+  thumbnail: async (p) => {
+    const image = await nativeImage.createThumbnailFromPath(p, { width: 64, height: 64 });
+    return image.isEmpty() ? undefined : image.toDataURL();
+  },
+  runOpen: (argv) =>
+    new Promise((resolve, reject) => {
+      execFile('/usr/bin/open', argv, { timeout: OPEN_WITH_LAUNCH_TIMEOUT_MS }, (error) => {
+        if (!error) resolve('ok');
+        else if (error.killed || error.signal === 'SIGTERM') resolve('timeout');
+        else reject(error);
+      });
+    }),
+});
+
+ipcMain.handle('ace:open-with-list-apps', async (): Promise<OpenWithInstalledApp[]> => {
+  try {
+    return await openWithService.listInstalled();
+  } catch {
+    return [];
+  }
+});
+
+ipcMain.handle('ace:open-with-app-icon', async (_event, appId: unknown): Promise<string | null> => {
+  try {
+    return await openWithService.loadIcon(appId);
+  } catch {
+    return null;
+  }
+});
+
+ipcMain.handle('ace:open-with-launch', async (_event, request: unknown): Promise<OpenWithLaunchResult> => {
+  try {
+    return await openWithService.launch(request);
+  } catch {
+    return { ok: false, reason: 'launch-failed' };
   }
 });

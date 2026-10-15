@@ -93,7 +93,7 @@ import {
   buildImportSummary,
   releaseRemovedConversations,
   resolveScanAction,
-} from '@/renderer/ace/useImportCliSessions';
+} from '@/renderer/ace/settings/useImportCliSessions';
 import { createSpawnSpy } from '../terminal/_fakePty';
 
 /** No embedded terminal is open (the renderer terminal UI is currently removed). */

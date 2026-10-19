@@ -38,6 +38,8 @@ vi.mock('@/renderer/hooks/context/ConversationHistoryContext', () => ({
     setActiveConversation: mocks.setActiveConversation,
     groupedHistory: mocks.groupedHistory,
     hasLoadedOnce: true,
+    activityStatus: 'ok',
+    isConversationListComplete: true,
   }),
 }));
 
@@ -81,7 +83,13 @@ beforeEach(() => {
   setHistory([]);
   localStorage.clear();
   // `lastSnapshot` is module-level mutable state shared by every case.
-  dispatchWorkspaceExpansionChange({ expandedWorkspaces: [], loadedCounts: {} });
+  dispatchWorkspaceExpansionChange({
+    collapsedSections: [],
+    pinnedProjects: [],
+    projectListLoadedCount: 5,
+    expandedWorkspaces: [],
+    loadedCounts: {},
+  });
 });
 
 afterEach(() => {
@@ -108,10 +116,10 @@ describe('useConversations per-project paging', () => {
     const { result } = renderHook(() => useConversations());
 
     act(() => result.current.handleShowMoreConversations('/a'));
-    expect(result.current.loadedCounts['/a']).toBe(10);
+    expect(result.current.loadedCounts['/a']).toBe(15);
 
     act(() => result.current.handleShowMoreConversations('/a'));
-    expect(result.current.loadedCounts['/a']).toBe(15);
+    expect(result.current.loadedCounts['/a']).toBe(25);
   });
 
   it('resets the loaded count to 5 after collapsing and re-expanding (AC3)', () => {
@@ -120,7 +128,7 @@ describe('useConversations per-project paging', () => {
 
     act(() => result.current.handleToggleWorkspace('/a'));
     act(() => result.current.handleShowMoreConversations('/a'));
-    expect(result.current.loadedCounts['/a']).toBe(10);
+    expect(result.current.loadedCounts['/a']).toBe(15);
 
     act(() => result.current.handleToggleWorkspace('/a'));
     expect(result.current.expandedWorkspaces).toEqual([]);
@@ -133,7 +141,7 @@ describe('useConversations per-project paging', () => {
 });
 
 describe('useConversations reveal of the active conversation (AC4)', () => {
-  it('advances the loaded count to the next multiple of 5 covering the active conversation', () => {
+  it('advances the loaded count to the smallest 5 + 10n covering the active conversation', () => {
     setHistory([workspaceItem('/ws', 20)]);
     mocks.paramsId = conversationId('/ws', 13); // index 12
 
@@ -172,14 +180,14 @@ describe('useConversations reveal of the active conversation (AC4)', () => {
   it('also expands the pinned-projects section when the target lives in a pinned project', () => {
     // Only the pinned section is collapsed, so a guard that checks 'projects'
     // alone would bail out and leave the pinned section shut.
-    localStorage.setItem(COLLAPSED_SECTIONS_KEY, JSON.stringify(['pinned-projects']));
+    localStorage.setItem(COLLAPSED_SECTIONS_KEY, JSON.stringify(['pinned-projects', 'projects']));
     setHistory([workspaceItem('/ws', 3)]);
     mocks.paramsId = conversationId('/ws', 2);
-
-    const { result } = renderHook(() => useConversations());
+    const pinnedProjects = ['/ws'];
+    const { result } = renderHook(() => useConversations({ pinnedProjects }));
 
     expect(result.current.collapsedSections.has('pinned-projects')).toBe(false);
-    expect(result.current.collapsedSections.has('projects')).toBe(false);
+    expect(result.current.collapsedSections.has('projects')).toBe(true);
   });
 });
 
@@ -194,7 +202,7 @@ describe('workspace-view snapshot channel (AC5)', () => {
     expect(subscriber.result.current).toHaveLength(5);
 
     act(() => owner.result.current.handleShowMoreConversations('/a'));
-    expect(subscriber.result.current).toHaveLength(10);
+    expect(subscriber.result.current).toHaveLength(12);
   });
 
   it('reacts to a dispatched workspace-view snapshot', () => {
@@ -202,10 +210,26 @@ describe('workspace-view snapshot channel (AC5)', () => {
 
     const { result } = renderHook(() => useVisibleConversationIds());
 
-    act(() => dispatchWorkspaceExpansionChange({ expandedWorkspaces: ['/a'], loadedCounts: { '/a': 10 } }));
+    act(() =>
+      dispatchWorkspaceExpansionChange({
+        collapsedSections: [],
+        pinnedProjects: [],
+        projectListLoadedCount: 5,
+        expandedWorkspaces: ['/a'],
+        loadedCounts: { '/a': 10 },
+      })
+    );
     expect(result.current).toHaveLength(10);
 
-    act(() => dispatchWorkspaceExpansionChange({ expandedWorkspaces: ['/a'], loadedCounts: {} }));
+    act(() =>
+      dispatchWorkspaceExpansionChange({
+        collapsedSections: [],
+        pinnedProjects: [],
+        projectListLoadedCount: 5,
+        expandedWorkspaces: ['/a'],
+        loadedCounts: {},
+      })
+    );
     expect(result.current).toHaveLength(5);
   });
 
@@ -213,7 +237,13 @@ describe('workspace-view snapshot channel (AC5)', () => {
     const listener = vi.fn();
     window.addEventListener(WORKSPACE_EXPANSION_EVENT, listener);
     try {
-      dispatchWorkspaceExpansionChange({ expandedWorkspaces: ['/a'], loadedCounts: { '/a': 10 } });
+      dispatchWorkspaceExpansionChange({
+        collapsedSections: [],
+        pinnedProjects: [],
+        projectListLoadedCount: 5,
+        expandedWorkspaces: ['/a'],
+        loadedCounts: { '/a': 10 },
+      });
     } finally {
       window.removeEventListener(WORKSPACE_EXPANSION_EVENT, listener);
     }
@@ -263,7 +293,7 @@ describe('bulk expand / collapse (AC6)', () => {
 
     act(() => result.current.handleShowMoreConversations('/a'));
     act(() => result.current.handleShowMoreConversations('/a'));
-    expect(result.current.loadedCounts['/a']).toBe(15);
+    expect(result.current.loadedCounts['/a']).toBe(25);
 
     act(() => result.current.handleExpandAllProjects());
 
@@ -283,11 +313,123 @@ describe('bulk expand / collapse (AC6)', () => {
     act(() => result.current.handleExpandAllProjects());
     act(() => result.current.handleShowMoreConversations('/a'));
     expect(result.current.expandedWorkspaces).toEqual(['/a', '/b']);
-    expect(result.current.loadedCounts['/a']).toBe(10);
+    expect(result.current.loadedCounts['/a']).toBe(15);
 
     act(() => result.current.handleCollapseAllProjects());
 
     expect(result.current.expandedWorkspaces).toEqual([]);
     expect(result.current.loadedCounts).toEqual({});
+  });
+});
+
+describe('ordinary-project list paging', () => {
+  it('starts at five projects and adds ten per click', () => {
+    const { result } = renderHook(() => useConversations());
+    expect(result.current.projectListLoadedCount).toBe(5);
+    act(() => result.current.handleShowMoreProjects());
+    expect(result.current.projectListLoadedCount).toBe(15);
+    act(() => result.current.handleShowMoreProjects());
+    expect(result.current.projectListLoadedCount).toBe(25);
+  });
+
+  it('resets only the normal project window when its section is folded or unfolded', () => {
+    setHistory([workspaceItem('/a', 22)]);
+    const { result } = renderHook(() => useConversations());
+    act(() => {
+      result.current.handleShowMoreProjects();
+      result.current.handleShowMoreConversations('/a');
+      result.current.toggleSection('projects');
+    });
+    expect(result.current.projectListLoadedCount).toBe(5);
+    expect(result.current.loadedCounts).toEqual({ '/a': 15 });
+    act(() => {
+      result.current.handleShowMoreProjects();
+      result.current.toggleSection('projects');
+    });
+    expect(result.current.projectListLoadedCount).toBe(5);
+  });
+
+  it('keeps the project window while expanding/collapsing all or folding pinned projects', () => {
+    setHistory([workspaceItem('/a', 22)]);
+    const { result } = renderHook(() => useConversations());
+    act(() => result.current.handleShowMoreProjects());
+    act(() => result.current.handleExpandAllProjects());
+    expect(result.current.projectListLoadedCount).toBe(15);
+    act(() => result.current.handleCollapseAllProjects());
+    expect(result.current.projectListLoadedCount).toBe(15);
+    act(() => result.current.toggleSection('pinned-projects'));
+    expect(result.current.projectListLoadedCount).toBe(15);
+  });
+
+  it('reveals an off-page conversation and its normal-project rank without counting pinned projects', () => {
+    const pinnedProjects = ['/pin'];
+    const items = [
+      workspaceItem('/pin', 1),
+      ...Array.from({ length: 17 }, (_, i) => workspaceItem(`/project-${i}`, 22)),
+    ];
+    setHistory(items);
+    mocks.paramsId = conversationId('/project-15', 16);
+    const { result } = renderHook(() => useConversations({ pinnedProjects }));
+    expect(result.current.projectListLoadedCount).toBe(25);
+    expect(result.current.loadedCounts).toEqual({ '/project-15': 25 });
+    expect(result.current.expandedWorkspaces).toEqual(['/project-15']);
+  });
+
+  it('does not grow the normal window when a pinned project is revealed', () => {
+    const pinnedProjects = ['/pin'];
+    setHistory([...Array.from({ length: 17 }, (_, i) => workspaceItem(`/project-${i}`, 1)), workspaceItem('/pin', 22)]);
+    mocks.paramsId = conversationId('/pin', 16);
+    const { result } = renderHook(() => useConversations({ pinnedProjects }));
+    expect(result.current.projectListLoadedCount).toBe(5);
+    expect(result.current.loadedCounts).toEqual({ '/pin': 25 });
+  });
+
+  it('does not inflate either window for a route id absent from the current data', () => {
+    setHistory([workspaceItem('/a', 22)]);
+    mocks.paramsId = 'missing';
+    const { result } = renderHook(() => useConversations());
+    expect(result.current.projectListLoadedCount).toBe(5);
+    expect(result.current.loadedCounts).toEqual({});
+    expect(result.current.expandedWorkspaces).toEqual([]);
+  });
+
+  it('publishes folds, pin membership and project windows together to Ctrl+Tab', () => {
+    const pinnedProjects = ['/pin'];
+    setHistory([workspaceItem('/pin', 1), ...Array.from({ length: 6 }, (_, i) => workspaceItem(`/p-${i}`, 1))]);
+    const owner = renderHook(() => useConversations({ pinnedProjects }));
+    const subscriber = renderHook(() => useVisibleConversationIds());
+    act(() => owner.result.current.handleExpandAllProjects());
+    expect(subscriber.result.current).toEqual(['/pin/c-1', '/p-0/c-1', '/p-1/c-1', '/p-2/c-1', '/p-3/c-1', '/p-4/c-1']);
+    act(() => owner.result.current.handleShowMoreProjects());
+    expect(subscriber.result.current).toEqual([
+      '/pin/c-1',
+      '/p-0/c-1',
+      '/p-1/c-1',
+      '/p-2/c-1',
+      '/p-3/c-1',
+      '/p-4/c-1',
+      '/p-5/c-1',
+    ]);
+    act(() => owner.result.current.toggleSection('projects'));
+    expect(subscriber.result.current).toEqual(['/pin/c-1']);
+  });
+});
+
+describe('cold-start pinned-project reveal', () => {
+  it('waits for pin hydration before opening the owning section without growing the normal window', () => {
+    localStorage.setItem(COLLAPSED_SECTIONS_KEY, JSON.stringify(['projects', 'pinned-projects']));
+    setHistory([...Array.from({ length: 16 }, (_, i) => workspaceItem(`/normal-${i}`, 1)), workspaceItem('/pin', 22)]);
+    mocks.paramsId = conversationId('/pin', 16);
+    const { result, rerender } = renderHook(
+      ({ pinnedProjects, pinnedProjectsReady }) => useConversations({ pinnedProjects, pinnedProjectsReady }),
+      { initialProps: { pinnedProjects: [] as string[], pinnedProjectsReady: false } }
+    );
+    expect(result.current.expandedWorkspaces).toEqual([]);
+    rerender({ pinnedProjects: ['/pin'], pinnedProjectsReady: true });
+    expect(result.current.projectListLoadedCount).toBe(5);
+    expect({ expanded: result.current.expandedWorkspaces, folds: [...result.current.collapsedSections] }).toEqual({
+      expanded: ['/pin'],
+      folds: ['projects'],
+    });
   });
 });

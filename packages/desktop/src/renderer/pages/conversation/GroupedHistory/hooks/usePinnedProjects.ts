@@ -26,15 +26,28 @@ const PINNED_PROJECTS_KEY = 'sidebar.pinnedProjects';
  */
 export const usePinnedProjects = () => {
   const [pinnedList, setPinnedList] = useState<string[]>([]);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     let mounted = true;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
     // Seed only after the config cache is populated, otherwise `get` returns
     // undefined on a cold start and the pinned section flashes empty.
-    void configService.whenReady().then(() => {
-      if (!mounted) return;
-      setPinnedList(configService.get(PINNED_PROJECTS_KEY) ?? []);
-    });
+    const hydrate = () => {
+      void configService
+        .whenReady()
+        .then(() => {
+          if (!mounted) return;
+          clearTimeout(retryTimer);
+          setPinnedList(configService.get(PINNED_PROJECTS_KEY) ?? []);
+          setIsReady(true);
+        })
+        .catch(() => {
+          // Failed initialization can be retried; successful hydration does not notify subscribers.
+          if (mounted) retryTimer = setTimeout(hydrate, 1000);
+        });
+    };
+    hydrate();
     // In-process reactivity: fires on any local `set` of this key (this hook's
     // own writes included), so the UI updates immediately.
     const unsubscribe = configService.subscribe(PINNED_PROJECTS_KEY, (value) => {
@@ -42,6 +55,7 @@ export const usePinnedProjects = () => {
     });
     return () => {
       mounted = false;
+      clearTimeout(retryTimer);
       unsubscribe();
     };
   }, []);
@@ -68,11 +82,11 @@ export const usePinnedProjects = () => {
 
   /**
    * Drop pinned entries whose workspace no longer exists in any project group
-   * (all its conversations were deleted). MUST only run once conversations have
-   * loaded, and never writes back when nothing changed.
+   * (all its conversations were deleted). The caller must authorize pruning only
+   * for a complete, successfully enriched list; partial or failed loads preserve pins.
    */
-  const pruneOrphans = useCallback(async (existingWorkspaces: Set<string>, hasLoadedOnce: boolean) => {
-    if (!hasLoadedOnce) return;
+  const pruneOrphans = useCallback(async (existingWorkspaces: Set<string>, canPrune: boolean) => {
+    if (!canPrune) return;
     const current = configService.get(PINNED_PROJECTS_KEY) ?? [];
     if (current.length === 0) return;
     const next = current.filter((workspace) => existingWorkspaces.has(workspace));
@@ -81,7 +95,7 @@ export const usePinnedProjects = () => {
     }
   }, []);
 
-  return { pinnedList, pinnedSet, isPinned, togglePin, reorder, pruneOrphans };
+  return { pinnedList, pinnedSet, isReady, isPinned, togglePin, reorder, pruneOrphans };
 };
 
 type PinnedProjectGroup = { workspace: string; displayName: string };

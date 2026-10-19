@@ -19,7 +19,7 @@ import {
 } from '../common/adapter/constant';
 import type { TerminalExitPayload, TerminalOutputPayload } from '../common/types/platform/electron';
 // ace:start shared types for the ace IPC surface below (preload has no `@/` alias)
-import type { HudStatuslineParams, HudStatuslineResult } from '../common/ace/types';
+import type { ConversationActivityTimesResult, HudStatuslineParams, HudStatuslineResult } from '../common/ace/types';
 import type { OpenWithInstalledApp, OpenWithLaunchRequest, OpenWithLaunchResult } from '../common/ace/openWithApps';
 // ace:end
 
@@ -72,6 +72,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   deleteOpencodeSessions: (sessionIds: string[]) => ipcRenderer.invoke('ace:delete-opencode-sessions', sessionIds),
   checkWorkspacesExist: (paths: string[]) => ipcRenderer.invoke('ace:check-workspaces-exist', paths),
   messageCounts: (ids: string[]) => ipcRenderer.invoke('ace:message-counts', ids),
+  conversationActivityTimes: (): Promise<ConversationActivityTimesResult> =>
+    ipcRenderer.invoke('ace:conversation-activity-times'),
   larkNotifyGetConfig: () => ipcRenderer.invoke('ace:lark-notify-get-config'),
   larkNotifySaveConfig: (config: unknown) => ipcRenderer.invoke('ace:lark-notify-save-config', config),
   larkNotifyTest: () => ipcRenderer.invoke('ace:lark-notify-test'),

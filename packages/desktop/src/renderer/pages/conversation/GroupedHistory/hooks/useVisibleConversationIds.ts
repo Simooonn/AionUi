@@ -8,14 +8,13 @@ export const useVisibleConversationIds = (): string[] => {
   const layout = useLayoutContext();
   const siderCollapsed = layout?.siderCollapsed ?? false;
   const { groupedHistory } = useConversationHistoryContext();
-  const { expandedWorkspaces, loadedCounts } = useWorkspaceExpansionState();
+  const snapshot = useWorkspaceExpansionState();
 
   return useMemo(() => {
     return buildVisibleConversationIds({
       ...groupedHistory,
-      expandedWorkspaces,
-      loadedCounts,
+      ...snapshot,
       siderCollapsed,
     });
-  }, [groupedHistory, expandedWorkspaces, loadedCounts, siderCollapsed]);
+  }, [groupedHistory, snapshot, siderCollapsed]);
 };

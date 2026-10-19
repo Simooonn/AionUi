@@ -166,6 +166,8 @@ export type TConversationAssistantIdentity = {
 interface IChatConversation<T, Extra> {
   created_at: number;
   modified_at: number;
+  /** Read-only chat activity derived by the sidebar sync store; never sent in metadata updates. */
+  chat_activity_at?: number;
   name: string;
   desc?: string;
   id: string;

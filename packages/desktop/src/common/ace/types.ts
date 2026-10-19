@@ -5,6 +5,11 @@
 
 export type CliSource = 'claude-code' | 'codex' | 'gemini' | 'opencode';
 
+/** Read-only derived chat times; unavailable data must not look like an empty success. */
+export type ConversationActivityTimesResult =
+  | { ok: true; times: Record<string, number> }
+  | { ok: false; reason: 'schema-mismatch' | 'query-failed' };
+
 /**
  * What "delete this conversation's local CLI data" resolves to — a discriminated
  * union shared by main (sessionFiles) and renderer (deleteWithLocalFiles).

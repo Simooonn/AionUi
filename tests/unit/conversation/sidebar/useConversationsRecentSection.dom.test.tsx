@@ -37,6 +37,8 @@ vi.mock('@/renderer/hooks/context/ConversationHistoryContext', () => ({
     setActiveConversation: mocks.setActiveConversation,
     groupedHistory: mocks.groupedHistory,
     hasLoadedOnce: true,
+    activityStatus: 'ok',
+    isConversationListComplete: true,
   }),
 }));
 
@@ -97,7 +99,13 @@ beforeEach(() => {
   };
   localStorage.clear();
   // `lastSnapshot` is module-level mutable state shared by every case.
-  dispatchWorkspaceExpansionChange({ expandedWorkspaces: [], loadedCounts: {} });
+  dispatchWorkspaceExpansionChange({
+    expandedWorkspaces: [],
+    loadedCounts: {},
+    collapsedSections: [],
+    pinnedProjects: [],
+    projectListLoadedCount: 5,
+  });
   scrolledIds = [];
   scrollSpy = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(function (this: Element) {
     scrolledIds.push(this.id);
@@ -120,16 +128,16 @@ describe('useConversations recent-section paging', () => {
     expect(result.current.recentLoadedCount).toBe(5);
 
     act(() => result.current.handleShowMoreRecent());
-    expect(result.current.recentLoadedCount).toBe(10);
+    expect(result.current.recentLoadedCount).toBe(15);
 
     act(() => result.current.handleShowMoreRecent());
-    expect(result.current.recentLoadedCount).toBe(15);
+    expect(result.current.recentLoadedCount).toBe(25);
   });
 
   it('restarts at one page whenever the recent section is folded or unfolded, and persists the fold', () => {
     const { result } = renderHook(() => useConversations());
     act(() => result.current.handleShowMoreRecent());
-    expect(result.current.recentLoadedCount).toBe(10);
+    expect(result.current.recentLoadedCount).toBe(15);
 
     act(() => result.current.toggleSection('recent'));
     expect(result.current.collapsedSections.has('recent')).toBe(true);
@@ -147,7 +155,7 @@ describe('useConversations recent-section paging', () => {
     act(() => result.current.handleShowMoreRecent());
 
     act(() => result.current.toggleSection('projects'));
-    expect(result.current.recentLoadedCount).toBe(10);
+    expect(result.current.recentLoadedCount).toBe(15);
   });
 });
 
@@ -165,6 +173,28 @@ describe('useConversations reveal of a conversation the recent section renders',
     expect(result.current.collapsedSections.has('projects')).toBe(true);
     expect(mocks.setActiveConversation).toHaveBeenCalledWith(TARGET);
     expect(mocks.clearCompletionUnread).toHaveBeenCalledWith(TARGET);
+  });
+
+  it('keeps an off-page project hidden when its recent row is already visible', async () => {
+    mocks.groupedHistory = {
+      pinnedConversations: [],
+      timelineSections: [
+        {
+          timeline: 'today',
+          items: [
+            ...Array.from({ length: 16 }, (_, index) => workspaceItem(`/normal-${index}`, 1)),
+            workspaceItem(WORKSPACE, 22),
+          ],
+        },
+      ],
+    };
+    appendRow(appendViewport(), `rc-${TARGET}`, rect(10, 44));
+    mocks.paramsId = TARGET;
+    const { result } = renderHook(() => useConversations());
+    await flushFrames();
+    expect(result.current.projectListLoadedCount).toBe(5);
+    expect(result.current.expandedWorkspaces).toEqual([]);
+    expect(scrolledIds).toEqual([]);
   });
 
   it('moves nothing when the recent row is already fully in view', async () => {

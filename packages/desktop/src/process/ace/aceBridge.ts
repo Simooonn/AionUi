@@ -11,6 +11,7 @@ import type {
   AceLarkNotifyConfig,
   AceLarkNotifyMaskedConfig,
   AceLarkNotifySaveConfig,
+  ConversationActivityTimesResult,
   EnsureCliResumeResult,
   HudStatuslineResult,
   ImportCliSessionsResult,
@@ -36,6 +37,7 @@ import { importConversationMessages } from './messageImporter';
 import {
   checkWorkspacesExist,
   deleteOpencodeSessions,
+  resolveConversationActivityTimes,
   resolveConversationFiles,
   resolveConversationMessageCounts,
   resolveResumeCommands,
@@ -152,6 +154,15 @@ ipcMain.handle('ace:message-counts', async (_event, ids: unknown) => {
     return await resolveConversationMessageCounts(safe);
   } catch {
     return {};
+  }
+});
+
+// Batch chat activity ignores metadata-only conversation updates.
+ipcMain.handle('ace:conversation-activity-times', async (): Promise<ConversationActivityTimesResult> => {
+  try {
+    return await resolveConversationActivityTimes();
+  } catch {
+    return { ok: false, reason: 'query-failed' };
   }
 });
 

@@ -19,7 +19,7 @@ const NO_STALE: ReadonlySet<string> = new Set();
 /** A conversation with an explicit activity time; `extra` is optional on purpose (group fixtures carry none). */
 const conversation = (
   id: string,
-  times: { modified_at?: number; created_at?: number },
+  times: { modified_at?: number; created_at?: number; chat_activity_at?: number },
   extra?: TChatConversation['extra']
 ): TChatConversation => ({ id, name: id, type: 'acp', ...times, extra }) as unknown as TChatConversation;
 
@@ -79,7 +79,7 @@ describe('buildRecentConversations', () => {
     expect(ids(result)).toEqual(['created', 'old']);
   });
 
-  it('keeps the collection order on equal activity: pinned first, then section order', () => {
+  it('uses deterministic IDs on equal activity independent of pinned membership', () => {
     const result = buildRecentConversations(
       history(
         [conversation('pinned', { modified_at: 100 })],
@@ -92,7 +92,23 @@ describe('buildRecentConversations', () => {
       t
     );
 
-    expect(ids(result)).toEqual(['pinned', 'a-1', 'free']);
+    expect(ids(result)).toEqual(['a-1', 'free', 'pinned']);
+  });
+
+  it('orders derived chat activity ahead of metadata time, with stable creation ties', () => {
+    const result = buildRecentConversations(
+      history(
+        [],
+        [
+          freeItem(conversation('metadata-new', { modified_at: 9000, created_at: 50, chat_activity_at: 100 })),
+          freeItem(conversation('chat-new', { modified_at: 10, created_at: 70, chat_activity_at: 300 })),
+          freeItem(conversation('same-time-newer-created', { modified_at: 20, created_at: 80, chat_activity_at: 300 })),
+        ]
+      ),
+      NO_STALE,
+      t
+    );
+    expect(ids(result)).toEqual(['same-time-newer-created', 'chat-new', 'metadata-new']);
   });
 
   it('drops every conversation of a stale project, judged by the group workspace', () => {

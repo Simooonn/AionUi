@@ -12,6 +12,7 @@ import AionModal from '@/renderer/components/base/AionModal';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useCronJobsMap } from '@/renderer/pages/cron';
 import { restrictToVerticalAxis } from '@/renderer/utils/ui/dndModifiers';
+import { isElectronDesktop } from '@/renderer/utils/platform';
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Button, Dropdown, Empty, Input, Menu, Message, Modal, Spin, Tooltip } from '@arco-design/web-react';
@@ -34,7 +35,12 @@ import { useConversations } from './hooks/useConversations';
 import { useDragAndDrop } from './hooks/useDragAndDrop';
 import { usePinnedProjects, usePinnedProjectDragAndDrop } from './hooks/usePinnedProjects';
 import type { ConversationRowProps, WorkspaceGroupedHistoryProps } from './types';
-import { getProjectLoadedCount, sliceLoadedConversations } from './utils/visibleConversationOrder';
+import {
+  getVisibleProjectConversations,
+  isSectionOpen,
+  sliceLoadedConversations,
+  sliceVisibleProjects,
+} from './utils/visibleConversationOrder';
 // ace:start recent-section
 import {
   buildRecentConversations,
@@ -69,6 +75,15 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
   const layout = useLayoutContext();
   const isMobile = layout?.isMobile ?? false;
   const { getJobStatus, markAsRead, setActiveConversation } = useCronJobsMap();
+  const {
+    pinnedSet,
+    pinnedList,
+    isReady: pinnedProjectsReady,
+    isPinned,
+    togglePin,
+    reorder: reorderPinnedProjects,
+    pruneOrphans,
+  } = usePinnedProjects();
 
   const {
     conversations,
@@ -86,18 +101,22 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     handleShowMoreConversations,
     handleExpandAllProjects,
     handleCollapseAllProjects,
-    hasLoadedOnce, // ace: pinned-project orphan pruning gates on a confirmed load
+    hasLoadedOnce,
+    activityStatus,
+    isConversationListComplete,
+    projectListLoadedCount,
+    handleShowMoreProjects,
     collapsedSections,
     toggleSection,
     // ace:start recent-section
     recentLoadedCount,
     handleShowMoreRecent,
     // ace:end
-  } = useConversations();
+  } = useConversations({ pinnedProjects: pinnedList, pinnedProjectsReady });
 
   const SectionLabel = useCallback(
     ({ sectionKey, label, trailing }: { sectionKey: string; label: string; trailing?: React.ReactNode }) => {
-      const isCollapsed = collapsedSections.has(sectionKey);
+      const isCollapsed = !isSectionOpen(collapsedSections, sectionKey);
       return (
         <div
           className='group/label sider-section-label flex items-center px-12px h-28px select-none sticky top-0 z-10 mt-8px cursor-pointer'
@@ -133,15 +152,6 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
   }, [id, setActiveConversation]);
 
   // ace:start pinned projects (config-driven sidebar pins)
-  const {
-    pinnedSet,
-    pinnedList,
-    isPinned,
-    togglePin,
-    reorder: reorderPinnedProjects,
-    pruneOrphans,
-  } = usePinnedProjects();
-
   const handleToggleProjectPin = useCallback(
     async (workspace: string) => {
       try {
@@ -377,14 +387,17 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     [projectGroups, pinnedSet]
   );
 
+  const visibleProjectGroups = sliceVisibleProjects(unpinnedProjectGroups, projectListLoadedCount, collapsed);
+  const projectsRemaining = unpinnedProjectGroups.length - visibleProjectGroups.length;
   const pinnedProjectIds = useMemo(() => pinnedProjectGroups.map((g) => g.workspace), [pinnedProjectGroups]);
 
-  // Prune pinned entries whose workspace has no conversations left (orphan). Gated
-  // on hasLoadedOnce so the empty pre-load state never wipes existing pins.
+  // Only a complete, successfully enriched list proves that a project was deleted.
+  // The full workspace set includes members in the standalone pinned-conversation section.
+  const canPrune = hasLoadedOnce && isConversationListComplete && activityStatus === 'ok';
   useEffect(() => {
-    const existing = new Set(projectGroups.map((g) => g.workspace));
-    void pruneOrphans(existing, hasLoadedOnce);
-  }, [projectGroups, hasLoadedOnce, pruneOrphans]);
+    if (!canPrune) return;
+    void pruneOrphans(new Set(staleCheckWorkspaces), canPrune);
+  }, [staleCheckWorkspaces, canPrune, pruneOrphans]);
 
   const {
     sensors: pinnedProjectSensors,
@@ -460,13 +473,23 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
   // pixel-aligns with them (indented inside a project folder, flush in the
   // recent section); stops pointerdown so a pinned project's drag listeners
   // (spread over the whole block) never see the click
-  const renderShowMoreRow = (remaining: number, onShowMore: () => void, indented: boolean) => {
+  const renderShowMoreRow = (
+    remaining: number,
+    onShowMore: () => void,
+    indented: boolean,
+    label = t('conversation.history.showMore', { count: remaining })
+  ) => {
     if (remaining <= 0) return null;
     return (
-      <div
-        role='button'
-        tabIndex={0}
-        aria-label={t('conversation.history.showMore', { count: remaining })}
+      <Button
+        type='text'
+        aria-label={label}
+        style={{
+          height: 34,
+          justifyContent: 'flex-start',
+          paddingInlineStart: indented ? 34 : 10,
+          paddingInlineEnd: 16,
+        }}
         className={classNames(
           'h-34px mt-2px rd-8px flex items-center pe-16px shrink-0 cursor-pointer text-13px text-t-tertiary hover:text-t-primary hover:bg-fill-3 transition-colors select-none min-w-0',
           indented ? 'ps-34px' : 'ps-10px'
@@ -484,8 +507,8 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
           }
         }}
       >
-        {t('conversation.history.showMore', { count: remaining })}
-      </div>
+        {label}
+      </Button>
     );
   };
   // ace:end
@@ -503,10 +526,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     const pinned = isPinned(group.workspace);
     // ace:start reveal one page of conversations at a time; a collapsed sider
     // renders every row, so paging only applies to the expanded sidebar.
-    const loadedCount = getProjectLoadedCount(loadedCounts, group.workspace);
-    const visibleConversations = collapsed
-      ? group.conversations
-      : sliceLoadedConversations(group.conversations, loadedCount);
+    const visibleConversations = getVisibleProjectConversations(group, expandedWorkspaces, loadedCounts, collapsed);
     const remaining = group.conversations.length - visibleConversations.length;
     // ace:end
     const projectMenu = (
@@ -639,9 +659,21 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     );
   };
 
+  const listStatus =
+    !collapsed &&
+    isElectronDesktop() &&
+    hasLoadedOnce &&
+    (!isConversationListComplete || activityStatus === 'unavailable') ? (
+      <div role='status' className='px-12px py-6px text-12px text-t-tertiary'>
+        {!isConversationListComplete && <div>{t('conversation.history.incompleteList')}</div>}
+        {activityStatus === 'unavailable' && <div>{t('conversation.history.activityUnavailable')}</div>}
+      </div>
+    ) : null;
+
   if (timelineSections.length === 0 && pinnedConversations.length === 0) {
     return (
       <>
+        {listStatus}
         {afterPinnedContent}
         <div className='py-48px flex-center'>
           <Empty description={t('conversation.history.noHistory')} />
@@ -782,6 +814,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
       </AionModal>
 
       <div>
+        {listStatus}
         {/* L1: Pinned section */}
         <DndContext
           sensors={sensors}
@@ -792,7 +825,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
           {pinnedConversations.length > 0 && (
             <div className='min-w-0'>
               {!collapsed && <SectionLabel sectionKey='pinned' label={t('conversation.history.pinnedSection')} />}
-              {!collapsedSections.has('pinned') && (
+              {isSectionOpen(collapsedSections, 'pinned') && (
                 <SortableContext items={pinnedIds} strategy={verticalListSortingStrategy}>
                   <div className='min-w-0'>
                     {pinnedConversations.map((conversation) => {
@@ -816,7 +849,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
             {!collapsed && (
               <SectionLabel sectionKey='pinned-projects' label={t('conversation.history.pinnedProjectsSection')} />
             )}
-            {!collapsedSections.has('pinned-projects') && (
+            {isSectionOpen(collapsedSections, 'pinned-projects') && (
               <DndContext
                 sensors={pinnedProjectSensors}
                 collisionDetection={closestCenter}
@@ -855,7 +888,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         {showRecentSection && (
           <div className='min-w-0' data-testid='recent-conversations-section'>
             <SectionLabel sectionKey={RECENT_SECTION_KEY} label={t('conversation.history.recentSection')} />
-            {!collapsedSections.has(RECENT_SECTION_KEY) && (
+            {isSectionOpen(collapsedSections, RECENT_SECTION_KEY) && (
               <div className='flex flex-col min-w-0'>
                 {visibleRecentConversations.map((entry) => (
                   <ConversationRow key={entry.conversation.id} {...getRecentRowProps(entry)} />
@@ -954,12 +987,21 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
                 // ace:end
               />
             )}
-            {!collapsedSections.has('projects') &&
-              unpinnedProjectGroups.map((group) => (
-                <div key={group.workspace} className='min-w-0'>
-                  {renderProjectGroup(group)}
-                </div>
-              ))}
+            {isSectionOpen(collapsedSections, 'projects') && (
+              <>
+                {visibleProjectGroups.map((group) => (
+                  <div key={group.workspace} className='min-w-0'>
+                    {renderProjectGroup(group)}
+                  </div>
+                ))}
+                {renderShowMoreRow(
+                  projectsRemaining,
+                  handleShowMoreProjects,
+                  false,
+                  t('conversation.history.showMoreProjects', { count: projectsRemaining })
+                )}
+              </>
+            )}
           </div>
         )}
 
@@ -969,7 +1011,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
             {!collapsed && (
               <SectionLabel sectionKey='conversations' label={t('conversation.history.conversationsSection')} />
             )}
-            {!collapsedSections.has('conversations') &&
+            {isSectionOpen(collapsedSections, 'conversations') &&
               conversationOnlySections.map((section) => (
                 <div key={section.timeline} className='min-w-0'>
                   {!collapsed && conversationOnlySections.length > 1 && (

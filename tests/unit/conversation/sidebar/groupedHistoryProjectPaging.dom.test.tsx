@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -31,6 +31,12 @@ const mocks = vi.hoisted(() => ({
   pinnedProjects: [] as string[],
   unreadIds: new Set<string>(),
   dragSpy: vi.fn(),
+  paramsId: undefined as string | undefined,
+  activityStatus: 'ok' as 'pending' | 'ok' | 'unavailable' | 'truncated',
+  complete: true,
+  hasLoadedOnce: true,
+  electron: true,
+  configSubscribers: new Set<(value: unknown) => void>(),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -38,7 +44,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('react-router-dom', () => ({
-  useParams: () => ({ id: undefined }),
+  useParams: () => ({ id: mocks.paramsId }),
   useNavigate: () => mocks.navigate,
 }));
 
@@ -54,7 +60,9 @@ vi.mock('@/renderer/hooks/context/ConversationHistoryContext', () => ({
     clearManualUnread: mocks.noop,
     setActiveConversation: mocks.noop,
     groupedHistory: mocks.groupedHistory,
-    hasLoadedOnce: true,
+    hasLoadedOnce: mocks.hasLoadedOnce,
+    activityStatus: mocks.activityStatus,
+    isConversationListComplete: mocks.complete,
   }),
 }));
 
@@ -84,12 +92,23 @@ vi.mock('@/common', () => ({
   },
 }));
 
+vi.mock('@/renderer/utils/platform', () => ({
+  isElectronDesktop: () => mocks.electron,
+  isWebUI: () => !mocks.electron,
+}));
+
 vi.mock('@/common/config/configService', () => ({
   configService: {
     whenReady: () => Promise.resolve(),
     get: () => mocks.pinnedProjects,
-    set: vi.fn(),
-    subscribe: () => () => {},
+    set: vi.fn(async (_key: string, value: string[]) => {
+      mocks.pinnedProjects = value;
+      mocks.configSubscribers.forEach((callback) => callback(value));
+    }),
+    subscribe: (_key: string, callback: (value: unknown) => void) => {
+      mocks.configSubscribers.add(callback);
+      return () => mocks.configSubscribers.delete(callback);
+    },
   },
 }));
 
@@ -115,6 +134,8 @@ vi.mock('@/renderer/pages/conversation/GroupedHistory/SortablePinnedProject', ()
 }));
 
 import WorkspaceGroupedHistory from '@/renderer/pages/conversation/GroupedHistory/index';
+import { useVisibleConversationIds } from '@/renderer/pages/conversation/GroupedHistory/hooks/useVisibleConversationIds';
+import { configService } from '@/common/config/configService';
 
 const conversationOf = (workspace: string, position: number) =>
   ({ id: `${workspace}/c-${position}`, name: `${workspace}/c-${position}` }) as TChatConversation;
@@ -134,6 +155,7 @@ const workspaceItem = (workspace: string, displayName: string, count: number): T
  * `configService.whenReady()` one microtask after mount.
  */
 const renderHistory = async (props: Partial<React.ComponentProps<typeof WorkspaceGroupedHistory>> = {}) => {
+  mocks.layout.siderCollapsed = props.collapsed ?? false;
   const utils = render(<WorkspaceGroupedHistory collapsed={false} batchMode={false} {...props} />);
   await act(async () => {});
   return utils;
@@ -162,6 +184,14 @@ const bulkButton = (action: 'expandAllProjects' | 'collapseAllProjects') =>
   screen.getByRole('button', { name: `conversation.history.${action}` });
 
 beforeEach(() => {
+  mocks.activityStatus = 'ok';
+  mocks.complete = true;
+  mocks.hasLoadedOnce = true;
+  mocks.electron = true;
+  mocks.paramsId = undefined;
+  mocks.layout.siderCollapsed = false;
+  mocks.configSubscribers.clear();
+  vi.mocked(configService.set).mockClear();
   const items = [
     workspaceItem(PINNED_WORKSPACE, 'project-pinned', 6),
     workspaceItem(PROJECT_A, 'project-a', 12),
@@ -202,16 +232,18 @@ describe('GroupedHistory project paging (AC1)', () => {
 });
 
 describe('GroupedHistory show-more row (AC2)', () => {
-  it('shows 5 → 10 → 12 rows and drops the more-row at the end', async () => {
+  it('shows 5 → 15 → 22 rows and drops the more-row at the end', async () => {
+    const item = workspaceItem(PROJECT_A, 'project-a', 22);
+    mocks.groupedHistory = { pinnedConversations: [], timelineSections: [{ timeline: 'today', items: [item] }] };
     await renderHistory();
     expandProject('project-a');
     expect(rowsOf('project-a')).toHaveLength(5);
 
     fireEvent.click(moreRowOf('project-a') as HTMLElement);
-    expect(rowsOf('project-a')).toHaveLength(10);
+    expect(rowsOf('project-a')).toHaveLength(15);
 
     fireEvent.click(moreRowOf('project-a') as HTMLElement);
-    expect(rowsOf('project-a')).toHaveLength(12);
+    expect(rowsOf('project-a')).toHaveLength(22);
     expect(moreRowOf('project-a')).toBeNull();
   });
 
@@ -224,7 +256,8 @@ describe('GroupedHistory show-more row (AC2)', () => {
     expect(firstMoreRow).toHaveTextContent('conversation.history.showMore:7');
 
     fireEvent.click(firstMoreRow);
-    expect(moreRowOf('project-a')).toHaveAttribute('aria-label', 'conversation.history.showMore:2');
+    expect(moreRowOf('project-a')).toBeNull();
+    expect(rowsOf('project-a')).toHaveLength(12);
   });
 
   it('keeps the more-row height at 34px', async () => {
@@ -241,7 +274,7 @@ describe('GroupedHistory collapse reset (AC3)', () => {
     await renderHistory();
     expandProject('project-a');
     fireEvent.click(moreRowOf('project-a') as HTMLElement);
-    expect(rowsOf('project-a')).toHaveLength(10);
+    expect(rowsOf('project-a')).toHaveLength(12);
 
     expandProject('project-a'); // collapse
     expect(rowsOf('project-a')).toHaveLength(0);
@@ -303,7 +336,7 @@ describe('GroupedHistory bulk expand/collapse buttons (AC6)', () => {
     await renderHistory();
     expandProject('project-a');
     fireEvent.click(moreRowOf('project-a') as HTMLElement);
-    expect(rowsOf('project-a')).toHaveLength(10);
+    expect(rowsOf('project-a')).toHaveLength(12);
 
     fireEvent.click(bulkButton('expandAllProjects'));
     expect(rowsOf('project-a')).toHaveLength(5);
@@ -362,5 +395,282 @@ describe('GroupedHistory paging leaves the rest of the sidebar alone (AC8)', () 
 
     fireEvent.pointerDown(rowsOf('project-pinned')[0], { pointerId: 1, button: 0 });
     expect(mocks.dragSpy).toHaveBeenCalled();
+  });
+});
+
+const setProjectHistory = (items: TimelineItem[], pinnedConversations: TChatConversation[] = []) => {
+  mocks.groupedHistory = { pinnedConversations, timelineSections: items.length ? [{ timeline: 'today', items }] : [] };
+  mocks.conversations = [
+    ...pinnedConversations,
+    ...items.flatMap((item) => item.workspaceGroup?.conversations ?? (item.conversation ? [item.conversation] : [])),
+  ];
+};
+
+const normalProjectItems = (count: number) =>
+  Array.from({ length: count }, (_, i) => workspaceItem(`/normal-${i}`, `normal-${i}`, 1));
+const normalProjectCount = () => screen.queryAllByText(/^normal-\d+$/).length;
+const moreProjects = () => screen.queryByRole('button', { name: /^conversation.history.showMoreProjects:/ });
+
+describe('ordinary project-list paging', () => {
+  it('shows 5 -> 15 -> 22 normal projects plus every pinned project', async () => {
+    const pins = Array.from({ length: 7 }, (_, i) => workspaceItem(`/pin-${i}`, `pin-${i}`, 1));
+    mocks.pinnedProjects = pins.map((item) => item.workspaceGroup!.workspace);
+    setProjectHistory([...pins, ...normalProjectItems(22)]);
+    await renderHistory();
+    expect(normalProjectCount()).toBe(5);
+    expect(screen.getAllByText(/^pin-\d+$/)).toHaveLength(7);
+    expect(moreProjects()).toHaveAttribute('aria-label', 'conversation.history.showMoreProjects:17');
+    fireEvent.click(moreProjects()!);
+    expect(normalProjectCount()).toBe(15);
+    expect(moreProjects()).toHaveAttribute('aria-label', 'conversation.history.showMoreProjects:7');
+    fireEvent.click(moreProjects()!);
+    expect(normalProjectCount()).toBe(22);
+    expect(moreProjects()).toBeNull();
+  });
+
+  it('resets the project window after section collapse without loading all on expand-all', async () => {
+    setProjectHistory(normalProjectItems(22));
+    await renderHistory();
+    fireEvent.click(moreProjects()!);
+    fireEvent.click(screen.getByText('conversation.history.projectsSection'));
+    fireEvent.click(screen.getByText('conversation.history.projectsSection'));
+    expect(normalProjectCount()).toBe(5);
+    fireEvent.click(bulkButton('expandAllProjects'));
+    expect(normalProjectCount()).toBe(5);
+    expect(projectRows()).toHaveLength(5);
+  });
+
+  it('keeps all conversations selectable beyond the normal-project window', async () => {
+    setProjectHistory(normalProjectItems(22));
+    await renderHistory({ batchMode: true });
+    fireEvent.click(bulkButton('expandAllProjects'));
+    expect(projectRows()).toHaveLength(5);
+    fireEvent.click(screen.getByRole('button', { name: 'conversation.history.selectAll' }));
+    expect(screen.getByText('conversation.history.selectedCount:22')).toBeInTheDocument();
+  });
+
+  it('temporarily shows all projects and their conversations in the narrow sider without growing the window', async () => {
+    setProjectHistory(normalProjectItems(22));
+    const { rerender } = await renderHistory();
+    mocks.layout.siderCollapsed = true;
+    rerender(<WorkspaceGroupedHistory collapsed />);
+    expect(projectRows()).toHaveLength(22);
+    expect(moreProjects()).toBeNull();
+    mocks.layout.siderCollapsed = false;
+    rerender(<WorkspaceGroupedHistory collapsed={false} />);
+    expect(normalProjectCount()).toBe(5);
+  });
+
+  it('reveals both an off-page project and its off-page conversation before scrolling', async () => {
+    setProjectHistory([...normalProjectItems(16), workspaceItem('/target', 'target-project', 22)]);
+    localStorage.setItem('grouped-history-collapsed-sections', JSON.stringify(['recent', 'projects']));
+    const { rerender } = await renderHistory();
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
+    try {
+      mocks.paramsId = '/target/c-16';
+      rerender(<WorkspaceGroupedHistory />);
+      expect(document.getElementById('c-/target/c-16')).toBeInTheDocument();
+      expect(rowsOf('target-project')).toHaveLength(22);
+      await waitFor(() => expect(scroll).toHaveBeenCalled());
+    } finally {
+      scroll.mockRestore();
+    }
+  });
+
+  it('reveals a cold-start pinned route after config hydration without reopening normal projects', async () => {
+    mocks.pinnedProjects = ['/target'];
+    setProjectHistory([...normalProjectItems(16), workspaceItem('/target', 'target-project', 22)]);
+    localStorage.setItem(
+      'grouped-history-collapsed-sections',
+      JSON.stringify(['recent', 'projects', 'pinned-projects'])
+    );
+    mocks.paramsId = '/target/c-16';
+    await renderHistory();
+    expect(document.getElementById('c-/target/c-16')).toBeInTheDocument();
+    expect(normalProjectCount()).toBe(0);
+    expect(JSON.parse(localStorage.getItem('grouped-history-collapsed-sections') ?? '[]')).toEqual([
+      'recent',
+      'projects',
+    ]);
+  });
+
+  it('keeps an empty project with individually pinned members without duplicating its row', async () => {
+    const pinned = {
+      ...conversationOf('/only-pin', 1),
+      extra: { workspace: '/only-pin', custom_workspace: true, pinned: true },
+    } as TChatConversation;
+    mocks.pinnedProjects = ['/only-pin'];
+    setProjectHistory([workspaceItem('/only-pin', 'only-pin-project', 0)], [pinned]);
+    await renderHistory();
+    expandProject('only-pin-project');
+    expect(rowsOf('only-pin-project')).toHaveLength(0);
+    expect(document.querySelectorAll('[id="c-/only-pin/c-1"]')).toHaveLength(1);
+    expect(configService.set).not.toHaveBeenCalled();
+  });
+});
+
+describe('DOM and Ctrl+Tab share visibility without sharing display order', () => {
+  it.each([
+    {
+      narrow: false,
+      folds: [] as string[],
+      expected: [
+        'solo/c-1',
+        'free/c-1',
+        '/normal-0/c-1',
+        '/pin/c-1',
+        '/normal-1/c-1',
+        '/normal-2/c-1',
+        '/normal-3/c-1',
+        '/normal-4/c-1',
+      ],
+    },
+    { narrow: false, folds: ['projects', 'conversations'], expected: ['solo/c-1', '/pin/c-1'] },
+    {
+      narrow: false,
+      folds: ['pinned-projects', 'pinned'],
+      expected: ['free/c-1', '/normal-0/c-1', '/normal-1/c-1', '/normal-2/c-1', '/normal-3/c-1', '/normal-4/c-1'],
+    },
+    {
+      narrow: true,
+      folds: [],
+      expected: [
+        'solo/c-1',
+        'free/c-1',
+        '/normal-0/c-1',
+        '/pin/c-1',
+        '/normal-1/c-1',
+        '/normal-2/c-1',
+        '/normal-3/c-1',
+        '/normal-4/c-1',
+        '/normal-5/c-1',
+      ],
+    },
+    { narrow: true, folds: ['projects', 'pinned-projects'], expected: ['solo/c-1', 'free/c-1'] },
+    {
+      narrow: true,
+      folds: ['pinned', 'conversations'],
+      expected: [
+        '/normal-0/c-1',
+        '/pin/c-1',
+        '/normal-1/c-1',
+        '/normal-2/c-1',
+        '/normal-3/c-1',
+        '/normal-4/c-1',
+        '/normal-5/c-1',
+      ],
+    },
+    { narrow: true, folds: ['pinned', 'projects', 'pinned-projects', 'conversations'], expected: [] },
+  ])('matches the canonical visible set with narrow=$narrow folds=$folds', async ({ narrow, folds, expected }) => {
+    const normal = normalProjectItems(6);
+    mocks.pinnedProjects = ['/pin'];
+    setProjectHistory(
+      [
+        { type: 'conversation', time: 0, conversation: conversationOf('free', 1) },
+        normal[0],
+        workspaceItem('/pin', 'pin-project', 1),
+        ...normal.slice(1),
+      ],
+      [conversationOf('solo', 1)]
+    );
+    localStorage.setItem('grouped-history-collapsed-sections', JSON.stringify(folds));
+    await renderHistory({ collapsed: narrow });
+    if (!narrow) {
+      if (!folds.includes('projects')) for (let i = 0; i < 5; i++) expandProject(`normal-${i}`);
+      if (!folds.includes('pinned-projects')) expandProject('pin-project');
+    }
+    const { result } = renderHook(() => useVisibleConversationIds());
+    expect(result.current).toEqual(expected);
+    const domIds = Array.from(projectRows(), (row) => row.id.slice(2));
+    expect(new Set(domIds)).toEqual(new Set(expected));
+    expect(new Set(domIds).size).toBe(domIds.length);
+  });
+});
+
+describe('partial-list pin protection and status feedback', () => {
+  it.each([
+    ['pending', false],
+    ['unavailable', false],
+    ['unavailable', true],
+    ['truncated', false],
+    ['truncated', true],
+    ['ok', false],
+  ] as const)('preserves pins and their original order for status=%s complete=%s', async (status, complete) => {
+    mocks.pinnedProjects = [PROJECT_B, PROJECT_A];
+    const originalItems = [workspaceItem(PROJECT_A, 'project-a', 1), workspaceItem(PROJECT_B, 'project-b', 1)];
+    setProjectHistory(originalItems);
+    const { rerender } = await renderHistory();
+    mocks.activityStatus = status;
+    mocks.complete = complete;
+    setProjectHistory([originalItems[0]]);
+    rerender(<WorkspaceGroupedHistory />);
+    expect(configService.set).not.toHaveBeenCalled();
+    expect(mocks.pinnedProjects).toEqual([PROJECT_B, PROJECT_A]);
+    mocks.activityStatus = 'ok';
+    mocks.complete = true;
+    setProjectHistory(originalItems);
+    rerender(<WorkspaceGroupedHistory />);
+    const names = Array.from(document.querySelectorAll('.workspace-collapse')).map((root) => root.textContent);
+    expect(names[0]).toContain('project-b');
+  });
+
+  it('does not prune before the first confirmed load even if the other flags permit it', async () => {
+    mocks.pinnedProjects = ['/missing'];
+    mocks.hasLoadedOnce = false;
+    await renderHistory();
+    expect(configService.set).not.toHaveBeenCalled();
+    expect(mocks.pinnedProjects).toEqual(['/missing']);
+  });
+
+  it('prunes only a genuinely absent project from a complete ok list', async () => {
+    mocks.pinnedProjects = [PROJECT_A, '/gone'];
+    await renderHistory();
+    expect(configService.set).toHaveBeenCalledWith('sidebar.pinnedProjects', [PROJECT_A]);
+    expect(mocks.pinnedProjects).toEqual([PROJECT_A]);
+  });
+
+  it('counts standalone pinned members and folded/off-page projects as existing', async () => {
+    mocks.pinnedProjects = ['/only-pin', '/normal-21'];
+    const pinned = {
+      ...conversationOf('/only-pin', 1),
+      extra: { workspace: '/only-pin', custom_workspace: true },
+    } as TChatConversation;
+    setProjectHistory(normalProjectItems(22), [pinned]);
+    localStorage.setItem(
+      'grouped-history-collapsed-sections',
+      JSON.stringify(['projects', 'pinned-projects', 'pinned'])
+    );
+    await renderHistory();
+    expect(configService.set).not.toHaveBeenCalled();
+    expect(mocks.pinnedProjects).toEqual(['/only-pin', '/normal-21']);
+  });
+
+  it.each([
+    ['truncated', 'incompleteList'],
+    ['unavailable', 'activityUnavailable'],
+  ] as const)('shows one persistent inline %s status even on an empty list', async (status, key) => {
+    mocks.activityStatus = status;
+    mocks.complete = false;
+    setProjectHistory([]);
+    const { rerender } = await renderHistory();
+    rerender(<WorkspaceGroupedHistory />);
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(screen.getByRole('status')).toHaveTextContent(`conversation.history.${key}`);
+  });
+
+  it('shows both incomplete-list and unavailable-time feedback when both fail', async () => {
+    mocks.activityStatus = 'unavailable';
+    mocks.complete = false;
+    setProjectHistory([]);
+    await renderHistory();
+    expect(screen.getByRole('status')).toHaveTextContent('conversation.history.incompleteList');
+    expect(screen.getByRole('status')).toHaveTextContent('conversation.history.activityUnavailable');
+  });
+
+  it('does not show Electron-only activity failure feedback on Web', async () => {
+    mocks.electron = false;
+    mocks.activityStatus = 'unavailable';
+    await renderHistory();
+    expect(screen.queryByText('conversation.history.activityUnavailable')).toBeNull();
   });
 });

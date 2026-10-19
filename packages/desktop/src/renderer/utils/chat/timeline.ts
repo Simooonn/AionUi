@@ -32,6 +32,20 @@ export const getActivityTime = (conversation: TChatConversation): number => {
   return conversation.modified_at || conversation.created_at || 0;
 };
 
+/** Read the sidebar's derived message time; legacy callers retain their existing fallback. */
+export const getChatActivityTime = (conversation: TChatConversation): number => {
+  return conversation.chat_activity_at ?? getActivityTime(conversation);
+};
+
+/** Order sidebar conversations deterministically without metadata modification time. */
+export const compareByChatActivity = (a: TChatConversation, b: TChatConversation): number => {
+  return (
+    getChatActivityTime(b) - getChatActivityTime(a) ||
+    (b.created_at || 0) - (a.created_at || 0) ||
+    a.id.localeCompare(b.id)
+  );
+};
+
 /**
  * Get the timeline label for a given timestamp
  * 获取给定时间戳的时间线标签

@@ -1,9 +1,9 @@
 /**
  * In-process publish/subscribe channel for the sidebar project-view state:
- * the expanded-workspace set plus each project's loaded conversation count.
+ * project expansion, conversation/project windows, section folds and pin membership.
  *
- * Nothing is persisted. A restart collapses every project and resets each one
- * to the default page size (spec AC7).
+ * This channel persists nothing; its owner persists only section folds. A restart
+ * collapses every project and resets its windows to the default size (spec AC7).
  *
  * Single-owner contract: only `useConversations` may call
  * `dispatchWorkspaceExpansionChange` — its single call site today is the
@@ -11,15 +11,25 @@
  * would overwrite each other's `lastSnapshot`.
  */
 import { useSyncExternalStore } from 'react';
+import { INITIAL_PAGE_SIZE } from '../utils/visibleConversationOrder';
 
 export const WORKSPACE_EXPANSION_EVENT = 'aionui:workspace-expansion-changed';
 
 export type WorkspaceViewSnapshot = {
   expandedWorkspaces: string[];
   loadedCounts: Record<string, number>;
+  collapsedSections: string[];
+  pinnedProjects: string[];
+  projectListLoadedCount: number;
 };
 
-const EMPTY_SNAPSHOT: WorkspaceViewSnapshot = { expandedWorkspaces: [], loadedCounts: {} };
+const EMPTY_SNAPSHOT: WorkspaceViewSnapshot = {
+  expandedWorkspaces: [],
+  loadedCounts: {},
+  collapsedSections: [],
+  pinnedProjects: [],
+  projectListLoadedCount: INITIAL_PAGE_SIZE,
+};
 
 // Replaced with a fresh object on every dispatch and stable in between, as
 // `useSyncExternalStore` requires of `getSnapshot`.

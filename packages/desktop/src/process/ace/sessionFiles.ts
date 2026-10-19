@@ -16,9 +16,9 @@ import { existsSync, lstatSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, normalize, sep } from 'node:path';
 import { getDataPath } from '@process/utils';
-import type { CliSource, ResolvedFile, UnlinkResult } from '@/common/ace/types';
+import type { CliSource, ConversationActivityTimesResult, ResolvedFile, UnlinkResult } from '@/common/ace/types';
 import { backendToCliSource, buildResumeCommand } from '@/common/ace/resumeCommand';
-import { hasCoupledSchema } from './aioncoreSchema';
+import { CONVERSATION_ACTIVITY_TIMES_SQL, hasConversationActivitySchema, hasCoupledSchema } from './aioncoreSchema';
 import { cliImageCacheDir } from './messageImporter';
 import { findSessionFiles } from './messageParser';
 import { opencodeDbPath } from './parsers/opencodeParser';
@@ -203,6 +203,43 @@ export async function resolveConversationMessageCounts(ids: string[]): Promise<R
     return out;
   } finally {
     db.close();
+  }
+}
+
+function isChatActivityTimestamp(value: number | null): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 1e12;
+}
+
+/** Derive chat time without consulting metadata-only updated_at changes. */
+export function pickChatActivityAt(row: { created_at: number; msg_at: number | null; cli_at: number | null }): number {
+  const messageAt = isChatActivityTimestamp(row.msg_at) ? row.msg_at : undefined;
+  const cliAt = isChatActivityTimestamp(row.cli_at) ? row.cli_at : undefined;
+  const activityAt = cliAt !== undefined ? Math.max(messageAt ?? 0, cliAt) : (messageAt ?? row.created_at);
+  if (!isChatActivityTimestamp(activityAt)) throw new Error('Invalid conversation timestamp');
+  return Math.round(activityAt);
+}
+
+/** Read all conversation activity times from one WAL-aware, read-only query. */
+export async function resolveConversationActivityTimes(): Promise<ConversationActivityTimesResult> {
+  let db: Db | undefined;
+  try {
+    const BetterSqlite3 = (await import('better-sqlite3')).default;
+    db = new BetterSqlite3(join(getDataPath(), BACKEND_DB), { readonly: true, fileMustExist: true });
+    db.pragma('busy_timeout = 5000');
+    if (!hasConversationActivitySchema(db)) {
+      return { ok: false, reason: 'schema-mismatch' };
+    }
+    const rows = db.prepare(CONVERSATION_ACTIVITY_TIMES_SQL).all() as Array<{
+      id: string;
+      created_at: number;
+      msg_at: number | null;
+      cli_at: number | null;
+    }>;
+    return { ok: true, times: Object.fromEntries(rows.map((row) => [row.id, pickChatActivityAt(row)])) };
+  } catch {
+    return { ok: false, reason: 'query-failed' };
+  } finally {
+    db?.close();
   }
 }
 

@@ -1,3 +1,5 @@
+import type { ConversationActivityTimesResult } from '../../ace/types';
+
 // WebUI 状态接口 / WebUI status interface
 export interface WebUIStatus {
   running: boolean;
@@ -22,6 +24,8 @@ export interface ElectronBridgeAPI {
   // Forward feedback diagnostics logs to the main process console / 转发反馈诊断日志到主进程控制台
   logFeedbackEvent?: (payload: { details?: unknown; level: 'info' | 'warn' | 'error'; message: string }) => void;
   recoverCorruptedDatabase?: () => Promise<void>;
+  /** Desktop-only batch of derived conversation chat times. */
+  conversationActivityTimes?: () => Promise<ConversationActivityTimesResult>;
 }
 
 // Embedded terminal (node-pty + xterm) — renderer-facing data plane.

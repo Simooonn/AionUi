@@ -13,6 +13,7 @@
 import { Message } from '@arco-design/web-react';
 import i18next from 'i18next';
 import type { EnsureCliResumeResult, ImportConversationMessagesResult } from '@/common/ace/types';
+import { emitter } from '@/renderer/utils/emitter';
 
 type AceApi = {
   importConversationMessages?: (conversationId: string) => Promise<ImportConversationMessagesResult>;
@@ -77,7 +78,8 @@ export async function ensureCliConversationReady(conversationId: string): Promis
     })(),
     (async () => {
       try {
-        await api?.importConversationMessages?.(conversationId);
+        const result = await api?.importConversationMessages?.(conversationId);
+        if (result && result.imported > 0) emitter.emit('chat.history.refresh');
       } catch {
         /* best-effort: fall through to whatever the DB already has */
       }

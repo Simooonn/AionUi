@@ -9,7 +9,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useConversationHistoryContext } from '@/renderer/hooks/context/ConversationHistoryContext';
 import type { TimelineSection } from '../types';
-import { getProjectLoadedCount, loadedCountCovering, PROJECT_PAGE_SIZE } from '../utils/visibleConversationOrder';
+import {
+  getProjectLoadedCount,
+  loadedCountCovering,
+  INITIAL_PAGE_SIZE,
+  PAGE_STEP,
+} from '../utils/visibleConversationOrder';
 // ace:start recent-section
 import { RECENT_ROW_ID_PREFIX, RECENT_SECTION_KEY } from '../utils/recentConversations';
 // ace:end
@@ -132,13 +137,19 @@ const resolveRevealPath = (id: string): 'legacy' | 'none' | 'recent' => {
 };
 // ace:end
 
-export const useConversations = () => {
+const EMPTY_PINNED_PROJECTS: string[] = [];
+
+export const useConversations = ({
+  pinnedProjects = EMPTY_PINNED_PROJECTS,
+  pinnedProjectsReady = true,
+}: { pinnedProjects?: string[]; pinnedProjectsReady?: boolean } = {}) => {
   // Projects start collapsed on every launch and each one at the default page
   // size — neither is persisted (spec AC7).
   const [expandedWorkspaces, setExpandedWorkspaces] = useState<string[]>([]);
   const [loadedCounts, setLoadedCounts] = useState<Record<string, number>>({});
+  const [projectListLoadedCount, setProjectListLoadedCount] = useState(INITIAL_PAGE_SIZE);
   // ace:start recent-section — revealed rows of the recent section; not persisted
-  const [recentLoadedCount, setRecentLoadedCount] = useState(PROJECT_PAGE_SIZE);
+  const [recentLoadedCount, setRecentLoadedCount] = useState(INITIAL_PAGE_SIZE);
   // ace:end
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => readCollapsedSections());
   const { id } = useParams();
@@ -154,6 +165,8 @@ export const useConversations = () => {
     setActiveConversation,
     groupedHistory,
     hasLoadedOnce,
+    activityStatus,
+    isConversationListComplete,
   } = useConversationHistoryContext();
 
   const { pinnedConversations, timelineSections } = groupedHistory;
@@ -171,7 +184,8 @@ export const useConversations = () => {
       return next;
     });
     // ace:start recent-section — folding the recent section either way restarts it at one page
-    if (key === RECENT_SECTION_KEY) setRecentLoadedCount(PROJECT_PAGE_SIZE);
+    if (key === RECENT_SECTION_KEY) setRecentLoadedCount(INITIAL_PAGE_SIZE);
+    if (key === 'projects') setProjectListLoadedCount(INITIAL_PAGE_SIZE);
     // ace:end
   }, []);
 
@@ -202,21 +216,26 @@ export const useConversations = () => {
     }
     // ace:end
 
+    // Do not classify a pinned project as ordinary before async config hydration.
+    if (!pinnedProjectsReady) return;
     const location = locateConversation(id, pinnedConversations, timelineSections);
     if (!location) return; // data not loaded yet; effect re-runs when it arrives
     revealedIdRef.current = id;
 
-    // Expand the containing section if collapsed. `locateConversation` reports
-    // every workspace conversation as 'projects', but a pinned project renders
-    // under the 'pinned-projects' section and this hook cannot tell the two
-    // apart, so both keys are reopened.
-    setCollapsedSections((prev) =>
-      withoutSections(prev, location.section === 'projects' ? ['projects', 'pinned-projects'] : [location.section])
-    );
+    // Reopen only the section that actually owns the canonical row.
+    const section =
+      location.workspace && pinnedProjects.includes(location.workspace) ? 'pinned-projects' : location.section;
+    setCollapsedSections((prev) => withoutSections(prev, [section]));
     // Expand the containing project folder if collapsed, and reveal enough
     // pages to include the target row.
     if (location.workspace) {
       const workspace = location.workspace;
+      if (!pinnedProjects.includes(workspace)) {
+        const rank = listWorkspaces(timelineSections)
+          .filter((item) => !pinnedProjects.includes(item))
+          .indexOf(workspace);
+        setProjectListLoadedCount((count) => Math.max(count, loadedCountCovering(rank)));
+      }
       setExpandedWorkspaces((prev) => (prev.includes(workspace) ? prev : [...prev, workspace]));
       const targetIndex = location.indexInWorkspace ?? 0;
       setLoadedCounts((prev) => {
@@ -230,12 +249,27 @@ export const useConversations = () => {
     // ace:start recent-section — same double-RAF scroll as before, via the shared helper
     return scrollIntoViewAfterPaint('c-' + id);
     // ace:end
-  }, [clearCompletionUnread, clearManualUnread, id, setActiveConversation, pinnedConversations, timelineSections]);
+  }, [
+    clearCompletionUnread,
+    clearManualUnread,
+    id,
+    setActiveConversation,
+    pinnedConversations,
+    timelineSections,
+    pinnedProjects,
+    pinnedProjectsReady,
+  ]);
 
   // Publish the project-view snapshot to the subscribers (nothing is persisted).
   useEffect(() => {
-    dispatchWorkspaceExpansionChange({ expandedWorkspaces, loadedCounts });
-  }, [expandedWorkspaces, loadedCounts]);
+    dispatchWorkspaceExpansionChange({
+      expandedWorkspaces,
+      loadedCounts,
+      collapsedSections: [...collapsedSections],
+      pinnedProjects,
+      projectListLoadedCount,
+    });
+  }, [expandedWorkspaces, loadedCounts, collapsedSections, pinnedProjects, projectListLoadedCount]);
 
   // Persist section collapsed state
   useEffect(() => {
@@ -277,7 +311,7 @@ export const useConversations = () => {
   }, []);
 
   const handleShowMoreConversations = useCallback((workspace: string) => {
-    setLoadedCounts((prev) => ({ ...prev, [workspace]: getProjectLoadedCount(prev, workspace) + PROJECT_PAGE_SIZE }));
+    setLoadedCounts((prev) => ({ ...prev, [workspace]: getProjectLoadedCount(prev, workspace) + PAGE_STEP }));
   }, []);
 
   const handleExpandAllProjects = useCallback(() => {
@@ -297,9 +331,13 @@ export const useConversations = () => {
 
   // ace:start recent-section
   const handleShowMoreRecent = useCallback(() => {
-    setRecentLoadedCount((count) => count + PROJECT_PAGE_SIZE);
+    setRecentLoadedCount((count) => count + PAGE_STEP);
   }, []);
   // ace:end
+
+  const handleShowMoreProjects = useCallback(() => {
+    setProjectListLoadedCount((count) => count + PAGE_STEP);
+  }, []);
 
   return {
     conversations,
@@ -317,7 +355,11 @@ export const useConversations = () => {
     handleShowMoreConversations,
     handleExpandAllProjects,
     handleCollapseAllProjects,
-    hasLoadedOnce, // ace: pinned-project orphan pruning gates on a confirmed load
+    hasLoadedOnce,
+    activityStatus,
+    isConversationListComplete,
+    projectListLoadedCount,
+    handleShowMoreProjects,
     collapsedSections,
     toggleSection,
     // ace:start recent-section

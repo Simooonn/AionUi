@@ -36,7 +36,7 @@ import { isConversationPinned } from './utils/groupingHelpers';
 // ace:start sidebar row relative-time label
 import { formatRelativeTime } from '@/renderer/ace/relativeTime';
 import { useRelativeTimeTick } from '@/renderer/ace/useRelativeTimeTick';
-import { getActivityTime } from '@/renderer/utils/chat/timeline';
+import { getChatActivityTime } from '@/renderer/utils/chat/timeline';
 // ace:end
 // ace:start copyable CLI resume command (claude --resume <id>, etc.)
 import { buildCliResumeCommand, useNativeResumeCommand } from '@/renderer/ace/readonly';
@@ -113,7 +113,7 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
   const inlineNameTooltipEnabled = !collapsed && !isMobile && !!conversation.name;
   // ace:start relative time of the last activity (same source as sidebar sort)
   const nowMs = useRelativeTimeTick();
-  const relativeTimeLabel = formatRelativeTime(getActivityTime(conversation), nowMs, t);
+  const relativeTimeLabel = formatRelativeTime(getChatActivityTime(conversation), nowMs, t);
   // ace:end
 
   const renderLeadingIcon = () => {

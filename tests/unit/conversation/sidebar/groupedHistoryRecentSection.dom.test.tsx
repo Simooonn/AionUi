@@ -57,6 +57,8 @@ vi.mock('@/renderer/hooks/context/ConversationHistoryContext', () => ({
     setActiveConversation: mocks.noop,
     groupedHistory: mocks.groupedHistory,
     hasLoadedOnce: true,
+    activityStatus: 'ok',
+    isConversationListComplete: true,
   }),
 }));
 
@@ -252,19 +254,27 @@ describe('GroupedHistory recent section placement (AC1)', () => {
 });
 
 describe('GroupedHistory recent section paging (AC4/AC5)', () => {
-  it('shows the 5 newest rows, then 10, then all 12, with a flush 34px more-row', async () => {
+  it('shows the 5 newest rows, then 15, then all 22, with a flush 34px more-row', async () => {
+    setHistory([workspaceItem(PROJECT_A, 'project-a', 22)]);
     await renderHistory();
 
     expect(recentRowIds()).toEqual([1, 2, 3, 4, 5].map((position) => `rc-${PROJECT_A}/c-${position}`));
     const more = recentMoreRow();
-    expect(more).toHaveAttribute('aria-label', 'conversation.history.showMore:7');
+    expect(more).toHaveAttribute('aria-label', 'conversation.history.showMore:17');
     expect(more).toHaveClass('h-34px', 'ps-10px');
     expect(more).not.toHaveClass('ps-34px');
 
     fireEvent.click(more as HTMLElement);
-    expect(recentRows()).toHaveLength(10);
-    expect(recentMoreRow()).toHaveAttribute('aria-label', 'conversation.history.showMore:2');
+    expect(recentRows()).toHaveLength(15);
+    expect(recentMoreRow()).toHaveAttribute('aria-label', 'conversation.history.showMore:7');
 
+    fireEvent.click(recentMoreRow() as HTMLElement);
+    expect(recentRows()).toHaveLength(22);
+    expect(recentMoreRow()).toBeNull();
+  });
+
+  it('exhausts a 12-conversation list with one increment', async () => {
+    await renderHistory();
     fireEvent.click(recentMoreRow() as HTMLElement);
     expect(recentRows()).toHaveLength(12);
     expect(recentMoreRow()).toBeNull();
@@ -281,7 +291,7 @@ describe('GroupedHistory recent section paging (AC4/AC5)', () => {
   it('goes back to one page after folding and unfolding the section', async () => {
     await renderHistory();
     fireEvent.click(recentMoreRow() as HTMLElement);
-    expect(recentRows()).toHaveLength(10);
+    expect(recentRows()).toHaveLength(12);
 
     fireEvent.click(screen.getByText('conversation.history.recentSection'));
     expect(recentRows()).toHaveLength(0);

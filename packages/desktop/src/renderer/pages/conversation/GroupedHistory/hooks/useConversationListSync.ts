@@ -213,8 +213,12 @@ export const applyWaitingConfirmationTransition = (
  */
 export const shouldReconcileMarkWaiting = (pendingConfirmations: number): boolean => pendingConfirmations > 0;
 
+export type ConversationActivityStatus = 'pending' | 'ok' | 'unavailable' | 'truncated';
+
 type ConversationListSyncSnapshot = {
   conversations: TChatConversation[];
+  activityStatus: ConversationActivityStatus;
+  isConversationListComplete: boolean;
   generatingConversationIds: Set<string>;
   waitingConfirmationConversationIds: Set<string>;
   completionUnreadConversationIds: Set<string>;
@@ -261,6 +265,9 @@ const listeners = new Set<() => void>();
 
 let isStoreInitialized = false;
 let hasLoadedOnceState = false;
+let activityStatusState: ConversationActivityStatus = 'pending';
+let isConversationListCompleteState = false;
+let refreshSeq = 0;
 let conversationsState: TChatConversation[] = [];
 let generatingConversationIdsState = new Set<string>();
 // Per-conversation set of pending confirmation ids (permission / acp_permission
@@ -288,6 +295,8 @@ let snapshotState: ConversationListSyncSnapshot = {
   waitingConfirmationConversationIds: waitingConfirmationConversationIdsState,
   completionUnreadConversationIds: completionUnreadConversationIdsState,
   hasLoadedOnce: hasLoadedOnceState,
+  activityStatus: activityStatusState,
+  isConversationListComplete: isConversationListCompleteState,
   manualUnreadConversationIds: manualUnreadConversationIdsState,
 };
 
@@ -298,6 +307,8 @@ const emitStoreChange = () => {
     waitingConfirmationConversationIds: waitingConfirmationConversationIdsState,
     completionUnreadConversationIds: completionUnreadConversationIdsState,
     hasLoadedOnce: hasLoadedOnceState,
+    activityStatus: activityStatusState,
+    isConversationListComplete: isConversationListCompleteState,
     manualUnreadConversationIds: manualUnreadConversationIdsState,
   };
   listeners.forEach((listener) => listener());
@@ -310,7 +321,8 @@ const subscribeConversationListSync = (listener: () => void) => {
   };
 };
 
-const getConversationListSyncSnapshot = (): ConversationListSyncSnapshot => snapshotState;
+/** Read the last atomically published sidebar snapshot. */
+export const getConversationListSyncSnapshot = (): ConversationListSyncSnapshot => snapshotState;
 
 // ace:start read-only snapshot of the generating Set for the Lark-notify feature
 export const getGeneratingConversationIds = (): ReadonlySet<string> => generatingConversationIdsState;
@@ -347,46 +359,114 @@ export const getSnapshotConversationName = (conversation_id: string): string | u
   return name ? name : undefined;
 };
 
-const refreshConversations = () => {
-  void ipcBridge.database.getUserConversations
-    .invoke({ limit: 10000 })
-    .then((result) => {
-      const items = result?.items;
-      if (items && Array.isArray(items)) {
-        const filteredData = items.filter((conv) => {
-          // Legacy rows from the pre-provider-probe health check flow are hidden
-          // from normal history. New health checks must not create conversations.
-          const extra = conv.extra as { is_health_check?: boolean; team_id?: string; teamId?: string } | undefined;
-          return extra?.is_health_check !== true && !extra?.team_id && !extra?.teamId;
-        });
-        conversationsState = filteredData;
-        // Use ALL conversation IDs (including team/legacy health-check rows) so the
-        // responseStream listener recognises them as known and doesn't
-        // trigger an infinite refreshConversations loop.
-        conversation_idsState = new Set(items.map((conversation) => conversation.id));
-        hasLoadedOnceState = true;
-        // Map ALL rows (unfiltered) so a team member conversation's project_id is
-        // resolvable too — the team route looks up its leader conversation here.
-        projectIdByIdState = new Map(items.map((conversation) => [conversation.id, conversation.project_id ?? null]));
-        emitStoreChange();
-        return;
+const loadAllConversations = async (): Promise<{ items: TChatConversation[]; complete: boolean }> => {
+  const items = new Map<string, TChatConversation>();
+  const cursors = new Set<string>();
+  let cursor: string | undefined;
+  for (let page = 0; page < 20; page += 1) {
+    try {
+      const result = await ipcBridge.database.getUserConversations.invoke({
+        limit: 10000,
+        ...(cursor ? { cursor } : {}),
+      });
+      if (!result || !Array.isArray(result.items)) throw new Error('Invalid conversation list response');
+      result.items.forEach((conversation) => items.set(conversation.id, conversation));
+      if (!result.has_more) {
+        // Multiple independent keyset reads cannot prove snapshot completeness.
+        return { items: [...items.values()], complete: page === 0 && items.size === result.items.length };
       }
-
-      conversationsState = [];
-      conversation_idsState = new Set();
-      hasLoadedOnceState = true;
-      projectIdByIdState = new Map();
-      emitStoreChange();
-    })
-    .catch((error) => {
-      console.error('[WorkspaceGroupedHistory] Failed to load conversations:', error);
-      conversationsState = [];
-      conversation_idsState = new Set();
-      hasLoadedOnceState = true;
-      projectIdByIdState = new Map();
-      emitStoreChange();
-    });
+      const nextCursor = result.items.at(-1)?.id;
+      if (!nextCursor || cursors.has(nextCursor)) break;
+      cursors.add(nextCursor);
+      cursor = nextCursor;
+    } catch (error) {
+      if (page === 0) throw error;
+      break;
+    }
+  }
+  return { items: [...items.values()], complete: false };
 };
+
+const setActivityStatus = (status: ConversationActivityStatus, reason?: string) => {
+  if (activityStatusState === status) return;
+  activityStatusState = status;
+  void ipcBridge.application.writeRendererLog
+    .invoke({
+      level: status === 'ok' ? 'info' : 'warn',
+      tag: 'conversationListSync',
+      message: 'sidebar_activity_status',
+      data: { status, reason },
+    })
+    .catch(() => {});
+};
+
+/** Refresh list metadata and read-only activity as one published generation. */
+export const refreshConversations = async (): Promise<void> => {
+  const seq = ++refreshSeq;
+  try {
+    const { items, complete } = await loadAllConversations();
+    if (seq !== refreshSeq) return;
+    let times: Record<string, number> = {};
+    let covered = false;
+    let activityFailure = 'ipc-unavailable';
+    const readTimes = window.electronAPI?.conversationActivityTimes;
+    if (readTimes) {
+      try {
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          const result = await readTimes();
+          if (seq !== refreshSeq) return;
+          if (result.ok === false) {
+            activityFailure = result.reason;
+            break;
+          }
+          activityFailure = 'missing-activity';
+          times = result.times;
+          covered = items.every(
+            (conversation) =>
+              Object.hasOwn(times, conversation.id) &&
+              Number.isFinite(times[conversation.id]) &&
+              times[conversation.id] > 0
+          );
+          if (covered) break;
+        }
+      } catch {
+        // Preserve previous proven values while the unavailable state is visible.
+      }
+    }
+    if (seq !== refreshSeq) return;
+    const previousTimes = new Map(
+      conversationsState.map((conversation) => [conversation.id, conversation.chat_activity_at])
+    );
+    const filteredData = items.filter((conv) => {
+      const extra = conv.extra as { is_health_check?: boolean; team_id?: string; teamId?: string } | undefined;
+      return extra?.is_health_check !== true && !extra?.team_id && !extra?.teamId;
+    });
+    conversationsState = filteredData.map((conversation) => {
+      const time =
+        Object.hasOwn(times, conversation.id) && Number.isFinite(times[conversation.id]) && times[conversation.id] > 0
+          ? times[conversation.id]
+          : previousTimes.get(conversation.id);
+      return { ...conversation, chat_activity_at: time };
+    });
+    // Keep team/health-check IDs known so their streams do not loop refreshes.
+    conversation_idsState = new Set(items.map((conversation) => conversation.id));
+    projectIdByIdState = new Map(items.map((conversation) => [conversation.id, conversation.project_id ?? null]));
+    hasLoadedOnceState = true;
+    isConversationListCompleteState = complete;
+    setActivityStatus(!covered ? 'unavailable' : complete ? 'ok' : 'truncated', covered ? undefined : activityFailure);
+    emitStoreChange();
+  } catch (error) {
+    if (seq !== refreshSeq) return;
+    console.error('[WorkspaceGroupedHistory] Failed to load conversations:', error);
+    hasLoadedOnceState = true;
+    isConversationListCompleteState = false;
+    setActivityStatus('unavailable', 'list-failed');
+    emitStoreChange();
+  }
+};
+
+/** Expose the last published status for diagnostics without starting a refresh. */
+export const getConversationActivityStatus = (): ConversationActivityStatus => activityStatusState;
 
 /** Source of a generating-state transition, logged for field diagnosis. */
 type GeneratingTransitionSource = 'stream' | 'reconcile' | 'terminal' | 'turnCompleted' | 'deleted';
@@ -693,6 +773,8 @@ export const useConversationListSync = () => {
     completionUnreadConversationIds,
     manualUnreadConversationIds,
     hasLoadedOnce,
+    activityStatus,
+    isConversationListComplete,
   } = useSyncExternalStore(
     subscribeConversationListSync,
     getConversationListSyncSnapshot,
@@ -754,5 +836,7 @@ export const useConversationListSync = () => {
     clearManualUnread,
     setActiveConversation,
     hasLoadedOnce,
+    activityStatus,
+    isConversationListComplete,
   };
 };

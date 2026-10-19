@@ -10,7 +10,11 @@ import {
   buildVisibleConversationIds,
   getProjectLoadedCount,
   loadedCountCovering,
-  PROJECT_PAGE_SIZE,
+  INITIAL_PAGE_SIZE,
+  PAGE_STEP,
+  isSectionOpen,
+  sliceVisibleProjects,
+  getVisibleProjectConversations,
   sliceLoadedConversations,
 } from '@/renderer/pages/conversation/GroupedHistory/utils/visibleConversationOrder';
 import type { TChatConversation } from '@/common/config/storage';
@@ -35,9 +39,12 @@ const grouped = (sections: TimelineSection[]): GroupedHistoryResult => ({
   timelineSections: sections,
 });
 
-describe('PROJECT_PAGE_SIZE', () => {
-  it('pages project conversations 5 at a time', () => {
-    expect(PROJECT_PAGE_SIZE).toBe(5);
+const defaultView = { collapsedSections: [], pinnedProjects: [], projectListLoadedCount: 5 };
+
+describe('paging sizes', () => {
+  it('starts at five and advances by ten', () => {
+    expect(INITIAL_PAGE_SIZE).toBe(5);
+    expect(PAGE_STEP).toBe(10);
   });
 });
 
@@ -61,11 +68,15 @@ describe('sliceLoadedConversations', () => {
     expect(slice.map((c) => c.id)).toEqual(['/a-1', '/a-2', '/a-3', '/a-4', '/a-5']);
   });
 
-  it('walks a 12-conversation project 5 -> 10 -> 12', () => {
-    const all = conversations('/a', 12);
+  it('walks a 22-conversation project 5 -> 15 -> 22', () => {
+    const all = conversations('/a', 22);
     expect(sliceLoadedConversations(all, 5)).toHaveLength(5);
-    expect(sliceLoadedConversations(all, 10)).toHaveLength(10);
-    expect(sliceLoadedConversations(all, 15)).toHaveLength(12);
+    expect(sliceLoadedConversations(all, 15)).toHaveLength(15);
+    expect(sliceLoadedConversations(all, 25)).toHaveLength(22);
+  });
+
+  it('stops at twelve when one increment exhausts the list', () => {
+    expect(sliceLoadedConversations(conversations('/a', 12), 15)).toHaveLength(12);
   });
 
   it('never returns a negative-length slice', () => {
@@ -82,8 +93,14 @@ describe('loadedCountCovering', () => {
     expect(loadedCountCovering(4)).toBe(5);
   });
 
-  it('covers the 6th conversation (index 5) with 10', () => {
-    expect(loadedCountCovering(5)).toBe(10);
+  it.each([
+    [5, 15],
+    [14, 15],
+    [15, 25],
+    [24, 25],
+    [25, 35],
+  ])('covers index %i with %i', (index, expected) => {
+    expect(loadedCountCovering(index)).toBe(expected);
   });
 
   it('covers the 13th conversation (index 12) with 15', () => {
@@ -98,6 +115,7 @@ describe('loadedCountCovering', () => {
 describe('buildVisibleConversationIds', () => {
   it('only lists the loaded slice of an expanded workspace', () => {
     const ids = buildVisibleConversationIds({
+      ...defaultView,
       ...grouped([workspaceSection('/a', 12)]),
       expandedWorkspaces: ['/a'],
       loadedCounts: {},
@@ -106,6 +124,7 @@ describe('buildVisibleConversationIds', () => {
     expect(ids).toEqual(['/a-1', '/a-2', '/a-3', '/a-4', '/a-5']);
 
     const widened = buildVisibleConversationIds({
+      ...defaultView,
       ...grouped([workspaceSection('/a', 12)]),
       expandedWorkspaces: ['/a'],
       loadedCounts: { '/a': 10 },
@@ -116,6 +135,7 @@ describe('buildVisibleConversationIds', () => {
 
   it('lists nothing for a collapsed workspace', () => {
     const ids = buildVisibleConversationIds({
+      ...defaultView,
       ...grouped([workspaceSection('/a', 12)]),
       expandedWorkspaces: [],
       loadedCounts: { '/a': 10 },
@@ -126,6 +146,7 @@ describe('buildVisibleConversationIds', () => {
 
   it('lists every workspace conversation when the sider is collapsed', () => {
     const ids = buildVisibleConversationIds({
+      ...defaultView,
       ...grouped([workspaceSection('/a', 12)]),
       expandedWorkspaces: [],
       loadedCounts: {},
@@ -136,6 +157,7 @@ describe('buildVisibleConversationIds', () => {
 
   it('pages each expanded workspace with its own count', () => {
     const ids = buildVisibleConversationIds({
+      ...defaultView,
       ...grouped([workspaceSection('/a', 12), workspaceSection('/b', 12)]),
       expandedWorkspaces: ['/a', '/b'],
       loadedCounts: { '/a': 10 },
@@ -147,6 +169,7 @@ describe('buildVisibleConversationIds', () => {
 
   it('keeps pinned and flat conversations ahead of the workspace slices', () => {
     const ids = buildVisibleConversationIds({
+      ...defaultView,
       pinnedConversations: conversations('/pin', 1),
       timelineSections: [
         {
@@ -163,5 +186,102 @@ describe('buildVisibleConversationIds', () => {
     });
     expect(ids.slice(0, 2)).toEqual(['/pin-1', 'flat-1']);
     expect(ids).toHaveLength(7);
+  });
+});
+
+describe('shared visibility predicates', () => {
+  it('keeps folded sections closed and ignores paging only in the narrow sider', () => {
+    expect(isSectionOpen(new Set(['projects']), 'projects')).toBe(false);
+    expect(sliceVisibleProjects([1, 2, 3], -1, false)).toEqual([]);
+    expect(sliceVisibleProjects([1, 2, 3], 1, true)).toEqual([1, 2, 3]);
+  });
+
+  it('returns no rows from a folded project but all its rows in the narrow sider', () => {
+    const group = { workspace: '/a', conversations: conversations('/a', 22) };
+    expect(getVisibleProjectConversations(group, [], {}, false)).toEqual([]);
+    expect(getVisibleProjectConversations(group, ['/a'], {}, false)).toHaveLength(5);
+    expect(getVisibleProjectConversations(group, [], {}, true)).toHaveLength(22);
+  });
+});
+
+describe('canonical visibility across sections and project windows', () => {
+  const history: GroupedHistoryResult = {
+    pinnedConversations: conversations('pin', 1),
+    timelineSections: [
+      {
+        timeline: 'today',
+        items: [
+          { type: 'conversation', time: 0, conversation: { id: 'free-1' } as TChatConversation },
+          ...workspaceSection('a', 1).items,
+          ...workspaceSection('pinned-project', 2).items,
+          ...workspaceSection('b', 1).items,
+          ...workspaceSection('c', 1).items,
+          ...workspaceSection('d', 1).items,
+          ...workspaceSection('e', 1).items,
+          ...workspaceSection('f', 1).items,
+          { type: 'conversation', time: 0, conversation: { id: 'free-2' } as TChatConversation },
+        ],
+      },
+    ],
+  };
+  const view = {
+    expandedWorkspaces: ['a', 'pinned-project', 'b', 'c', 'd', 'e', 'f'],
+    loadedCounts: {},
+    collapsedSections: [],
+    pinnedProjects: ['pinned-project'],
+    projectListLoadedCount: 5,
+    siderCollapsed: false,
+  };
+
+  it('preserves independent canonical order while pinned projects consume no normal slots', () => {
+    expect(buildVisibleConversationIds({ ...history, ...view })).toEqual([
+      'pin-1',
+      'free-1',
+      'a-1',
+      'pinned-project-1',
+      'pinned-project-2',
+      'b-1',
+      'c-1',
+      'd-1',
+      'e-1',
+      'free-2',
+    ]);
+  });
+
+  it.each([false, true])('respects every section fold with narrow=%s', (siderCollapsed) => {
+    expect(
+      buildVisibleConversationIds({
+        ...history,
+        ...view,
+        siderCollapsed,
+        collapsedSections: ['projects', 'pinned', 'conversations'],
+      })
+    ).toEqual(['pinned-project-1', 'pinned-project-2']);
+    expect(
+      buildVisibleConversationIds({
+        ...history,
+        ...view,
+        siderCollapsed,
+        collapsedSections: ['projects', 'pinned-projects', 'pinned', 'conversations'],
+      })
+    ).toEqual([]);
+  });
+
+  it('bypasses project and conversation windows but not section folds in the narrow sider', () => {
+    expect(
+      buildVisibleConversationIds({
+        ...history,
+        ...view,
+        siderCollapsed: true,
+        expandedWorkspaces: [],
+        collapsedSections: ['pinned-projects'],
+      })
+    ).toEqual(['pin-1', 'free-1', 'a-1', 'b-1', 'c-1', 'd-1', 'e-1', 'f-1', 'free-2']);
+  });
+
+  it('returns no duplicate ids even if a conversation appears twice in the supplied history', () => {
+    expect(
+      buildVisibleConversationIds({ ...history, ...view, pinnedConversations: [{ id: 'free-1' } as TChatConversation] })
+    ).toEqual(['free-1', 'a-1', 'pinned-project-1', 'pinned-project-2', 'b-1', 'c-1', 'd-1', 'e-1', 'free-2']);
   });
 });

@@ -10,6 +10,32 @@
  * crashing.
  */
 
+export const CLI_ROW_ID_PREFIX = 'cli-';
+export const CHAT_ACTIVITY_TYPES = ['text', 'thinking', 'tool_call', 'tool_group', 'acp_tool_call', 'plan'] as const;
+
+/**
+ * One read snapshot; malformed metadata must not abort other conversations.
+ * SQLite's 1e999 is infinity: exclude it before MAX so it cannot hide valid rows.
+ */
+export const CONVERSATION_ACTIVITY_TIMES_SQL = `SELECT c.id AS id, c.created_at AS created_at,
+  (SELECT MAX(m.created_at) FROM messages m
+    WHERE m.conversation_id = c.id AND m.hidden = 0
+      AND m.type IN (${CHAT_ACTIVITY_TYPES.map((type) => `'${type}'`).join(', ')})
+      AND typeof(m.created_at) IN ('integer', 'real') AND m.created_at >= 1000000000000
+      AND m.created_at < 1e999) AS msg_at,
+  CASE WHEN json_valid(c.extra) THEN
+    CASE WHEN json_type(c.extra, '$.cli_session_id') = 'text'
+          AND length(trim(json_extract(c.extra, '$.cli_session_id'))) > 0
+          AND json_type(c.extra, '$.cli_source') = 'text'
+          AND length(trim(json_extract(c.extra, '$.cli_source'))) > 0
+          AND json_type(c.extra, '$.cli_updated_at') IN ('integer', 'real')
+          AND json_extract(c.extra, '$.cli_updated_at') >= 1000000000000
+          AND json_extract(c.extra, '$.cli_updated_at') < 1e999
+          AND NOT EXISTS (SELECT 1 FROM messages x WHERE x.conversation_id = c.id AND x.id LIKE '${CLI_ROW_ID_PREFIX}%')
+      THEN json_extract(c.extra, '$.cli_updated_at') END
+    END AS cli_at
+  FROM conversations c`;
+
 export const ACE_AIONCORE_COUPLED_SCHEMA = {
   /** Runtime table driving ACP session/load resume (v0.1.41 split agent_backend into agent_source + agent_id). */
   acp_session: ['conversation_id', 'session_id', 'session_status', 'agent_source', 'agent_id'],
@@ -48,6 +74,14 @@ export function hasCoupledSchema(db: SqliteDb, table: CoupledTable): boolean {
   // unvetted string reach the PRAGMA interpolation below.
   if (!Object.hasOwn(ACE_AIONCORE_COUPLED_SCHEMA, table)) return false;
   return tableHasColumns(db, table, ACE_AIONCORE_COUPLED_SCHEMA[table]);
+}
+
+/** Keep the new read contract separate so legacy writer/schema guards stay unchanged. */
+export function hasConversationActivitySchema(db: SqliteDb): boolean {
+  return (
+    tableHasColumns(db, 'conversations', ['id', 'created_at', 'extra']) &&
+    tableHasColumns(db, 'messages', ['id', 'conversation_id', 'type', 'hidden', 'created_at'])
+  );
 }
 
 // --- CLI-import dedupe (baseline read + duplicate cleanup) -------------------
@@ -169,7 +203,7 @@ export const DUPLICATE_IMPORT_LOSERS_SQL = `WITH claims AS (
   )
 SELECT r.id, r.sid AS cliSessionId,
        (r.archived_at IS NOT NULL) AS archived,
-       EXISTS (SELECT 1 FROM messages m WHERE m.conversation_id = r.id AND m.id NOT LIKE 'cli-%') AS hasLiveTurns,
+       EXISTS (SELECT 1 FROM messages m WHERE m.conversation_id = r.id AND m.id NOT LIKE '${CLI_ROW_ID_PREFIX}%') AS hasLiveTurns,
        EXISTS (SELECT 1 FROM cron_jobs j WHERE j.conversation_id = r.id) AS hasCronJobs
   FROM (
     SELECT claims.*,
@@ -249,7 +283,7 @@ export const BACKFILL_IMPORTED_ACTIVITY_SQL = `UPDATE conversations
     AND CAST(json_extract(extra, '$.cli_updated_at') AS INTEGER) > 0
     AND updated_at <> CAST(json_extract(extra, '$.cli_updated_at') AS INTEGER)
     AND NOT EXISTS (
-      SELECT 1 FROM messages m WHERE m.conversation_id = conversations.id AND m.id NOT LIKE 'cli-%'
+      SELECT 1 FROM messages m WHERE m.conversation_id = conversations.id AND m.id NOT LIKE '${CLI_ROW_ID_PREFIX}%'
     )`;
 
 /** Returns the number of conversations whose ordering was corrected. */

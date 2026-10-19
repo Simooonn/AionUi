@@ -5,12 +5,12 @@
  */
 
 import type { TChatConversation } from '@/common/config/storage';
-import { getActivityTime } from '@/renderer/utils/chat/timeline';
+import { compareByChatActivity, getChatActivityTime } from '@/renderer/utils/chat/timeline';
 import { getWorkspaceDisplayName } from '@/renderer/utils/workspace/workspace';
-import { getWorkspaceUpdateTime } from '@/renderer/utils/workspace/workspaceHistory';
 
 import type { GroupedHistoryResult, TimelineItem, TimelineSection } from '../types';
 import { getConversationSortOrder } from './sortOrderHelpers';
+import { getProjectWorkspace } from './recentConversations';
 
 export const isConversationPinned = (conversation: TChatConversation): boolean => {
   const extra = conversation.extra as { pinned?: boolean } | undefined;
@@ -27,7 +27,8 @@ export const getConversationPinnedAt = (conversation: TChatConversation): number
 
 export const groupConversationsByWorkspace = (
   conversations: TChatConversation[],
-  t: (key: string) => string
+  t: (key: string) => string,
+  pinnedActivityByWorkspace: ReadonlyMap<string, number> = new Map()
 ): TimelineSection[] => {
   const allWorkspaceGroups = new Map<string, TChatConversation[]>();
   const withoutWorkspaceConvs: TChatConversation[] = [];
@@ -46,13 +47,16 @@ export const groupConversationsByWorkspace = (
     }
   });
 
+  // A project remains present when its last normal member is individually pinned.
+  for (const workspace of pinnedActivityByWorkspace.keys()) {
+    if (!allWorkspaceGroups.has(workspace)) allWorkspaceGroups.set(workspace, []);
+  }
   const items: TimelineItem[] = [];
 
   allWorkspaceGroups.forEach((convList, workspace) => {
-    const sortedConvs = [...convList].toSorted((a, b) => getActivityTime(b) - getActivityTime(a));
-    const latestConversationTime = getActivityTime(sortedConvs[0]);
-    const updateTime = getWorkspaceUpdateTime(workspace);
-    const time = Math.max(updateTime, latestConversationTime);
+    const sortedConvs = convList.toSorted(compareByChatActivity);
+    const latestConversationTime = sortedConvs[0] ? getChatActivityTime(sortedConvs[0]) : 0;
+    const time = Math.max(pinnedActivityByWorkspace.get(workspace) ?? 0, latestConversationTime);
     items.push({
       type: 'workspace',
       time,
@@ -71,12 +75,18 @@ export const groupConversationsByWorkspace = (
   withoutWorkspaceConvs.forEach((conv) => {
     items.push({
       type: 'conversation',
-      time: getActivityTime(conv),
+      time: getChatActivityTime(conv),
       conversation: conv,
     });
   });
 
-  items.sort((a, b) => b.time - a.time);
+  items.sort((a, b) => {
+    if (a.time !== b.time) return b.time - a.time;
+    if (a.conversation && b.conversation) return compareByChatActivity(a.conversation, b.conversation);
+    const keyA = a.workspaceGroup?.workspace ?? a.conversation?.id ?? '';
+    const keyB = b.workspaceGroup?.workspace ?? b.conversation?.id ?? '';
+    return keyA.localeCompare(keyB);
+  });
 
   if (items.length === 0) return [];
 
@@ -114,8 +124,19 @@ export const buildGroupedHistory = (
 
   const normalConversations = visibleConversations.filter((conversation) => !isConversationPinned(conversation));
 
+  const pinnedActivityByWorkspace = new Map<string, number>();
+  for (const conversation of pinnedConversations) {
+    const workspace = getProjectWorkspace(conversation);
+    if (workspace) {
+      pinnedActivityByWorkspace.set(
+        workspace,
+        Math.max(pinnedActivityByWorkspace.get(workspace) ?? 0, getChatActivityTime(conversation))
+      );
+    }
+  }
+
   return {
     pinnedConversations,
-    timelineSections: groupConversationsByWorkspace(normalConversations, t),
+    timelineSections: groupConversationsByWorkspace(normalConversations, t, pinnedActivityByWorkspace),
   };
 };

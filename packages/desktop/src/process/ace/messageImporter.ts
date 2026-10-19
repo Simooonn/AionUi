@@ -26,7 +26,7 @@ import { join } from 'node:path';
 import { AIONUI_FILES_MARKER } from '@/common/config/constants';
 import { getDataPath } from '@process/utils';
 import type { CliSource, ImportConversationMessagesResult, ParsedCliItem, ParsedCliMessage } from '@/common/ace/types';
-import { touchConversationActivity } from './aioncoreSchema';
+import { CLI_ROW_ID_PREFIX, touchConversationActivity } from './aioncoreSchema';
 import { findSessionFiles, parseSessionFiles } from './messageParser';
 
 const BACKEND_DB = 'aionui-backend.db';
@@ -178,18 +178,20 @@ export function isLiveDuplicate(index: LiveRowIndex, position: string, text: str
   return list.some((t) => Math.abs(t - createdAt) < DEDUP_WINDOW_MS);
 }
 
-function mapRows(
+/** Map parsed turns to persisted rows; audit callers can avoid image-cache writes. */
+export function mapRows(
   conversationId: string,
   sessionId: string,
   source: CliSource,
   messages: ParsedCliMessage[],
   liveIndex: LiveRowIndex,
-  liveToolIds: Set<string>
+  liveToolIds: Set<string>,
+  materialize: typeof materializeCliImages = materializeCliImages
 ): { rows: MessageRow[]; unmapped: number } {
   const rows: MessageRow[] = [];
   let unmapped = 0;
   for (const m of messages) {
-    const imagePaths = materializeCliImages(
+    const imagePaths = materialize(
       sessionId,
       m.items.flatMap((it) => (it.kind === 'image' ? [it] : []))
     );
@@ -203,7 +205,7 @@ function mapRows(
         // Rendered by MessageThinking's ace variant: a one-line "session
         // compacted" header, collapsed by default, markdown body on expand.
         rows.push({
-          id: `cli-${m.msgId}-${i}`,
+          id: `${CLI_ROW_ID_PREFIX}${m.msgId}-${i}`,
           conversation_id: conversationId,
           msg_id: m.msgId,
           status: 'finish',
@@ -220,7 +222,7 @@ function mapRows(
         // tool_call_id is globally unique, so this dedup is exact.
         if (liveToolIds.has(item.callId)) return;
         rows.push({
-          id: `cli-${m.msgId}-${i}`,
+          id: `${CLI_ROW_ID_PREFIX}${m.msgId}-${i}`,
           conversation_id: conversationId,
           msg_id: item.callId,
           status: 'finish',
@@ -236,7 +238,7 @@ function mapRows(
         // CLI notice (gemini error/info/warning) → the app's native tips row;
         // MessageTips handles all three types with zero new UI.
         rows.push({
-          id: `cli-${m.msgId}-${i}`,
+          id: `${CLI_ROW_ID_PREFIX}${m.msgId}-${i}`,
           conversation_id: conversationId,
           msg_id: m.msgId,
           status: 'finish',
@@ -263,7 +265,7 @@ function mapRows(
         pendingImages = [];
       }
       rows.push({
-        id: `cli-${m.msgId}-${i}`,
+        id: `${CLI_ROW_ID_PREFIX}${m.msgId}-${i}`,
         conversation_id: conversationId,
         msg_id: m.msgId,
         status: 'finish',
@@ -278,7 +280,7 @@ function mapRows(
     });
     if (pendingImages.length) {
       rows.push({
-        id: `cli-${m.msgId}-img`,
+        id: `${CLI_ROW_ID_PREFIX}${m.msgId}-img`,
         conversation_id: conversationId,
         msg_id: m.msgId,
         status: 'finish',
@@ -320,7 +322,7 @@ export async function importConversationMessages(conversationId: string): Promis
 
     const liveRows = db
       .prepare(
-        "SELECT content, position, created_at FROM messages WHERE conversation_id = ? AND id NOT LIKE 'cli-%' AND type IN ('text','thinking')"
+        `SELECT content, position, created_at FROM messages WHERE conversation_id = ? AND id NOT LIKE '${CLI_ROW_ID_PREFIX}%' AND type IN ('text','thinking')`
       )
       .all(conversationId) as LiveRow[];
     const liveIndex = buildLiveRowIndex(liveRows);
@@ -328,7 +330,7 @@ export async function importConversationMessages(conversationId: string): Promis
       (
         db
           .prepare(
-            "SELECT msg_id FROM messages WHERE conversation_id = ? AND id NOT LIKE 'cli-%' AND type = 'acp_tool_call'"
+            `SELECT msg_id FROM messages WHERE conversation_id = ? AND id NOT LIKE '${CLI_ROW_ID_PREFIX}%' AND type = 'acp_tool_call'`
           )
           .all(conversationId) as { msg_id: string }[]
       ).map((r) => r.msg_id)
@@ -361,7 +363,7 @@ export async function importConversationMessages(conversationId: string): Promis
     touchConversationActivity(db, conversationId, activityTs, liveRows.length > 0);
 
     // Replace-sync (scoped to this conversation, cli- rows only) — see header.
-    const purge = db.prepare("DELETE FROM messages WHERE conversation_id = ? AND id LIKE 'cli-%'");
+    const purge = db.prepare(`DELETE FROM messages WHERE conversation_id = ? AND id LIKE '${CLI_ROW_ID_PREFIX}%'`);
     const insert = db.prepare(
       'INSERT OR IGNORE INTO messages (id, conversation_id, msg_id, type, content, position, status, hidden, created_at) VALUES (@id, @conversation_id, @msg_id, @type, @content, @position, @status, @hidden, @created_at)'
     );

@@ -5,7 +5,7 @@
  */
 
 import type { TChatConversation } from '@/common/config/storage';
-import { getActivityTime } from '@/renderer/utils/chat/timeline';
+import { compareByChatActivity } from '@/renderer/utils/chat/timeline';
 import { getWorkspaceDisplayName } from '@/renderer/utils/workspace/workspace';
 
 import type { GroupedHistoryResult } from '../types';
@@ -37,7 +37,7 @@ export const getProjectWorkspace = (conversation: TChatConversation): string | u
 /**
  * Every sidebar conversation — pinned, inside a project, or free — newest
  * activity first, minus those whose project workspace no longer exists on disk.
- * Ties keep the collection order: pinned first, then the grouped sections.
+ * Ties use creation time and ID, independent of pinned membership or source order.
  */
 export const buildRecentConversations = (
   { pinnedConversations, timelineSections }: GroupedHistoryResult,
@@ -72,5 +72,5 @@ export const buildRecentConversations = (
     }
   }
 
-  return [...pinned, ...grouped].toSorted((a, b) => getActivityTime(b.conversation) - getActivityTime(a.conversation));
+  return [...pinned, ...grouped].toSorted((a, b) => compareByChatActivity(a.conversation, b.conversation));
 };

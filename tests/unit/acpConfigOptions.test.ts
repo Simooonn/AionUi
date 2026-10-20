@@ -5,6 +5,7 @@ import {
   deriveSelectOption,
   describeConfigLoadError,
   hasObservedValue,
+  isRuntimeWarmingLoadError,
 } from '@/renderer/hooks/agent/useAcpConfigOptions';
 import { describe, expect, it } from 'vitest';
 
@@ -113,5 +114,34 @@ describe('describeConfigLoadError', () => {
   it('falls back to Error.message and String() for other failures', () => {
     expect(describeConfigLoadError(new Error('spawn failed'))).toBe('spawn failed');
     expect(describeConfigLoadError('boom')).toBe('boom');
+  });
+});
+
+describe('isRuntimeWarmingLoadError', () => {
+  const loadConflict = (code: string, message: string) =>
+    new BackendHttpError({
+      method: 'GET',
+      path: '/api/teams/team-1/conversations/conv-1/config-options',
+      status: 409,
+      body: { success: false, error: message, code },
+    });
+
+  it('treats a team session still bootstrapping as warming', () => {
+    const error = loadConflict('TEAM_RUNTIME_NOT_READY', 'Team agent runtime is not ready for conversation: conv-1');
+
+    expect(isRuntimeWarmingLoadError(error)).toBe(true);
+  });
+
+  it('treats a member runtime still starting as warming', () => {
+    const error = loadConflict('TEAM_MEMBER_RUNTIME_STARTING', 'Team member runtime is starting');
+
+    expect(isRuntimeWarmingLoadError(error)).toBe(true);
+  });
+
+  it('still reports runtimes that genuinely failed', () => {
+    expect(isRuntimeWarmingLoadError(loadConflict('TEAM_MEMBER_RUNTIME_FAILED', 'Team member runtime failed'))).toBe(
+      false
+    );
+    expect(isRuntimeWarmingLoadError(new Error('spawn failed'))).toBe(false);
   });
 });

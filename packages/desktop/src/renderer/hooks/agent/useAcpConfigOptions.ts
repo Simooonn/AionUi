@@ -97,6 +97,30 @@ export function describeConfigLoadError(error: unknown): string {
   return String(error);
 }
 
+/**
+ * Codes meaning "the runtime has not come up YET" — not "it failed to start".
+ *
+ * A team member's config-options read races the team session bootstrap: the chat
+ * views mount under the warmup overlay and read immediately, so the first read
+ * routinely lands on one of these 409s. The options then self-heal, because
+ * `useTeamSession` revalidates them on `agentRuntimeStatusChanged: ready`, which
+ * is why the team port deliberately does not retry. Treating the race as a
+ * startup failure only produces a red toast for a conversation that is fine.
+ *
+ * Matched by CODE only — never by message text, which is free to be reworded or
+ * localized — exactly like `classifyConfigSetError` does on the write path.
+ */
+const RUNTIME_WARMING_LOAD_CODES = new Set([
+  'TEAM_RUNTIME_NOT_READY',
+  'TEAM_MEMBER_RUNTIME_STARTING',
+  'runtime_restarting',
+]);
+
+/** Whether a failed config-options load only means the runtime is still starting. */
+export function isRuntimeWarmingLoadError(error: unknown): boolean {
+  return isBackendHttpError(error) && RUNTIME_WARMING_LOAD_CODES.has(error.code);
+}
+
 export function classifyConfigSetError(error: unknown): AcpConfigSetErrorKind {
   if (error instanceof Error) {
     if (error.message.includes('command_ack')) return 'command_ack';
@@ -283,7 +307,8 @@ export function useAcpConfigOptions({
   const [setStatus, setSetStatus] = useState<AcpConfigSetStatus>(() => getConversationSetStatus(conversation_id));
   // Last config-options load failure (runtime ensure error). Cleared on any
   // successful load so consumers can surface "runtime failed to start" instead
-  // of silently rendering an empty toolbar.
+  // of silently rendering an empty toolbar. A runtime that is merely still
+  // starting never lands here — see `isRuntimeWarmingLoadError`.
   const [loadError, setLoadError] = useState<unknown>(null);
   const [pendingValues, setPendingValues] = useState<Record<string, string>>(() =>
     getConversationPending(conversation_id)
@@ -363,7 +388,9 @@ export function useAcpConfigOptions({
       setIsReloading(false);
       return next;
     } catch (error) {
-      setLoadError(error);
+      // A runtime that has not finished starting is not a startup failure — keep
+      // the toolbar quiet and let the ready-event revalidation fill it in.
+      setLoadError(isRuntimeWarmingLoadError(error) ? null : error);
       throw error;
     } finally {
       setIsReloading(false);

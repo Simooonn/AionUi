@@ -25,6 +25,7 @@ Unit and jsdom-DOM tests for the Electron renderer process (`packages/desktop/sr
 | `normalizeDbMessage.test.ts`           | `Messages/hooks.normalizeDbMessage` restores tip localization and structured error metadata.                             |
 | `pendingConfirmationsRecovery.test.ts` | `Messages/usePendingConfirmationsRecovery` permission-message build/detect/remove by id/call_id.                         |
 | `useAcpMessage.dom.test.ts`            | `acp/useAcpMessage` hook message handling.                                                                               |
+| `useAcpConfigOptionsLoadError.dom.test.ts` | `hooks/agent/useAcpConfigOptions` keeps `loadError` empty for a runtime that is merely still starting.               |
 | `useAcpModelInfo.dom.test.ts`          | `hooks/agent/useAcpModelInfo` (SWR-backed) model-info fetching.                                                          |
 | `useAutoScroll.dom.test.tsx`           | `Messages/useAutoScroll` scroll-follow logic.                                                                            |
 | `useFontSizes.dom.test.ts`             | `useFontSizes` hook against a mocked configService subscriber registry.                                                  |

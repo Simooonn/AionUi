@@ -54,12 +54,13 @@ jobs:
           sign=$(printf '' | openssl dgst -sha256 -hmac "$timestamp"$'\n'"$LARK_WEBHOOK_SECRET" -binary | base64)
 
           # Compare lists commits oldest first; show the newest MAX_LINES, newest first, in UTC+8.
+          # Author is the GitHub login; fall back to the git author name when the email has no account.
           payload=$(jq -c --arg ts "$timestamp" --arg sign "$sign" --arg upstream "$UPSTREAM" \
             --arg branch "$BRANCH" --argjson max "$MAX_LINES" '
             .ahead_by as $n
             | [.commits[-$max:] | reverse[]
                 | (.commit.committer.date | fromdate + 28800 | strftime("%Y-%m-%d %H:%M")) as $time
-                | [{tag: "text", text: "\(.sha[0:7])  \($time)  \(.commit.author.name): \(.commit.message | split("\n")[0])"}]
+                | [{tag: "text", text: "\(.sha[0:7])  \($time)  \(.author.login // .commit.author.name): \(.commit.message | split("\n")[0])"}]
               ] as $lines
             | {
                 timestamp: $ts,

@@ -71,6 +71,7 @@ for i in range(1, n + 1):
         date = "2026-10-20T18:00:00Z"  # newest; crosses midnight in UTC+8
     commits.append({
         "sha": f"{i:07d}" + "a" * 33,
+        "author": {"login": f"user{i}"} if i % 2 else None,
         "commit": {"author": {"name": f"dev{i}"}, "committer": {"date": date},
                    "message": f"feat: change {i}\n\nbody line"},
     })
@@ -108,8 +109,8 @@ check "curl called once" [ "$(calls curl)" -eq 1 ]
 check "msg_type post" [ "$(payload .msg_type)" = post ]
 check "title has count" [ "$(payload .content.post.zh_cn.title)" = "上游 iOfficeAI/AionUi 有 2 个提交未同步到 fork main" ]
 EXPECTED=$(printf '%s\n' \
-  '886dcbd  2026-10-19 21:25  瓦砾: chore(docs): update WeChat group QR code to wx-25 (#4337)' \
-  'c140550  2026-10-14 12:18  瓦砾: chore(docs): update WeChat group QR code to wx-24 (#4320)' \
+  '886dcbd  2026-10-19 21:25  IceyLiu: chore(docs): update WeChat group QR code to wx-25 (#4337)' \
+  'c140550  2026-10-14 12:18  IceyLiu: chore(docs): update WeChat group QR code to wx-24 (#4320)' \
   '查看全部差异')
 check "commit lines newest first in UTC+8, then link" [ "$(lines)" = "$EXPECTED" ]
 check "link href is compare html_url" [ "$(payload '.content.post.zh_cn.content[-1][0].href')" = "https://github.com/iOfficeAI/AionUi/compare/Simooonn:main...iOfficeAI:main" ]
@@ -125,7 +126,8 @@ run_case behind23
 check "exit 0" [ "$RC" -eq 0 ]
 check "title has count 23" [ "$(payload .content.post.zh_cn.title)" = "上游 iOfficeAI/AionUi 有 23 个提交未同步到 fork main" ]
 check "22 rows (20 commits + more + link)" [ "$(lines | wc -l | tr -d ' ')" -eq 22 ]
-check "first row is newest, midnight rollover" [ "$(lines | sed -n 1p)" = "0000023  2026-10-21 02:00  dev23: feat: change 23" ]
+check "first row is newest, midnight rollover, GitHub login" [ "$(lines | sed -n 1p)" = "0000023  2026-10-21 02:00  user23: feat: change 23" ]
+check "no GitHub account falls back to git author name" [ "$(lines | sed -n 2p | cut -d' ' -f6)" = dev22: ]
 check "20th row is commit 4" [ "$(lines | sed -n 20p | cut -c1-7)" = 0000004 ]
 check "more row says 3" [ "$(lines | sed -n 21p)" = "……另有 3 个更早的提交未列出" ]
 

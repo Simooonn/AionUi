@@ -8,6 +8,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { createElement, type PropsWithChildren } from 'react';
 import { SWRConfig } from 'swr';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { BackendHttpError } from '@/common/adapter/httpBridge';
 import type { IResponseMessage } from '@/common/adapter/ipcBridge';
 import type { AcpConfigOptionDto, AcpModelInfo } from '@/common/types/platform/acpTypes';
 import { type AcpConfigOptionsPort, useAcpConfigOptions } from '@/renderer/hooks/agent/useAcpConfigOptions';
@@ -546,5 +547,90 @@ describe('useAcpConfigOptions port identity', () => {
 
     expect(load).toHaveBeenCalledTimes(1);
     expect(result.current.isConfigOptionBlocked('model')).toBe(true);
+  });
+});
+
+describe('useAcpConfigOptions load errors', () => {
+  const teamLoadConflict = (code: string, message: string) =>
+    new BackendHttpError({
+      method: 'GET',
+      path: '/api/teams/team-1/conversations/conv-load-error/config-options',
+      status: 409,
+      body: { success: false, error: message, code },
+    });
+
+  const runtimeEnsureFailure = () =>
+    new BackendHttpError({
+      method: 'POST',
+      path: '/api/conversations/conv-load-error/runtime/ensure',
+      status: 502,
+      body: { success: false, error: 'Upstream service unavailable.', code: 'BAD_GATEWAY' },
+    });
+
+  // Build the port once so these cases do not depend on how the hook keys its
+  // fetch on port identity (that is covered by the port identity cases above).
+  const renderWithLoad = (load: () => Promise<AcpConfigOptionDto[]>) => {
+    const configOptionsPort = { load };
+    return renderHook(() => useAcpConfigOptions({ conversation_id: 'conv-load-error', configOptionsPort }), {
+      wrapper: createSwrWrapper(),
+    });
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    responseStreamHandlers.length = 0;
+  });
+
+  // The team page mounts every member's chat view under the warmup overlay, so
+  // the first read races the session bootstrap. Surfacing that race as a
+  // startup failure used to flash a red toast per member on team creation.
+  it.each([
+    ['TEAM_RUNTIME_NOT_READY', 'Team agent runtime is not ready for conversation: conv-load-error'],
+    ['TEAM_MEMBER_RUNTIME_STARTING', 'Team member runtime is starting'],
+  ])('keeps loadError empty while the runtime is still starting (%s)', async (code, message) => {
+    const load = vi.fn().mockRejectedValue(teamLoadConflict(code, message));
+
+    const { result } = renderWithLoad(load);
+
+    await waitFor(() => {
+      expect(load).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+    expect(result.current.loadError).toBeNull();
+    expect(result.current.configOptions).toBeNull();
+  });
+
+  it('still reports a runtime that genuinely failed to start', async () => {
+    const error = runtimeEnsureFailure();
+    const load = vi.fn().mockRejectedValue(error);
+
+    const { result } = renderWithLoad(load);
+
+    await waitFor(() => {
+      expect(result.current.loadError).toBe(error);
+    });
+  });
+
+  it('clears a prior failure once the runtime comes up', async () => {
+    const error = runtimeEnsureFailure();
+    const options = buildConfigOptions();
+    const load = vi.fn().mockRejectedValueOnce(error).mockResolvedValue(options);
+
+    const { result } = renderWithLoad(load);
+
+    await waitFor(() => {
+      expect(result.current.loadError).toBe(error);
+    });
+
+    await act(async () => {
+      await result.current.reload();
+    });
+
+    await waitFor(() => {
+      expect(result.current.loadError).toBeNull();
+      expect(result.current.configOptions).toEqual(options);
+    });
   });
 });

@@ -210,6 +210,7 @@ resources/hub
 # Server build output
 dist-server/
 .omc/
+.serena/
 .superset/
 .claude/teams/
 

@@ -148,6 +148,9 @@ const AcpSendBox: React.FC<{
   } = messageState;
   const { t } = useTranslation();
   const teamPermission = useTeamPermission();
+  // Stable piece of the team context for callbacks that feed effects; the
+  // context object itself changes identity on every run-state update.
+  const teamWarmupSession = teamPermission?.warmupSession;
   // In team mode, all agents show the permission mode selector (members don't propagate)
   const showModeSelector = true;
   const isLeaderInTeam = teamPermission && conversation_id === teamPermission.leaderConversationId;
@@ -184,12 +187,8 @@ const AcpSendBox: React.FC<{
   );
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
   const [currentMode, setCurrentMode] = useState<string | undefined>(session_mode);
-  const prepareRuntimeConfig = useCallback(async () => {
-    if (teamPermission) return;
-  }, [teamPermission]);
   const runtimeConfig = useAcpConfigOptions({
     conversation_id,
-    prepareRuntime: prepareRuntimeConfig,
     prepareSetRuntime: teamPermission?.warmupSession,
     configOptionsPort: teamPermission?.configOptionsPort,
     enabled: true,
@@ -225,7 +224,6 @@ const AcpSendBox: React.FC<{
     conversation_id,
     backend,
     initialModelId: current_model_id, // ace: seed from the conversation's persisted model
-    prepareRuntime: prepareRuntimeConfig,
     prepareSetRuntime: teamPermission?.warmupSession,
     configOptionsPort: teamPermission?.configOptionsPort,
     enabled: true, // ace: desktop toolbar pills consume this on all viewports
@@ -324,7 +322,7 @@ const AcpSendBox: React.FC<{
       // Plain user text; the backend resolves each ChatFileRef and injects the
       // [[AION_FILES]] marker at the send edge (no front-end path/marker building).
       try {
-        if (teamPermission) await teamPermission.warmupSession();
+        if (teamWarmupSession) await teamWarmupSession();
         // ace:start re-wire CLI resume right before the send (covers queued commands too)
         await ensureCliResumeBeforeSend(conversation_id);
         // ace:end
@@ -440,8 +438,8 @@ Please check your local CLI tool authentication status`,
       resetState,
       setAiProcessing,
       t,
-      teamPermission,
       teamSendMessage,
+      teamWarmupSession,
     ]
   );
 
@@ -923,7 +921,6 @@ Please check your local CLI tool authentication status`,
                 compactLabelPrefix={t('agentMode.permission')}
                 hideCompactLabelPrefixOnMobile
                 onModeChanged={isLeaderInTeam ? teamPermission?.propagateMode : undefined}
-                beforeRuntimeSync={prepareRuntimeConfig}
                 beforeRuntimeSet={teamPermission?.warmupSession}
                 configOptionsPort={teamPermission?.configOptionsPort}
               />

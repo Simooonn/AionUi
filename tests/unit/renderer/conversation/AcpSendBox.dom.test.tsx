@@ -34,6 +34,10 @@ const {
   draftContentRef,
   messageWarningMock,
   stopInvokeMock,
+  useAcpModelInfoSpy,
+  checkAndUpdateTitleMock,
+  translateMock,
+  i18nStub,
 } = vi.hoisted(() => ({
   sendMessageInvokeMock: vi.fn(),
   addOrUpdateMessageMock: vi.fn(),
@@ -76,6 +80,15 @@ const {
   draftContentRef: { current: '' },
   messageWarningMock: vi.fn(),
   stopInvokeMock: vi.fn().mockResolvedValue(undefined),
+  useAcpModelInfoSpy: vi.fn(),
+  // Stable across renders so callback-identity assertions only see real changes.
+  checkAndUpdateTitleMock: vi.fn(),
+  // Same output as react-i18next's not-initialised `t` (defaultValue, else the
+  // key), but one stable function instead of a new one per render.
+  translateMock: (key: string, options?: string | { defaultValue?: string }) =>
+    typeof options === 'string' ? options : (options?.defaultValue ?? key),
+  // react-i18next hands out an empty i18n object when it is not initialised.
+  i18nStub: {},
 }));
 
 vi.mock('@/common', () => ({
@@ -203,13 +216,16 @@ vi.mock('@/renderer/components/media/HorizontalFileList', () => ({
   default: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock('@/renderer/hooks/agent/useAcpModelInfo', () => ({
-  useAcpModelInfo: () => ({
-    model_info: null,
-    canSwitch: false,
-    isSetting: false,
-    setStatus: { state: 'idle' },
-    selectModel: vi.fn(),
-  }),
+  useAcpModelInfo: (args: unknown) => {
+    useAcpModelInfoSpy(args);
+    return {
+      model_info: null,
+      canSwitch: false,
+      isSetting: false,
+      setStatus: { state: 'idle' },
+      selectModel: vi.fn(),
+    };
+  },
 }));
 vi.mock('@/renderer/hooks/agent/useAcpConfigOptions', () => ({
   classifyConfigSetError: () => 'unknown',
@@ -234,7 +250,7 @@ vi.mock('@/renderer/hooks/chat/useSendBoxFiles', () => ({
 }));
 vi.mock('@/renderer/hooks/chat/useAutoTitle', () => ({
   useAutoTitle: () => ({
-    checkAndUpdateTitle: vi.fn(),
+    checkAndUpdateTitle: checkAndUpdateTitleMock,
   }),
 }));
 vi.mock('@/renderer/hooks/context/ConversationContext', () => ({
@@ -302,6 +318,10 @@ vi.mock('@/renderer/utils/file/fileSelection', () => ({
 vi.mock('@/renderer/utils/file/messageFiles', () => ({
   collectChatFileRefs: () => [],
   splitChatFileRefs: () => ({ uploadFiles: [], atPath: [] }),
+}));
+vi.mock('react-i18next', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('react-i18next')>()),
+  useTranslation: () => ({ t: translateMock, i18n: i18nStub, ready: false }),
 }));
 vi.mock('@/renderer/pages/conversation/platforms/acp/useAcpInitialMessage', () => ({
   useAcpInitialMessage: vi.fn(),
@@ -1104,5 +1124,87 @@ describe('AcpSendBox', () => {
       };
       expect(props.isTeamConversation).toBe(true);
     });
+  });
+});
+
+// Latest first argument a spy received, or an empty object before any call.
+const lastCallArg = <T,>(spy: { mock: { calls: unknown[][] } }): T => (spy.mock.calls.at(-1)?.[0] ?? {}) as T;
+
+describe('AcpSendBox team context stability', () => {
+  const makeTeamPermission = () => ({
+    isTeamMode: true,
+    isLeaderAgent: false,
+    leaderConversationId: 'conv-lead',
+    allConversationIds: ['conv-lead', 'conv-1'],
+    propagateMode: vi.fn(),
+    warmupSession: vi.fn().mockResolvedValue(undefined),
+    configOptionsPort: { load: vi.fn().mockResolvedValue(null) },
+    sessionReady: true,
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    runtimeViewMock.hydrated = true;
+    runtimeViewMock.state = 'idle';
+    runtimeViewMock.isProcessing = false;
+    runtimeViewMock.canSendMessage = true;
+    runtimeViewMock.activeTurnId = null;
+    runtimeViewMock.supportsMidturnDelivery = false;
+    draftContentRef.current = '';
+    useAcpConfigOptionsMock.mockReturnValue({
+      setStatus: { state: 'idle' },
+      mode: null,
+      model: null,
+      thoughtLevel: null,
+      reload: vi.fn(),
+      setConfigOption: vi.fn(),
+    });
+  });
+
+  // The team context object is rebuilt on every run-state update; callbacks
+  // that feed config-option reads or the command queue must not follow it.
+  it('keeps runtime callbacks stable when only the team context object changes', () => {
+    const team = makeTeamPermission();
+    const messageState = makeMessageState();
+    useTeamPermissionMock.mockReturnValue(team);
+    // A fresh element each time: re-rendering the same element object lets React
+    // bail out, which would make this test pass without exercising anything.
+    const renderElement = () => (
+      <AcpSendBox conversation_id='conv-1' backend='codex' workspacePath='/tmp/workspace' messageState={messageState} />
+    );
+    const view = render(renderElement());
+    const renderCount = useAcpConfigOptionsMock.mock.calls.length;
+    const configPrepare = lastCallArg<{ prepareRuntime?: unknown }>(useAcpConfigOptionsMock).prepareRuntime;
+    const modelInfoPrepare = lastCallArg<{ prepareRuntime?: unknown }>(useAcpModelInfoSpy).prepareRuntime;
+    const onExecute = lastCallArg<{ onExecute?: unknown }>(useConversationCommandQueueSpy).onExecute;
+
+    useTeamPermissionMock.mockReturnValue({ ...team });
+    view.rerender(renderElement());
+
+    expect(useAcpConfigOptionsMock.mock.calls.length).toBeGreaterThan(renderCount);
+    expect(lastCallArg<{ prepareRuntime?: unknown }>(useAcpConfigOptionsMock).prepareRuntime).toBe(configPrepare);
+    expect(lastCallArg<{ prepareRuntime?: unknown }>(useAcpModelInfoSpy).prepareRuntime).toBe(modelInfoPrepare);
+    expect(lastCallArg<{ onExecute?: unknown }>(useConversationCommandQueueSpy).onExecute).toBe(onExecute);
+  });
+
+  it('marks a send failed when the team warmup before it fails', async () => {
+    const team = makeTeamPermission();
+    team.warmupSession.mockRejectedValue(new Error('member runtime failed'));
+    useTeamPermissionMock.mockReturnValue(team);
+    render(
+      <AcpSendBox
+        conversation_id='conv-1'
+        backend='codex'
+        workspacePath='/tmp/workspace'
+        messageState={makeMessageState()}
+      />
+    );
+
+    await act(async () => {
+      screen.getByRole('button', { name: 'send' }).click();
+    });
+
+    await waitFor(() => expect(runtimeViewMock.markSendFailed).toHaveBeenCalled());
+    expect(sendMessageInvokeMock).not.toHaveBeenCalled();
   });
 });

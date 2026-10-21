@@ -797,6 +797,7 @@ const TeamPageContent: React.FC<TeamPageContentProps> = ({
       leaderConversationId={leaderConversationId}
       allConversationIds={allConversationIds}
       runtimeStartingConversationIds={runtimeStartingConversationIds}
+      sessionReady={warmupPhase === 'ready'}
     >
       <TeamIdentityProvider colorOfConversation={colorOfConversation}>
         {messageContext}

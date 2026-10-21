@@ -50,7 +50,7 @@ import { collectChatFileRefs, splitChatFileRefs } from '@/renderer/utils/file/me
 import type { AgentModeOption } from '@/renderer/utils/model/agentTypes';
 import { Button, Message, Tag } from '@arco-design/web-react';
 import { Brain, Lightning, MagicHat, Shield } from '@icon-park/react';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { classifyConversationBusyError } from '../conversationBusyError';
 import { useAionrsMessage } from './useAionrsMessage';
@@ -143,6 +143,12 @@ const AionrsSendBox: React.FC<{
   const { current_model } = modelSelection;
   const teamPermission = useTeamPermission();
   const propagateMode = teamPermission?.propagateMode;
+  // Depend on these stable pieces, never on the whole context object: its
+  // identity changes on every run-state update, and effects keyed on it used to
+  // re-call ensureSession in a loop while a member runtime was failing.
+  const isTeamMode = Boolean(teamPermission);
+  const teamWarmupSession = teamPermission?.warmupSession;
+  const teamSessionReady = teamPermission?.sessionReady ?? false;
 
   const { thought, running, turnStartedAtMs, setActiveMsgId, setWaitingResponse, resetState } = useAionrsMessage(
     conversation_id,
@@ -168,19 +174,15 @@ const AionrsSendBox: React.FC<{
   );
 
   const [agentWarmed, setAgentWarmed] = useState(false);
-  const prepareRuntimeConfig = useCallback(async () => {
-    if (teamPermission) return;
-  }, [teamPermission]);
   const prepareRuntimeSync = useCallback(async () => {
-    if (teamPermission) {
-      await teamPermission.warmupSession();
+    if (teamWarmupSession) {
+      await teamWarmupSession();
       return;
     }
     await ensureConversationRuntime(conversation_id);
-  }, [conversation_id, teamPermission]);
+  }, [conversation_id, teamWarmupSession]);
   const runtimeConfig = useAcpConfigOptions({
     conversation_id,
-    prepareRuntime: prepareRuntimeConfig,
     prepareSetRuntime: teamPermission?.warmupSession,
     configOptionsPort: teamPermission?.configOptionsPort,
     enabled: Boolean(conversation_id),
@@ -195,20 +197,53 @@ const AionrsSendBox: React.FC<{
 
   useEffect(() => {
     if (!conversation_id) return;
+    let cancelled = false;
     setAgentWarmed(false);
     void prepareRuntimeSync()
       .then(() => {
-        setAgentWarmed(true);
+        if (!cancelled) setAgentWarmed(true);
       })
       .catch((error) => {
+        // In a team the warmup overlay and the red member capsule already show
+        // the failure (with a retry); a toast here only repeated it.
+        if (isTeamMode) {
+          console.warn('[AionrsSendBox] team mount warmup failed', error);
+          return;
+        }
         Message.error(getConversationRuntimeWorkspaceErrorMessage(error, t));
       });
-  }, [conversation_id, prepareRuntimeSync, t]);
+    return () => {
+      cancelled = true;
+    };
+  }, [conversation_id, isTeamMode, prepareRuntimeSync, t]);
+
+  // Recover after the team session comes up (e.g. the user pressed Retry on the
+  // overlay): warm once on a false→true edge seen after mount, and only if this
+  // member is not warmed yet. Falling edges do nothing, so a session that drops
+  // never triggers an automatic retry, and a healthy open that flickers
+  // ready→warming→ready does not re-warm an already warmed member.
+  const prevSessionReadyRef = useRef(teamSessionReady);
+  useEffect(() => {
+    const wasReady = prevSessionReadyRef.current;
+    prevSessionReadyRef.current = teamSessionReady;
+    if (!isTeamMode || wasReady || !teamSessionReady || agentWarmed) return;
+    let cancelled = false;
+    void prepareRuntimeSync()
+      .then(() => {
+        if (!cancelled) setAgentWarmed(true);
+      })
+      .catch((error) => {
+        console.warn('[AionrsSendBox] team recovery warmup failed', error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [agentWarmed, isTeamMode, prepareRuntimeSync, teamSessionReady]);
 
   const slash_commands = useSlashCommands(conversation_id, {
     conversation_type: 'aionrs',
     agentStatus: agentWarmed ? 'active' : null,
-    prepareRuntime: teamPermission ? prepareRuntimeSync : undefined,
+    prepareRuntime: isTeamMode ? prepareRuntimeSync : undefined,
   });
 
   const { setSendBoxHandler } = usePreviewContext();
@@ -253,7 +288,6 @@ const AionrsSendBox: React.FC<{
 
   const executeCommand = useCallback(
     async ({ input, files, sessions }: Pick<ConversationCommandQueueItem, 'input' | 'files' | 'sessions'>) => {
-      if (teamPermission) await teamPermission.warmupSession();
       if (!current_model?.use_model) {
         Message.warning(t('conversation.chat.noModelSelected'));
         throw new Error('No model selected');
@@ -263,6 +297,9 @@ const AionrsSendBox: React.FC<{
       // ChatFileRef to an absolute path and injects the [[AION_FILES]] marker at
       // the send edge — the front-end no longer builds paths nor the marker.
       try {
+        // Inside the try so a failed warmup reaches markSendFailed and the
+        // user-visible error below, instead of being swallowed by SendBox.
+        if (teamWarmupSession) await teamWarmupSession();
         void checkAndUpdateTitle(conversation_id, input);
         if (teamSendMessage) {
           await teamSendMessage({ input, files });
@@ -320,8 +357,8 @@ const AionrsSendBox: React.FC<{
       setActiveMsgId,
       setWaitingResponse,
       t,
-      teamPermission,
       teamSendMessage,
+      teamWarmupSession,
     ]
   );
 
@@ -815,7 +852,6 @@ const AionrsSendBox: React.FC<{
               compactLabelPrefix={t('agentMode.permission')}
               hideCompactLabelPrefixOnMobile
               onModeChanged={propagateMode}
-              beforeRuntimeSync={prepareRuntimeConfig}
               beforeRuntimeSet={teamPermission?.warmupSession}
               configOptionsPort={teamPermission?.configOptionsPort}
             />

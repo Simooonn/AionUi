@@ -17,6 +17,8 @@ type TeamPermissionContextValue = {
   warmupSession: () => Promise<void>;
   /** Read/write runtime config options through the team-owned session */
   configOptionsPort: TeamConfigOptionsPort;
+  /** Whether the whole team session is up (page-level warmup phase is 'ready') */
+  sessionReady: boolean;
 };
 
 const TeamPermissionContext = createContext<TeamPermissionContextValue | null>(null);
@@ -28,6 +30,7 @@ export const TeamPermissionProvider: React.FC<{
   leaderConversationId: string;
   allConversationIds: string[];
   runtimeStartingConversationIds: ReadonlySet<string>;
+  sessionReady: boolean;
 }> = ({
   children,
   team_id,
@@ -35,6 +38,7 @@ export const TeamPermissionProvider: React.FC<{
   leaderConversationId,
   allConversationIds,
   runtimeStartingConversationIds,
+  sessionReady,
 }) => {
   const warmupPromiseRef = useRef<Promise<void> | null>(null);
 
@@ -63,7 +67,11 @@ export const TeamPermissionProvider: React.FC<{
     return warmupPromiseRef.current;
   }, [team_id]);
 
-  const configOptionsPort = useMemo(
+  // The functions that do I/O only depend on the team, so they keep their
+  // identity for the team's lifetime. Consumers key their fetch effects on
+  // these functions; rebuilding them on every run-state update is what used to
+  // re-fire config-options reads (and, via the context, ensureSession) in a loop.
+  const basePort = useMemo(
     () =>
       createTeamConfigOptionsPort({
         team_id,
@@ -72,11 +80,29 @@ export const TeamPermissionProvider: React.FC<{
           ipcBridge.team.getConfigOptions.invoke({ team_id: targetTeamId, conversation_id }),
         setConfigOption: (conversation_id, option_id, value) =>
           ipcBridge.team.setConfigOption.invoke({ team_id, conversation_id, option_id, value }),
-        isConfigOptionBlocked: (conversation_id, _option_id, category) =>
-          runtimeStartingConversationIds.has(conversation_id) ||
-          (conversation_id === leaderConversationId && category === 'mode' && runtimeStartingConversationIds.size > 0),
       }),
-    [leaderConversationId, runtimeStartingConversationIds, team_id, warmupSession]
+    [team_id, warmupSession]
+  );
+
+  // Callers hand in a fresh Set whenever run state is re-indexed, even when its
+  // contents did not move. Key it by content so the blocking policy below only
+  // changes — and only re-renders the pickers — when a runtime really starts or
+  // finishes starting. Conversation ids are short hex strings, so '\n' is a safe
+  // separator.
+  const runtimeStartingKey = [...runtimeStartingConversationIds].toSorted().join('\n');
+  const stableRuntimeStartingIds = useMemo(
+    () => new Set(runtimeStartingKey ? runtimeStartingKey.split('\n') : []),
+    [runtimeStartingKey]
+  );
+
+  const configOptionsPort = useMemo<TeamConfigOptionsPort>(
+    () => ({
+      ...basePort,
+      isConfigOptionBlocked: (conversation_id, _option_id, category) =>
+        stableRuntimeStartingIds.has(conversation_id) ||
+        (conversation_id === leaderConversationId && category === 'mode' && stableRuntimeStartingIds.size > 0),
+    }),
+    [basePort, leaderConversationId, stableRuntimeStartingIds]
   );
 
   const value = useMemo<TeamPermissionContextValue>(
@@ -88,8 +114,17 @@ export const TeamPermissionProvider: React.FC<{
       propagateMode,
       warmupSession,
       configOptionsPort,
+      sessionReady,
     }),
-    [isLeaderAgent, leaderConversationId, allConversationIds, propagateMode, warmupSession, configOptionsPort]
+    [
+      isLeaderAgent,
+      leaderConversationId,
+      allConversationIds,
+      propagateMode,
+      warmupSession,
+      configOptionsPort,
+      sessionReady,
+    ]
   );
 
   return <TeamPermissionContext.Provider value={value}>{children}</TeamPermissionContext.Provider>;

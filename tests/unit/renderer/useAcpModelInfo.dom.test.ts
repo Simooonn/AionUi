@@ -10,6 +10,7 @@ import { SWRConfig } from 'swr';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IResponseMessage } from '@/common/adapter/ipcBridge';
 import type { AcpConfigOptionDto, AcpModelInfo } from '@/common/types/platform/acpTypes';
+import { type AcpConfigOptionsPort, useAcpConfigOptions } from '@/renderer/hooks/agent/useAcpConfigOptions';
 import { useAcpModelInfo } from '@/renderer/hooks/agent/useAcpModelInfo';
 
 const { ensureRuntimeInvokeMock, setConfigOptionInvokeMock, responseStreamHandlers } = vi.hoisted(() => ({
@@ -508,5 +509,42 @@ describe('useAcpModelInfo', () => {
       expect(result.current.model_info?.current_model_id).toBe('opus-4');
     });
     expect(result.current.canSwitch).toBe(false);
+  });
+});
+
+describe('useAcpConfigOptions port identity', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    responseStreamHandlers.length = 0;
+  });
+
+  // A team port object is rebuilt whenever its blocking policy changes. That
+  // must refresh the blocked state without re-reading config options, or every
+  // member re-fetches on each runtime-starting transition.
+  it('re-evaluates the blocking policy without reloading when only the port object changes', async () => {
+    const load = vi.fn().mockResolvedValue(buildConfigOptions('opus-4'));
+    const openPort: AcpConfigOptionsPort = { load, isConfigOptionBlocked: () => false };
+    const blockedPort: AcpConfigOptionsPort = { load, isConfigOptionBlocked: () => true };
+    const { result, rerender } = renderHook(
+      ({ port }: { port: AcpConfigOptionsPort }) =>
+        useAcpConfigOptions({ conversation_id: 'conv-port-identity', configOptionsPort: port }),
+      { initialProps: { port: openPort }, wrapper: createSwrWrapper() }
+    );
+
+    // Let the first read settle so a second read could not hide inside the
+    // in-flight de-duplication.
+    await waitFor(() => {
+      expect(result.current.configOptions).not.toBeNull();
+    });
+    expect(load).toHaveBeenCalledTimes(1);
+    expect(result.current.isConfigOptionBlocked('model')).toBe(false);
+
+    rerender({ port: blockedPort });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+
+    expect(load).toHaveBeenCalledTimes(1);
+    expect(result.current.isConfigOptionBlocked('model')).toBe(true);
   });
 });

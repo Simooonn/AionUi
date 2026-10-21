@@ -1,6 +1,20 @@
+import { render } from '@testing-library/react';
+import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { BackendHttpError } from '@/common/adapter/httpBridge';
+import { TeamPermissionProvider, useTeamPermission } from '@/renderer/pages/team/hooks/TeamPermissionContext';
 import { createTeamConfigOptionsPort } from '@/renderer/pages/team/hooks/teamConfigOptions';
+
+vi.mock('@/common', () => ({
+  ipcBridge: {
+    team: {
+      ensureSession: { invoke: vi.fn().mockResolvedValue(undefined) },
+      getConfigOptions: { invoke: vi.fn().mockResolvedValue({ config_options: [] }) },
+      setConfigOption: { invoke: vi.fn() },
+      setSessionMode: { invoke: vi.fn().mockResolvedValue(undefined) },
+    },
+  },
+}));
 
 describe('createTeamConfigOptionsPort', () => {
   const configOptionsResponse = {
@@ -139,5 +153,89 @@ describe('createTeamConfigOptionsPort', () => {
 
     await expect(port.load('conversation-1')).rejects.toBe(error);
     expect(getConfigOptions).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('TeamPermissionProvider', () => {
+  type ProviderValue = NonNullable<ReturnType<typeof useTeamPermission>>;
+
+  const ALL_CONVERSATION_IDS = ['lead', 'c1', 'c2'];
+
+  // Render the real provider and record every context value it publishes, so a
+  // test can compare identities across re-renders.
+  const renderProvider = (runtimeStarting: ReadonlySet<string>, sessionReady = false) => {
+    const seen: ProviderValue[] = [];
+    const Probe = () => {
+      const value = useTeamPermission();
+      if (value) seen.push(value);
+      return null;
+    };
+    const tree = (ids: ReadonlySet<string>, ready: boolean) => (
+      <TeamPermissionProvider
+        team_id='team-1'
+        isLeaderAgent
+        leaderConversationId='lead'
+        allConversationIds={ALL_CONVERSATION_IDS}
+        runtimeStartingConversationIds={ids}
+        sessionReady={ready}
+      >
+        <Probe />
+      </TeamPermissionProvider>
+    );
+    const view = render(tree(runtimeStarting, sessionReady));
+    return {
+      seen,
+      latest: () => seen[seen.length - 1],
+      rerender: (ids: ReadonlySet<string>, ready = sessionReady) => view.rerender(tree(ids, ready)),
+    };
+  };
+
+  // A run-state re-index hands the provider a new Set with the same members; the
+  // port must not change, or every member re-reads config options in a loop.
+  it('keeps the port and its load function when the runtime-starting set is rebuilt with the same members', () => {
+    const view = renderProvider(new Set(['c1']));
+    const before = view.latest().configOptionsPort;
+
+    view.rerender(new Set(['c1']));
+
+    const after = view.latest().configOptionsPort;
+    expect(after).toBe(before);
+    expect(after.load).toBe(before.load);
+  });
+
+  it('swaps only the blocking policy when the runtime-starting members change', () => {
+    const view = renderProvider(new Set(['c1']));
+    const before = view.latest().configOptionsPort;
+    expect(before.isConfigOptionBlocked?.('c1', 'model', 'model')).toBe(true);
+    expect(before.isConfigOptionBlocked?.('c2', 'model', 'model')).toBe(false);
+
+    view.rerender(new Set(['c2']));
+
+    const after = view.latest().configOptionsPort;
+    expect(after).not.toBe(before);
+    expect(after.isConfigOptionBlocked?.('c1', 'model', 'model')).toBe(false);
+    expect(after.isConfigOptionBlocked?.('c2', 'model', 'model')).toBe(true);
+    expect(after.load).toBe(before.load);
+    expect(after.setConfigOption).toBe(before.setConfigOption);
+  });
+
+  it('blocks only the leader mode option while any member runtime is starting', () => {
+    const view = renderProvider(new Set(['c1']));
+    const port = view.latest().configOptionsPort;
+    expect(port.isConfigOptionBlocked?.('lead', 'mode', 'mode')).toBe(true);
+    expect(port.isConfigOptionBlocked?.('lead', 'model', 'model')).toBe(false);
+
+    view.rerender(new Set());
+
+    expect(view.latest().configOptionsPort.isConfigOptionBlocked?.('lead', 'mode', 'mode')).toBe(false);
+  });
+
+  it('publishes sessionReady and updates it when the team session comes up', () => {
+    const view = renderProvider(new Set(), false);
+    expect(view.latest().sessionReady).toBe(false);
+
+    view.rerender(new Set(), true);
+
+    expect(view.latest().sessionReady).toBe(true);
   });
 });

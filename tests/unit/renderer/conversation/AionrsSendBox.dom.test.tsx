@@ -22,6 +22,13 @@ const {
   draftMutateMock,
   draftContentRef,
   runtimeViewIsProcessingRef,
+  useSlashCommandsSpy,
+  useAcpConfigOptionsSpy,
+  useConversationCommandQueueSpy,
+  checkAndUpdateTitleMock,
+  setActiveMsgIdMock,
+  setWaitingResponseMock,
+  resetStateMock,
 } = vi.hoisted(() => ({
   ensureConversationRuntimeMock: vi.fn().mockResolvedValue({ recovered: false, config_options: [], runtime: null }),
   sendMessageInvokeMock: vi.fn().mockResolvedValue(undefined),
@@ -37,6 +44,14 @@ const {
   draftMutateMock: vi.fn(),
   draftContentRef: { current: '' },
   runtimeViewIsProcessingRef: { current: false },
+  useSlashCommandsSpy: vi.fn(),
+  useAcpConfigOptionsSpy: vi.fn(),
+  useConversationCommandQueueSpy: vi.fn(),
+  // Stable across renders so callback-identity assertions only see real changes.
+  checkAndUpdateTitleMock: vi.fn(),
+  setActiveMsgIdMock: vi.fn(),
+  setWaitingResponseMock: vi.fn(),
+  resetStateMock: vi.fn(),
 }));
 
 vi.mock('@/common', () => ({
@@ -136,14 +151,17 @@ vi.mock('@/renderer/components/media/HorizontalFileList', () => ({
 }));
 vi.mock('@/renderer/hooks/agent/useAcpConfigOptions', () => ({
   classifyConfigSetError: () => 'unknown',
-  useAcpConfigOptions: () => ({
-    setStatus: { state: 'idle' },
-    mode: null,
-    model: null,
-    thoughtLevel: null,
-    reload: vi.fn(),
-    setConfigOption: vi.fn(),
-  }),
+  useAcpConfigOptions: (args: unknown) => {
+    useAcpConfigOptionsSpy(args);
+    return {
+      setStatus: { state: 'idle' },
+      mode: null,
+      model: null,
+      thoughtLevel: null,
+      reload: vi.fn(),
+      setConfigOption: vi.fn(),
+    };
+  },
 }));
 vi.mock('@/renderer/hooks/context/ConversationContext', () => ({
   useConversationContextSafe: () => ({
@@ -156,7 +174,7 @@ vi.mock('@/renderer/hooks/context/LayoutContext', () => ({
 }));
 vi.mock('@/renderer/hooks/chat/useAutoTitle', () => ({
   useAutoTitle: () => ({
-    checkAndUpdateTitle: vi.fn(),
+    checkAndUpdateTitle: checkAndUpdateTitleMock,
   }),
 }));
 vi.mock('@/renderer/hooks/chat/useSendBoxDraft', () => ({
@@ -177,7 +195,10 @@ vi.mock('@/renderer/hooks/chat/useSendBoxFiles', () => ({
   createSetUploadFile: () => vi.fn(),
 }));
 vi.mock('@/renderer/hooks/chat/useSlashCommands', () => ({
-  useSlashCommands: () => [],
+  useSlashCommands: (...args: unknown[]) => {
+    useSlashCommandsSpy(...args);
+    return [];
+  },
 }));
 vi.mock('@/renderer/hooks/file/useOpenFileSelector', () => ({
   useOpenFileSelector: () => ({
@@ -189,21 +210,24 @@ vi.mock('@/renderer/hooks/ui/useLatestRef', () => ({
   useLatestRef: <T,>(value: T) => ({ current: value }),
 }));
 vi.mock('@/renderer/pages/conversation/platforms/useConversationCommandQueue', () => ({
-  useConversationCommandQueue: () => ({
-    items: [],
-    isPaused: false,
-    isInteractionLocked: false,
-    hasPendingCommands: false,
-    enqueue: enqueueMock,
-    remove: vi.fn(),
-    clear: vi.fn(),
-    reorder: vi.fn(),
-    pause: vi.fn(),
-    resume: vi.fn(),
-    lockInteraction: vi.fn(),
-    unlockInteraction: vi.fn(),
-    resetActiveExecution: vi.fn(),
-  }),
+  useConversationCommandQueue: (args: unknown) => {
+    useConversationCommandQueueSpy(args);
+    return {
+      items: [],
+      isPaused: false,
+      isInteractionLocked: false,
+      hasPendingCommands: false,
+      enqueue: enqueueMock,
+      remove: vi.fn(),
+      clear: vi.fn(),
+      reorder: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      lockInteraction: vi.fn(),
+      unlockInteraction: vi.fn(),
+      resetActiveExecution: vi.fn(),
+    };
+  },
 }));
 vi.mock('@/renderer/pages/conversation/runtime/useConversationRuntimeView', () => ({
   useConversationRuntimeView: () => ({
@@ -288,9 +312,9 @@ vi.mock('@/renderer/pages/conversation/platforms/aionrs/useAionrsMessage', () =>
   useAionrsMessage: () => ({
     thought: { subject: '', description: '' },
     running: false,
-    setActiveMsgId: vi.fn(),
-    setWaitingResponse: vi.fn(),
-    resetState: vi.fn(),
+    setActiveMsgId: setActiveMsgIdMock,
+    setWaitingResponse: setWaitingResponseMock,
+    resetState: resetStateMock,
   }),
 }));
 
@@ -549,5 +573,163 @@ describe('AionrsSendBox', () => {
       expect(props.onAddToDraft).toBeDefined();
       expect(props.addToDraftDisabled).toBe(true);
     });
+  });
+});
+
+// Latest first argument a spy received, or an empty object before any call.
+const lastCallArg = <T,>(spy: { mock: { calls: unknown[][] } }): T => (spy.mock.calls.at(-1)?.[0] ?? {}) as T;
+
+describe('AionrsSendBox team warmup stability', () => {
+  type TeamPermissionStub = {
+    isTeamMode: true;
+    isLeaderAgent: boolean;
+    leaderConversationId: string;
+    allConversationIds: string[];
+    propagateMode: () => void;
+    warmupSession: () => Promise<void>;
+    configOptionsPort: { load: () => Promise<null> };
+    sessionReady: boolean;
+  };
+
+  const makeTeamPermission = (overrides: Partial<TeamPermissionStub> = {}): TeamPermissionStub => ({
+    isTeamMode: true,
+    isLeaderAgent: true,
+    leaderConversationId: 'conv-1',
+    allConversationIds: ['conv-1'],
+    propagateMode: vi.fn(),
+    warmupSession: vi.fn().mockResolvedValue(undefined),
+    configOptionsPort: { load: vi.fn().mockResolvedValue(null) },
+    sessionReady: true,
+    ...overrides,
+  });
+
+  const renderSendBox = () => render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+  const rerenderSendBox = (view: ReturnType<typeof render>) =>
+    view.rerender(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+  const flush = () =>
+    act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+  const lastSlashOptions = () =>
+    (useSlashCommandsSpy.mock.calls.at(-1)?.[1] ?? {}) as { agentStatus?: string | null; prepareRuntime?: unknown };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    ensureConversationRuntimeMock.mockResolvedValue({ recovered: false, config_options: [], runtime: null });
+    draftContentRef.current = '';
+    runtimeViewIsProcessingRef.current = false;
+  });
+
+  // The team context object is rebuilt on every run-state update. Nothing keyed
+  // on it may re-warm, or a failing member turns into an ensureSession loop.
+  it('does not re-warm or rebuild runtime callbacks when only the team context object changes', async () => {
+    const team = makeTeamPermission();
+    useTeamPermissionMock.mockReturnValue(team);
+    const view = renderSendBox();
+    await waitFor(() => expect(team.warmupSession).toHaveBeenCalledTimes(1));
+    await flush();
+    const slashPrepare = lastSlashOptions().prepareRuntime;
+    const configPrepare = lastCallArg<{ prepareRuntime?: unknown }>(useAcpConfigOptionsSpy).prepareRuntime;
+    const onExecute = lastCallArg<{ onExecute?: unknown }>(useConversationCommandQueueSpy).onExecute;
+
+    useTeamPermissionMock.mockReturnValue({ ...team });
+    rerenderSendBox(view);
+    await flush();
+
+    expect(team.warmupSession).toHaveBeenCalledTimes(1);
+    expect(lastSlashOptions().prepareRuntime).toBe(slashPrepare);
+    expect(lastCallArg<{ prepareRuntime?: unknown }>(useAcpConfigOptionsSpy).prepareRuntime).toBe(configPrepare);
+    expect(lastCallArg<{ onExecute?: unknown }>(useConversationCommandQueueSpy).onExecute).toBe(onExecute);
+  });
+
+  it('logs a failed team mount warmup instead of toasting it', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const failure = new Error('member runtime failed');
+      useTeamPermissionMock.mockReturnValue(
+        makeTeamPermission({ warmupSession: vi.fn().mockRejectedValue(failure), sessionReady: false })
+      );
+      renderSendBox();
+
+      await waitFor(() => expect(warnSpy).toHaveBeenCalledWith('[AionrsSendBox] team mount warmup failed', failure));
+      expect(Message.error).not.toHaveBeenCalled();
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it('still toasts a failed runtime ensure in single chat', async () => {
+    useTeamPermissionMock.mockReturnValue(null);
+    ensureConversationRuntimeMock.mockRejectedValueOnce(new Error('workspace missing'));
+    renderSendBox();
+
+    await waitFor(() => expect(Message.error).toHaveBeenCalledWith('workspace failed'));
+  });
+
+  it('warms once more when the team session comes up after a failed mount warmup', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const warmupSession = vi
+        .fn()
+        .mockRejectedValueOnce(new Error('member runtime failed'))
+        .mockResolvedValue(undefined);
+      const team = makeTeamPermission({ warmupSession, sessionReady: false });
+      useTeamPermissionMock.mockReturnValue(team);
+      const view = renderSendBox();
+      await waitFor(() => expect(warmupSession).toHaveBeenCalledTimes(1));
+      await flush();
+
+      useTeamPermissionMock.mockReturnValue({ ...team, sessionReady: true });
+      rerenderSendBox(view);
+
+      await waitFor(() => expect(lastSlashOptions().agentStatus).toBe('active'));
+      await flush();
+      expect(warmupSession).toHaveBeenCalledTimes(2);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it('does not warm again when the team session drops after a successful mount warmup', async () => {
+    const team = makeTeamPermission({ sessionReady: true });
+    useTeamPermissionMock.mockReturnValue(team);
+    const view = renderSendBox();
+    await waitFor(() => expect(lastSlashOptions().agentStatus).toBe('active'));
+
+    useTeamPermissionMock.mockReturnValue({ ...team, sessionReady: false });
+    rerenderSendBox(view);
+    await flush();
+
+    expect(team.warmupSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not warm again when the team session comes up for an already warmed member', async () => {
+    const team = makeTeamPermission({ sessionReady: false });
+    useTeamPermissionMock.mockReturnValue(team);
+    const view = renderSendBox();
+    await waitFor(() => expect(lastSlashOptions().agentStatus).toBe('active'));
+
+    useTeamPermissionMock.mockReturnValue({ ...team, sessionReady: true });
+    rerenderSendBox(view);
+    await flush();
+
+    expect(team.warmupSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a send whose team warmup fails instead of dropping it silently', async () => {
+    const warmupSession = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('member runtime failed'));
+    useTeamPermissionMock.mockReturnValue(makeTeamPermission({ warmupSession }));
+    renderSendBox();
+    await waitFor(() => expect(warmupSession).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      screen.getByRole('button', { name: 'send' }).click();
+    });
+
+    await waitFor(() => expect(markSendFailedMock).toHaveBeenCalledWith(expect.objectContaining({ kind: 'ordinary' })));
+    expect(Message.error).toHaveBeenCalledWith('workspace failed');
   });
 });

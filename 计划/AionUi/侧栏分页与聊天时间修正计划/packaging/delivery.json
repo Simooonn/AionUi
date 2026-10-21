@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-19",
+  "authorization": "User explicitly requested commit, package and push; installation was not requested.",
+  "commit": "582555ad82a4fb6ab34bdda2f184535ff57f9763",
+  "subject": "fix(sidebar): correct pagination and chat activity ordering",
+  "branch": "feature/ace",
+  "remote": "origin",
+  "remoteHeadVerified": "582555ad82a4fb6ab34bdda2f184535ff57f9763",
+  "push": {
+    "command": "just push origin HEAD:refs/heads/feature/ace",
+    "exitCode": 0,
+    "log": "push-retry.log",
+    "checksPassed": ["lint", "format-check", "typecheck", "i18n", "full tests"],
+    "testFilesPassed": 560,
+    "testFilesSkipped": 1,
+    "testsPassed": 5811,
+    "testsSkipped": 6,
+    "testsTodo": 2,
+    "previousUnpushedAncestorCommitsIncluded": ["26f737ba4", "f8317e33a"]
+  },
+  "package": {
+    "worktree": "/Users/wmm/wmm-code/ace-diy/AionUi-sidebar-package-582555ad8",
+    "version": "2.2.2",
+    "platform": "darwin-arm64",
+    "electronVersion": "37.10.3",
+    "buildLog": "build-portable.log",
+    "exitCode": 0,
+    "dmg": "/Users/wmm/wmm-code/ace-diy/AionUi-sidebar-package-582555ad8/out/sidebar-portable/AionUi-2.2.2-mac-arm64.dmg",
+    "dmgSha256": "ddb97a769cfbd3985cdd180f580f9331492914683f95cfc6f877993ceddf38e9",
+    "zip": "/Users/wmm/wmm-code/ace-diy/AionUi-sidebar-package-582555ad8/out/sidebar-portable/AionUi-2.2.2-mac-arm64.zip",
+    "zipSha256": "76c682ff0838c5e0bf421cb1787c630acdf392af325bb273894d86d48d18b666",
+    "app": "/Users/wmm/wmm-code/ace-diy/AionUi-sidebar-package-582555ad8/out/sidebar-portable/mac-arm64/AionUi.app",
+    "signing": "ad-hoc; not Apple Developer ID signed or notarized",
+    "strictSignatureCheckPassed": true,
+    "dmgIntegrityPassed": true,
+    "zipIntegrityPassed": true,
+    "verificationLog": "verification-portable.log",
+    "backendExecutableSha256": "aabfab28b52d11a4017934ce59c8e7ab50f8a595c6e44231f32861fc24445cca",
+    "backendExecutableAndManifestUnchanged": true,
+    "packagingCopyAdjustments": "Changed three copied Node tool symlinks (corepack, npm, npx) from absolute local-bundle paths to equivalent relative paths within the bundle. Original resources and installed application were not changed.",
+    "supersedes": "out/sidebar-local artifacts failed strict signature verification because of absolute external symlinks; use only out/sidebar-portable."
+  },
+  "preserved": {
+    "unrelatedWorkingChanges": true,
+    "localPlanAuditAndScreenshotsNotPublished": true,
+    "originalBackendResourcesUnchanged": true,
+    "installedApplicationUnchanged": true
+  },
+  "notPerformed": ["installation", "version bump", "tag", "PR", "release publication", "production history rewrite"],
+  "retainedFailures": [
+    "First isolated build could not resolve serve-handler because package-level node_modules links had not been copied; copying existing package dependencies resolved it without installing packages.",
+    "First just push stopped at format-check because the concurrent Vite build had a transient generated config file; the full gate was rerun successfully after the build stopped.",
+    "Initial package passed normal signing verification but failed strict verification on external Node tool symlinks; the isolated resource copy was corrected and a new portable package passed strict verification."
+  ]
+}

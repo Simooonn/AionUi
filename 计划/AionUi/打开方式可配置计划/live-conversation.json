@@ -1,0 +1,25 @@
+{
+  "status": 201,
+  "data": {
+    "success": true,
+    "data": {
+      "id": "d043babf",
+      "name": "OPENWITHTEST-20261015",
+      "type": "acp",
+      "status": "pending",
+      "source": "aionui",
+      "pinned": false,
+      "created_at": 1792057636939,
+      "modified_at": 1792057636939,
+      "extra": {
+        "backend": "claude",
+        "workspace": "/Users/wmm/.aionui/live-verify",
+        "skills": ["aionui-config", "conversation-create", "cron", "officecli", "session-message", "skill-creator"],
+        "mcp_server_ids": [],
+        "mcp_servers": [],
+        "mcp_statuses": [],
+        "is_temporary_workspace": false
+      }
+    }
+  }
+}

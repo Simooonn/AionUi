@@ -1,0 +1,1118 @@
+{
+  "startedAt": "2026-10-19T03:49:24.085Z",
+  "ids": {
+    "A": "9478bf64",
+    "B": "c77b1399",
+    "C": "2b55a0a7"
+  },
+  "checks": [
+    {
+      "name": "pin A: activity unchanged",
+      "ok": true,
+      "evidence": {
+        "before": {
+          "ok": true,
+          "times": {
+            "9478bf64": 1792380677430,
+            "c77b1399": 1792381555842,
+            "2b55a0a7": 1792381562583
+          }
+        },
+        "after": {
+          "ok": true,
+          "times": {
+            "9478bf64": 1792380677430,
+            "c77b1399": 1792381555842,
+            "2b55a0a7": 1792381562583
+          }
+        }
+      }
+    },
+    {
+      "name": "pin A: project time unchanged",
+      "ok": true,
+      "evidence": [1792381562583, 1792381562583]
+    },
+    {
+      "name": "pin A: remaining member order unchanged",
+      "ok": true,
+      "evidence": {
+        "before": ["2b55a0a7", "c77b1399", "9478bf64"],
+        "after": ["2b55a0a7", "c77b1399"]
+      }
+    },
+    {
+      "name": "pin A: recent order unchanged",
+      "ok": true,
+      "evidence": [
+        ["2b55a0a7", "c77b1399", "9478bf64"],
+        ["2b55a0a7", "c77b1399", "9478bf64"]
+      ]
+    },
+    {
+      "name": "pin A: actual UI contains standalone row",
+      "ok": true,
+      "evidence": ["c-9478bf64"]
+    },
+    {
+      "name": "unpin A: activity unchanged",
+      "ok": true,
+      "evidence": {
+        "before": {
+          "ok": true,
+          "times": {
+            "9478bf64": 1792380677430,
+            "c77b1399": 1792381555842,
+            "2b55a0a7": 1792381562583
+          }
+        },
+        "after": {
+          "ok": true,
+          "times": {
+            "9478bf64": 1792380677430,
+            "c77b1399": 1792381555842,
+            "2b55a0a7": 1792381562583
+          }
+        }
+      }
+    },
+    {
+      "name": "unpin A: project time unchanged",
+      "ok": true,
+      "evidence": [1792381562583, 1792381562583]
+    },
+    {
+      "name": "unpin A: remaining member order unchanged",
+      "ok": true,
+      "evidence": {
+        "before": ["2b55a0a7", "c77b1399", "9478bf64"],
+        "after": ["2b55a0a7", "c77b1399", "9478bf64"]
+      }
+    },
+    {
+      "name": "unpin A: recent order unchanged",
+      "ok": true,
+      "evidence": [
+        ["2b55a0a7", "c77b1399", "9478bf64"],
+        ["2b55a0a7", "c77b1399", "9478bf64"]
+      ]
+    },
+    {
+      "name": "rename C: activity unchanged",
+      "ok": true,
+      "evidence": {
+        "before": {
+          "ok": true,
+          "times": {
+            "9478bf64": 1792380677430,
+            "c77b1399": 1792381555842,
+            "2b55a0a7": 1792381562583
+          }
+        },
+        "after": {
+          "ok": true,
+          "times": {
+            "9478bf64": 1792380677430,
+            "c77b1399": 1792381555842,
+            "2b55a0a7": 1792381562583
+          }
+        }
+      }
+    },
+    {
+      "name": "rename C: project time unchanged",
+      "ok": true,
+      "evidence": [1792381562583, 1792381562583]
+    },
+    {
+      "name": "rename C: remaining member order unchanged",
+      "ok": true,
+      "evidence": {
+        "before": ["2b55a0a7", "c77b1399", "9478bf64"],
+        "after": ["2b55a0a7", "c77b1399", "9478bf64"]
+      }
+    },
+    {
+      "name": "rename C: recent order unchanged",
+      "ok": true,
+      "evidence": [
+        ["2b55a0a7", "c77b1399", "9478bf64"],
+        ["2b55a0a7", "c77b1399", "9478bf64"]
+      ]
+    },
+    {
+      "name": "rename C: actual UI name updated",
+      "ok": true
+    },
+    {
+      "name": "open A without message: activity unchanged",
+      "ok": true,
+      "evidence": {
+        "before": {
+          "ok": true,
+          "times": {
+            "9478bf64": 1792380677430,
+            "c77b1399": 1792381555842,
+            "2b55a0a7": 1792381562583
+          }
+        },
+        "after": {
+          "ok": true,
+          "times": {
+            "9478bf64": 1792380677430,
+            "c77b1399": 1792381555842,
+            "2b55a0a7": 1792381562583
+          }
+        }
+      }
+    },
+    {
+      "name": "open A without message: project time unchanged",
+      "ok": true,
+      "evidence": [1792381562583, 1792381562583]
+    },
+    {
+      "name": "open A without message: remaining member order unchanged",
+      "ok": true,
+      "evidence": {
+        "before": ["2b55a0a7", "c77b1399", "9478bf64"],
+        "after": ["2b55a0a7", "c77b1399", "9478bf64"]
+      }
+    },
+    {
+      "name": "open A without message: recent order unchanged",
+      "ok": true,
+      "evidence": [
+        ["2b55a0a7", "c77b1399", "9478bf64"],
+        ["2b55a0a7", "c77b1399", "9478bf64"]
+      ]
+    },
+    {
+      "name": "open A: selected route",
+      "ok": true,
+      "evidence": "http://localhost:5173/#/conversation/9478bf64"
+    },
+    {
+      "name": "new message advances chat activity",
+      "ok": true,
+      "evidence": [1792380677430, 1792381790863]
+    },
+    {
+      "name": "new message moves A to recent front",
+      "ok": true,
+      "evidence": [
+        ["2b55a0a7", "c77b1399", "9478bf64"],
+        ["9478bf64", "2b55a0a7", "c77b1399"]
+      ]
+    },
+    {
+      "name": "new message preserves manual pin order",
+      "ok": true,
+      "evidence": [
+        ["c77b1399", "9478bf64"],
+        ["c77b1399", "9478bf64"]
+      ]
+    },
+    {
+      "name": "new message advances project time including pinned member",
+      "ok": true,
+      "evidence": [1792381562583, 1792381790863]
+    },
+    {
+      "name": "page reload: activity unchanged",
+      "ok": true,
+      "evidence": {
+        "before": {
+          "ok": true,
+          "times": {
+            "9478bf64": 1792381790863,
+            "c77b1399": 1792381555842,
+            "2b55a0a7": 1792381562583
+          }
+        },
+        "after": {
+          "ok": true,
+          "times": {
+            "9478bf64": 1792381790863,
+            "c77b1399": 1792381555842,
+            "2b55a0a7": 1792381562583
+          }
+        }
+      }
+    },
+    {
+      "name": "page reload: project time unchanged",
+      "ok": true,
+      "evidence": [1792381790863, 1792381790863]
+    },
+    {
+      "name": "page reload: remaining member order unchanged",
+      "ok": true,
+      "evidence": {
+        "before": ["2b55a0a7"],
+        "after": ["2b55a0a7"]
+      }
+    },
+    {
+      "name": "page reload: recent order unchanged",
+      "ok": true,
+      "evidence": [
+        ["9478bf64", "2b55a0a7", "c77b1399"],
+        ["9478bf64", "2b55a0a7", "c77b1399"]
+      ]
+    },
+    {
+      "name": "page reload preserves manual pin order",
+      "ok": true,
+      "evidence": [
+        ["c77b1399", "9478bf64"],
+        ["c77b1399", "9478bf64"]
+      ]
+    },
+    {
+      "name": "main restart: activity unchanged",
+      "ok": true,
+      "evidence": {
+        "before": {
+          "ok": true,
+          "times": {
+            "9478bf64": 1792381790863,
+            "c77b1399": 1792381555842,
+            "2b55a0a7": 1792381562583
+          }
+        },
+        "after": {
+          "ok": true,
+          "times": {
+            "9478bf64": 1792381790863,
+            "c77b1399": 1792381555842,
+            "2b55a0a7": 1792381562583
+          }
+        }
+      }
+    },
+    {
+      "name": "main restart: project time unchanged",
+      "ok": true,
+      "evidence": [1792381790863, 1792381790863]
+    },
+    {
+      "name": "main restart: remaining member order unchanged",
+      "ok": true,
+      "evidence": {
+        "before": ["2b55a0a7"],
+        "after": ["2b55a0a7"]
+      }
+    },
+    {
+      "name": "main restart: recent order unchanged",
+      "ok": true,
+      "evidence": [
+        ["9478bf64", "2b55a0a7", "c77b1399"],
+        ["9478bf64", "2b55a0a7", "c77b1399"]
+      ]
+    },
+    {
+      "name": "main restart preserves manual pin order",
+      "ok": true,
+      "evidence": [
+        ["c77b1399", "9478bf64"],
+        ["c77b1399", "9478bf64"]
+      ]
+    },
+    {
+      "name": "main restart preserves renamed C",
+      "ok": true
+    },
+    {
+      "name": "main restart uses a new dev backend process",
+      "ok": true,
+      "evidence": {
+        "previousPid": "18367",
+        "nextPid": "93210",
+        "beforePort": 53186,
+        "afterPort": 65450
+      }
+    },
+    {
+      "name": "main restart preserves A/B/C and shared workspace",
+      "ok": true,
+      "evidence": [
+        {
+          "id": "9478bf64",
+          "state": "idle",
+          "workspace": "/Users/wmm/.aionui/live-verify"
+        },
+        {
+          "id": "c77b1399",
+          "state": "idle",
+          "workspace": "/Users/wmm/.aionui/live-verify"
+        },
+        {
+          "id": "2b55a0a7",
+          "state": "idle",
+          "workspace": "/Users/wmm/.aionui/live-verify"
+        }
+      ]
+    }
+  ],
+  "snapshots": [
+    {
+      "label": "initial",
+      "at": "2026-10-19T03:49:30.386Z",
+      "moduleUrl": "http://localhost:5173/pages/conversation/GroupedHistory/hooks/useConversationListSync.ts?t=1792381754222",
+      "activityStatus": "ok",
+      "complete": true,
+      "conversations": [
+        {
+          "id": "2b55a0a7",
+          "name": "DELTEST-SIDEBAR-20261019-C-RENAMED",
+          "modifiedAt": 1792381699292,
+          "activityAt": 1792381562583
+        },
+        {
+          "id": "9478bf64",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381696623,
+          "activityAt": 1792380677430,
+          "pinned": false,
+          "pinnedAt": 1792381694610
+        },
+        {
+          "id": "c77b1399",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381558178,
+          "activityAt": 1792381555842
+        }
+      ],
+      "ipc": {
+        "ok": true,
+        "times": {
+          "9478bf64": 1792380677430,
+          "c77b1399": 1792381555842,
+          "2b55a0a7": 1792381562583
+        }
+      },
+      "projectTime": 1792381562583,
+      "projectOrder": ["2b55a0a7", "c77b1399", "9478bf64"],
+      "pinnedOrder": [],
+      "recentDom": ["2b55a0a7", "c77b1399", "9478bf64"],
+      "projectDom": ["c-2b55a0a7", "c-c77b1399", "c-9478bf64"],
+      "otherDom": []
+    },
+    {
+      "label": "baseline",
+      "at": "2026-10-19T03:49:31.359Z",
+      "moduleUrl": "http://localhost:5173/pages/conversation/GroupedHistory/hooks/useConversationListSync.ts?t=1792381754222",
+      "activityStatus": "ok",
+      "complete": true,
+      "conversations": [
+        {
+          "id": "2b55a0a7",
+          "name": "DELTEST-SIDEBAR-20261019-C-RENAMED",
+          "modifiedAt": 1792381699292,
+          "activityAt": 1792381562583
+        },
+        {
+          "id": "9478bf64",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381696623,
+          "activityAt": 1792380677430,
+          "pinned": false,
+          "pinnedAt": 1792381694610
+        },
+        {
+          "id": "c77b1399",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381558178,
+          "activityAt": 1792381555842
+        }
+      ],
+      "ipc": {
+        "ok": true,
+        "times": {
+          "9478bf64": 1792380677430,
+          "c77b1399": 1792381555842,
+          "2b55a0a7": 1792381562583
+        }
+      },
+      "projectTime": 1792381562583,
+      "projectOrder": ["2b55a0a7", "c77b1399", "9478bf64"],
+      "pinnedOrder": [],
+      "recentDom": ["2b55a0a7", "c77b1399", "9478bf64"],
+      "projectDom": ["c-2b55a0a7", "c-c77b1399", "c-9478bf64"],
+      "otherDom": []
+    },
+    {
+      "label": "pin-A",
+      "at": "2026-10-19T03:49:33.322Z",
+      "moduleUrl": "http://localhost:5173/pages/conversation/GroupedHistory/hooks/useConversationListSync.ts?t=1792381754222",
+      "activityStatus": "ok",
+      "complete": true,
+      "conversations": [
+        {
+          "id": "9478bf64",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381771695,
+          "activityAt": 1792380677430,
+          "pinned": true,
+          "pinnedAt": 1792381771690
+        },
+        {
+          "id": "2b55a0a7",
+          "name": "DELTEST-SIDEBAR-20261019-C-RENAMED",
+          "modifiedAt": 1792381699292,
+          "activityAt": 1792381562583
+        },
+        {
+          "id": "c77b1399",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381558178,
+          "activityAt": 1792381555842
+        }
+      ],
+      "ipc": {
+        "ok": true,
+        "times": {
+          "9478bf64": 1792380677430,
+          "c77b1399": 1792381555842,
+          "2b55a0a7": 1792381562583
+        }
+      },
+      "projectTime": 1792381562583,
+      "projectOrder": ["2b55a0a7", "c77b1399"],
+      "pinnedOrder": ["9478bf64"],
+      "recentDom": ["2b55a0a7", "c77b1399", "9478bf64"],
+      "projectDom": ["c-2b55a0a7", "c-c77b1399"],
+      "otherDom": ["c-9478bf64"]
+    },
+    {
+      "label": "unpin-A",
+      "at": "2026-10-19T03:49:35.270Z",
+      "moduleUrl": "http://localhost:5173/pages/conversation/GroupedHistory/hooks/useConversationListSync.ts?t=1792381754222",
+      "activityStatus": "ok",
+      "complete": true,
+      "conversations": [
+        {
+          "id": "9478bf64",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381773666,
+          "activityAt": 1792380677430,
+          "pinned": false,
+          "pinnedAt": 1792381771690
+        },
+        {
+          "id": "2b55a0a7",
+          "name": "DELTEST-SIDEBAR-20261019-C-RENAMED",
+          "modifiedAt": 1792381699292,
+          "activityAt": 1792381562583
+        },
+        {
+          "id": "c77b1399",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381558178,
+          "activityAt": 1792381555842
+        }
+      ],
+      "ipc": {
+        "ok": true,
+        "times": {
+          "9478bf64": 1792380677430,
+          "c77b1399": 1792381555842,
+          "2b55a0a7": 1792381562583
+        }
+      },
+      "projectTime": 1792381562583,
+      "projectOrder": ["2b55a0a7", "c77b1399", "9478bf64"],
+      "pinnedOrder": [],
+      "recentDom": ["2b55a0a7", "c77b1399", "9478bf64"],
+      "projectDom": ["c-2b55a0a7", "c-c77b1399", "c-9478bf64"],
+      "otherDom": []
+    },
+    {
+      "label": "rename-C",
+      "at": "2026-10-19T03:49:37.575Z",
+      "moduleUrl": "http://localhost:5173/pages/conversation/GroupedHistory/hooks/useConversationListSync.ts?t=1792381754222",
+      "activityStatus": "ok",
+      "complete": true,
+      "conversations": [
+        {
+          "id": "2b55a0a7",
+          "name": "DELTEST-SIDEBAR-20261019-C-RENAMED",
+          "modifiedAt": 1792381776484,
+          "activityAt": 1792381562583
+        },
+        {
+          "id": "9478bf64",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381773666,
+          "activityAt": 1792380677430,
+          "pinned": false,
+          "pinnedAt": 1792381771690
+        },
+        {
+          "id": "c77b1399",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381558178,
+          "activityAt": 1792381555842
+        }
+      ],
+      "ipc": {
+        "ok": true,
+        "times": {
+          "9478bf64": 1792380677430,
+          "c77b1399": 1792381555842,
+          "2b55a0a7": 1792381562583
+        }
+      },
+      "projectTime": 1792381562583,
+      "projectOrder": ["2b55a0a7", "c77b1399", "9478bf64"],
+      "pinnedOrder": [],
+      "recentDom": ["2b55a0a7", "c77b1399", "9478bf64"],
+      "projectDom": ["c-2b55a0a7", "c-c77b1399", "c-9478bf64"],
+      "otherDom": []
+    },
+    {
+      "label": "open-A-without-message",
+      "at": "2026-10-19T03:49:40.722Z",
+      "moduleUrl": "http://localhost:5173/pages/conversation/GroupedHistory/hooks/useConversationListSync.ts?t=1792381754222",
+      "activityStatus": "ok",
+      "complete": true,
+      "conversations": [
+        {
+          "id": "2b55a0a7",
+          "name": "DELTEST-SIDEBAR-20261019-C-RENAMED",
+          "modifiedAt": 1792381776484,
+          "activityAt": 1792381562583
+        },
+        {
+          "id": "9478bf64",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381773666,
+          "activityAt": 1792380677430,
+          "pinned": false,
+          "pinnedAt": 1792381771690
+        },
+        {
+          "id": "c77b1399",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381558178,
+          "activityAt": 1792381555842
+        }
+      ],
+      "ipc": {
+        "ok": true,
+        "times": {
+          "9478bf64": 1792380677430,
+          "c77b1399": 1792381555842,
+          "2b55a0a7": 1792381562583
+        }
+      },
+      "projectTime": 1792381562583,
+      "projectOrder": ["2b55a0a7", "c77b1399", "9478bf64"],
+      "pinnedOrder": [],
+      "recentDom": ["2b55a0a7", "c77b1399", "9478bf64"],
+      "projectDom": ["c-2b55a0a7", "c-c77b1399", "c-9478bf64"],
+      "otherDom": []
+    },
+    {
+      "label": "before-new-message",
+      "at": "2026-10-19T03:49:43.683Z",
+      "moduleUrl": "http://localhost:5173/pages/conversation/GroupedHistory/hooks/useConversationListSync.ts?t=1792381754222",
+      "activityStatus": "ok",
+      "complete": true,
+      "conversations": [
+        {
+          "id": "c77b1399",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381782044,
+          "activityAt": 1792381555842,
+          "pinned": true,
+          "pinnedAt": 1792381782041
+        },
+        {
+          "id": "9478bf64",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381781069,
+          "activityAt": 1792380677430,
+          "pinned": true,
+          "pinnedAt": 1792381781066
+        },
+        {
+          "id": "2b55a0a7",
+          "name": "DELTEST-SIDEBAR-20261019-C-RENAMED",
+          "modifiedAt": 1792381776484,
+          "activityAt": 1792381562583
+        }
+      ],
+      "ipc": {
+        "ok": true,
+        "times": {
+          "9478bf64": 1792380677430,
+          "c77b1399": 1792381555842,
+          "2b55a0a7": 1792381562583
+        }
+      },
+      "projectTime": 1792381562583,
+      "projectOrder": ["2b55a0a7"],
+      "pinnedOrder": ["c77b1399", "9478bf64"],
+      "recentDom": ["2b55a0a7", "c77b1399", "9478bf64"],
+      "projectDom": ["c-2b55a0a7"],
+      "otherDom": ["c-c77b1399", "c-9478bf64"]
+    },
+    {
+      "label": "after-new-message",
+      "at": "2026-10-19T03:49:52.449Z",
+      "moduleUrl": "http://localhost:5173/pages/conversation/GroupedHistory/hooks/useConversationListSync.ts?t=1792381754222",
+      "activityStatus": "ok",
+      "complete": true,
+      "conversations": [
+        {
+          "id": "9478bf64",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381790898,
+          "activityAt": 1792381790863,
+          "pinned": true,
+          "pinnedAt": 1792381781066
+        },
+        {
+          "id": "c77b1399",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381782044,
+          "activityAt": 1792381555842,
+          "pinned": true,
+          "pinnedAt": 1792381782041
+        },
+        {
+          "id": "2b55a0a7",
+          "name": "DELTEST-SIDEBAR-20261019-C-RENAMED",
+          "modifiedAt": 1792381776484,
+          "activityAt": 1792381562583
+        }
+      ],
+      "ipc": {
+        "ok": true,
+        "times": {
+          "9478bf64": 1792381790863,
+          "c77b1399": 1792381555842,
+          "2b55a0a7": 1792381562583
+        }
+      },
+      "projectTime": 1792381790863,
+      "projectOrder": ["2b55a0a7"],
+      "pinnedOrder": ["c77b1399", "9478bf64"],
+      "recentDom": ["9478bf64", "2b55a0a7", "c77b1399"],
+      "projectDom": ["c-2b55a0a7"],
+      "otherDom": ["c-c77b1399", "c-9478bf64"]
+    },
+    {
+      "label": "page-reload",
+      "at": "2026-10-19T03:49:58.743Z",
+      "moduleUrl": "http://localhost:5173/pages/conversation/GroupedHistory/hooks/useConversationListSync.ts?t=1792381754222",
+      "activityStatus": "ok",
+      "complete": true,
+      "conversations": [
+        {
+          "id": "9478bf64",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381790898,
+          "activityAt": 1792381790863,
+          "pinned": true,
+          "pinnedAt": 1792381781066
+        },
+        {
+          "id": "c77b1399",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381782044,
+          "activityAt": 1792381555842,
+          "pinned": true,
+          "pinnedAt": 1792381782041
+        },
+        {
+          "id": "2b55a0a7",
+          "name": "DELTEST-SIDEBAR-20261019-C-RENAMED",
+          "modifiedAt": 1792381776484,
+          "activityAt": 1792381562583
+        }
+      ],
+      "ipc": {
+        "ok": true,
+        "times": {
+          "9478bf64": 1792381790863,
+          "c77b1399": 1792381555842,
+          "2b55a0a7": 1792381562583
+        }
+      },
+      "projectTime": 1792381790863,
+      "projectOrder": ["2b55a0a7"],
+      "pinnedOrder": ["c77b1399", "9478bf64"],
+      "recentDom": ["9478bf64", "2b55a0a7", "c77b1399"],
+      "projectDom": [],
+      "otherDom": ["c-c77b1399", "c-9478bf64"]
+    },
+    {
+      "label": "main-process-restart",
+      "at": "2026-10-19T03:52:40.988Z",
+      "moduleUrl": "http://localhost:5173/pages/conversation/GroupedHistory/hooks/useConversationListSync.ts",
+      "activityStatus": "ok",
+      "complete": true,
+      "conversations": [
+        {
+          "id": "9478bf64",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381790898,
+          "activityAt": 1792381790863,
+          "pinned": true,
+          "pinnedAt": 1792381781066
+        },
+        {
+          "id": "c77b1399",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381782044,
+          "activityAt": 1792381555842,
+          "pinned": true,
+          "pinnedAt": 1792381782041
+        },
+        {
+          "id": "2b55a0a7",
+          "name": "DELTEST-SIDEBAR-20261019-C-RENAMED",
+          "modifiedAt": 1792381776484,
+          "activityAt": 1792381562583
+        }
+      ],
+      "ipc": {
+        "ok": true,
+        "times": {
+          "9478bf64": 1792381790863,
+          "c77b1399": 1792381555842,
+          "2b55a0a7": 1792381562583
+        }
+      },
+      "projectTime": 1792381790863,
+      "projectOrder": ["2b55a0a7"],
+      "pinnedOrder": ["c77b1399", "9478bf64"],
+      "recentDom": [],
+      "projectDom": [],
+      "otherDom": []
+    },
+    {
+      "label": "main-process-restart",
+      "at": "2026-10-19T03:54:07.924Z",
+      "moduleUrl": "http://localhost:5173/pages/conversation/GroupedHistory/hooks/useConversationListSync.ts",
+      "activityStatus": "ok",
+      "complete": true,
+      "conversations": [
+        {
+          "id": "9478bf64",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381790898,
+          "activityAt": 1792381790863,
+          "pinned": true,
+          "pinnedAt": 1792381781066
+        },
+        {
+          "id": "c77b1399",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381782044,
+          "activityAt": 1792381555842,
+          "pinned": true,
+          "pinnedAt": 1792381782041
+        },
+        {
+          "id": "2b55a0a7",
+          "name": "DELTEST-SIDEBAR-20261019-C-RENAMED",
+          "modifiedAt": 1792381776484,
+          "activityAt": 1792381562583
+        }
+      ],
+      "ipc": {
+        "ok": true,
+        "times": {
+          "9478bf64": 1792381790863,
+          "c77b1399": 1792381555842,
+          "2b55a0a7": 1792381562583
+        }
+      },
+      "projectTime": 1792381790863,
+      "projectOrder": ["2b55a0a7"],
+      "pinnedOrder": ["c77b1399", "9478bf64"],
+      "recentDom": ["9478bf64", "2b55a0a7", "c77b1399"],
+      "projectDom": [],
+      "otherDom": ["c-c77b1399", "c-9478bf64"]
+    }
+  ],
+  "errors": [],
+  "mainRestartVerified": true,
+  "devBackendProcess": "93210 92819 /Users/wmm/wmm-code/ace-diy/AionUi/resources/bundled-aioncore/darwin-arm64/aioncore --port 0 --data-dir /Users/wmm/.aionui-dev --parent-pid 92819 --log-level debug --app-version 2.2.2 --log-dir /Users/wmm/Library/Logs/AionUi-Dev --work-dir /Users/wmm/.aionui-dev --local",
+  "backendPort": 65450,
+  "backendSocket": "COMMAND    PID USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME\naioncore 93210  wmm   13u  IPv4 0x3fa93aa5c6f2df64      0t0  TCP 127.0.0.1:65450 (LISTEN)\n",
+  "messageEvidence": [
+    {
+      "id": "9478bf64",
+      "runtime": "idle",
+      "before": 2,
+      "after": 4,
+      "types": ["text", "text", "text", "text"]
+    }
+  ],
+  "screenshot": "electron-sidebar-verified.png",
+  "finishedAt": "2026-10-19T03:54:08.068Z",
+  "status": "passed",
+  "restartIntent": {
+    "at": "2026-10-19T03:51:37.302Z",
+    "main": "17989 17348 /Users/wmm/wmm-code/ace-diy/AionUi/node_modules/.bun/electron@37.10.3/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron . --remote-debugging-port=9231",
+    "backend": "18367 17989 /Users/wmm/wmm-code/ace-diy/AionUi/resources/bundled-aioncore/darwin-arm64/aioncore --port 0 --data-dir /Users/wmm/.aionui-dev --parent-pid 17989 --log-level debug --app-version 2.2.2 --log-dir /Users/wmm/Library/Logs/AionUi-Dev --work-dir /Users/wmm/.aionui-dev --local",
+    "retainedIds": {
+      "A": "9478bf64",
+      "B": "c77b1399",
+      "C": "2b55a0a7"
+    },
+    "lastSnapshot": {
+      "label": "page-reload",
+      "at": "2026-10-19T03:49:58.743Z",
+      "moduleUrl": "http://localhost:5173/pages/conversation/GroupedHistory/hooks/useConversationListSync.ts?t=1792381754222",
+      "activityStatus": "ok",
+      "complete": true,
+      "conversations": [
+        {
+          "id": "9478bf64",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381790898,
+          "activityAt": 1792381790863,
+          "pinned": true,
+          "pinnedAt": 1792381781066
+        },
+        {
+          "id": "c77b1399",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381782044,
+          "activityAt": 1792381555842,
+          "pinned": true,
+          "pinnedAt": 1792381782041
+        },
+        {
+          "id": "2b55a0a7",
+          "name": "DELTEST-SIDEBAR-20261019-C-RENAMED",
+          "modifiedAt": 1792381776484,
+          "activityAt": 1792381562583
+        }
+      ],
+      "ipc": {
+        "ok": true,
+        "times": {
+          "9478bf64": 1792381790863,
+          "c77b1399": 1792381555842,
+          "2b55a0a7": 1792381562583
+        }
+      },
+      "projectTime": 1792381790863,
+      "projectOrder": ["2b55a0a7"],
+      "pinnedOrder": ["c77b1399", "9478bf64"],
+      "recentDom": ["9478bf64", "2b55a0a7", "c77b1399"],
+      "projectDom": [],
+      "otherDom": ["c-c77b1399", "c-9478bf64"]
+    }
+  },
+  "preRestart": {
+    "devBackendProcess": "18367 17989 /Users/wmm/wmm-code/ace-diy/AionUi/resources/bundled-aioncore/darwin-arm64/aioncore --port 0 --data-dir /Users/wmm/.aionui-dev --parent-pid 17989 --log-level debug --app-version 2.2.2 --log-dir /Users/wmm/Library/Logs/AionUi-Dev --work-dir /Users/wmm/.aionui-dev --local",
+    "backendPort": 53186,
+    "snapshot": {
+      "label": "page-reload",
+      "at": "2026-10-19T03:49:58.743Z",
+      "moduleUrl": "http://localhost:5173/pages/conversation/GroupedHistory/hooks/useConversationListSync.ts?t=1792381754222",
+      "activityStatus": "ok",
+      "complete": true,
+      "conversations": [
+        {
+          "id": "9478bf64",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381790898,
+          "activityAt": 1792381790863,
+          "pinned": true,
+          "pinnedAt": 1792381781066
+        },
+        {
+          "id": "c77b1399",
+          "name": "OK reply, no tools",
+          "modifiedAt": 1792381782044,
+          "activityAt": 1792381555842,
+          "pinned": true,
+          "pinnedAt": 1792381782041
+        },
+        {
+          "id": "2b55a0a7",
+          "name": "DELTEST-SIDEBAR-20261019-C-RENAMED",
+          "modifiedAt": 1792381776484,
+          "activityAt": 1792381562583
+        }
+      ],
+      "ipc": {
+        "ok": true,
+        "times": {
+          "9478bf64": 1792381790863,
+          "c77b1399": 1792381555842,
+          "2b55a0a7": 1792381562583
+        }
+      },
+      "projectTime": 1792381790863,
+      "projectOrder": ["2b55a0a7"],
+      "pinnedOrder": ["c77b1399", "9478bf64"],
+      "recentDom": ["9478bf64", "2b55a0a7", "c77b1399"],
+      "projectDom": [],
+      "otherDom": ["c-c77b1399", "c-9478bf64"]
+    }
+  },
+  "runtimeAfterRestart": [
+    {
+      "id": "9478bf64",
+      "state": "idle",
+      "workspace": "/Users/wmm/.aionui/live-verify"
+    },
+    {
+      "id": "c77b1399",
+      "state": "idle",
+      "workspace": "/Users/wmm/.aionui/live-verify"
+    },
+    {
+      "id": "2b55a0a7",
+      "state": "idle",
+      "workspace": "/Users/wmm/.aionui/live-verify"
+    }
+  ],
+  "restartAttempts": [
+    {
+      "at": "2026-10-19T03:52:41.321Z",
+      "checks": [
+        {
+          "name": "main restart: activity unchanged",
+          "ok": true,
+          "evidence": {
+            "before": {
+              "ok": true,
+              "times": {
+                "9478bf64": 1792381790863,
+                "c77b1399": 1792381555842,
+                "2b55a0a7": 1792381562583
+              }
+            },
+            "after": {
+              "ok": true,
+              "times": {
+                "9478bf64": 1792381790863,
+                "c77b1399": 1792381555842,
+                "2b55a0a7": 1792381562583
+              }
+            }
+          }
+        },
+        {
+          "name": "main restart: project time unchanged",
+          "ok": true,
+          "evidence": [1792381790863, 1792381790863]
+        },
+        {
+          "name": "main restart: remaining member order unchanged",
+          "ok": true,
+          "evidence": {
+            "before": ["2b55a0a7"],
+            "after": ["2b55a0a7"]
+          }
+        },
+        {
+          "name": "main restart: recent order unchanged",
+          "ok": false,
+          "evidence": [["9478bf64", "2b55a0a7", "c77b1399"], []]
+        },
+        {
+          "name": "main restart preserves manual pin order",
+          "ok": true,
+          "evidence": [
+            ["c77b1399", "9478bf64"],
+            ["c77b1399", "9478bf64"]
+          ]
+        },
+        {
+          "name": "main restart preserves renamed C",
+          "ok": true
+        },
+        {
+          "name": "main restart uses a new dev backend process",
+          "ok": true,
+          "evidence": {
+            "previousPid": "18367",
+            "nextPid": "93210",
+            "beforePort": 53186,
+            "afterPort": 65450
+          }
+        },
+        {
+          "name": "main restart preserves A/B/C and shared workspace",
+          "ok": true,
+          "evidence": [
+            {
+              "id": "9478bf64",
+              "state": "idle",
+              "workspace": "/Users/wmm/.aionui/live-verify"
+            },
+            {
+              "id": "c77b1399",
+              "state": "idle",
+              "workspace": "/Users/wmm/.aionui/live-verify"
+            },
+            {
+              "id": "2b55a0a7",
+              "state": "idle",
+              "workspace": "/Users/wmm/.aionui/live-verify"
+            }
+          ]
+        }
+      ],
+      "snapshot": {
+        "label": "main-process-restart",
+        "at": "2026-10-19T03:52:40.988Z",
+        "moduleUrl": "http://localhost:5173/pages/conversation/GroupedHistory/hooks/useConversationListSync.ts",
+        "activityStatus": "ok",
+        "complete": true,
+        "conversations": [
+          {
+            "id": "9478bf64",
+            "name": "OK reply, no tools",
+            "modifiedAt": 1792381790898,
+            "activityAt": 1792381790863,
+            "pinned": true,
+            "pinnedAt": 1792381781066
+          },
+          {
+            "id": "c77b1399",
+            "name": "OK reply, no tools",
+            "modifiedAt": 1792381782044,
+            "activityAt": 1792381555842,
+            "pinned": true,
+            "pinnedAt": 1792381782041
+          },
+          {
+            "id": "2b55a0a7",
+            "name": "DELTEST-SIDEBAR-20261019-C-RENAMED",
+            "modifiedAt": 1792381776484,
+            "activityAt": 1792381562583
+          }
+        ],
+        "ipc": {
+          "ok": true,
+          "times": {
+            "9478bf64": 1792381790863,
+            "c77b1399": 1792381555842,
+            "2b55a0a7": 1792381562583
+          }
+        },
+        "projectTime": 1792381790863,
+        "projectOrder": ["2b55a0a7"],
+        "pinnedOrder": ["c77b1399", "9478bf64"],
+        "recentDom": [],
+        "projectDom": [],
+        "otherDom": []
+      },
+      "note": "Initial sampling preceded sidebar DOM readiness; retained as timing evidence."
+    }
+  ]
+}

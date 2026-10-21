@@ -1,0 +1,21 @@
+# spike 2026-10-15 macOS 15.7.4; columns: label, open argv, exit, open wall ms, on-screen layer-0 windows of the app before->after, all layer-0 windows before->after, new cwd pids, ancestry
+terminal	-a /System/Applications/Utilities/Terminal.app /Users/wmm/.aionui/live-verify/open-with-spike	exit=0	open_ms=223	win_on=0->2	win_all=0->11	new_cwd_pids=none	ancestry=none
+iterm2	-a /Applications/iTerm.app /Users/wmm/.aionui/live-verify/open-with-spike	exit=0	open_ms=306	win_on=1->1	win_all=10->10	new_cwd_pids=none	ancestry=none
+note	terminal shell 79159 cwd=spike realpath; ancestry -zsh<login<Terminal.app (lsof path bug: ~/.aionui is a symlink, fixed after this row)
+note	iterm2 shell 80017 cwd=spike realpath; ancestry -zsh</usr/bin/login<iTermServer-3.6.5<iTerm.app; opened as new tab (window count unchanged)
+chrome	-n -a /Applications/Google Chrome.app --args --new-window about:blank	exit=0	open_ms=1866	win_on=3->3	win_all=25->25	new_cwd_pids=none	ancestry=none
+note	chrome first run: window count 3->3 at +3s, 4 at +6s (slow to appear)
+chrome-rerun	-n -a /Applications/Google Chrome.app --args --new-window about:blank	exit=0	open_ms=128	win_on=4->5	win_all=30->35	new_cwd_pids=none	ancestry=none
+safari-url	-a /Applications/Safari.app about:blank	exit=0	open_ms=99	win_on=1->1	win_all=11->11	new_cwd_pids=none	ancestry=none
+note	safari-url: exit 0, on-screen window count unchanged -> expected new tab in existing window; titles unreadable (no screen-recording permission) -> user visual check
+firefox-newwin-cold	-n -a /Applications/Firefox.app --args -new-window about:blank	exit=0	open_ms=116	win_on=0->0	win_all=0->1	new_cwd_pids=none	ancestry=none
+note	firefox cold: on-screen Firefox window 0->1 after ~12s (slow cold start)
+firefox-newwin-warm	-n -a /Applications/Firefox.app --args -new-window about:blank	exit=0	open_ms=160	win_on=1->2	win_all=2->12	new_cwd_pids=none	ancestry=none
+cursor	-a /Applications/Cursor.app /Users/wmm/.aionui/live-verify/open-with-spike	exit=0	open_ms=131	win_on=0->1	win_all=0->9	new_cwd_pids=none	ancestry=none
+note	cursor: storage.json windowsState.lastActiveWindow.folder = file:///Users/wmm/Library/Application%20Support/AionUi/aionui/live-verify/open-with-spike
+antigravity	-a /Applications/Antigravity.app /Users/wmm/.aionui/live-verify/open-with-spike	exit=0	open_ms=173	win_on=0->1	win_all=0->9	new_cwd_pids=none	ancestry=none
+note	antigravity 2.23.0: window opened (0->1) but no evidence the folder was opened: no workspace storage.json, no process with files under the folder, no state file mentions the path; app runs language_server --subclient_type hub (agent manager UI) -> needs user visual check
+goland	-a /Applications/GoLand.app /Users/wmm/.aionui/live-verify/open-with-spike	exit=0	open_ms=115	win_on=0->1	win_all=0->10	new_cwd_pids=none	ancestry=none
+note	goland: idea.log 14:49:47 "Scanning completed for open-with-spike" (project opened at realpath); .idea not yet written
+phpstorm	-a /Applications/PhpStorm.app /Users/wmm/.aionui/live-verify/open-with-spike	exit=0	open_ms=147	win_on=0->2	win_all=0->11	new_cwd_pids=none	ancestry=none
+note	phpstorm: idea.log 15:07:51 "Scanning completed for open-with-spike"; .idea/ created by this run at 15:07 (to delete after the IDEs are closed)

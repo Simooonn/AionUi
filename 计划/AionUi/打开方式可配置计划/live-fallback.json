@@ -1,0 +1,10 @@
+{
+  "req": [
+    {
+      "url": "http://127.0.0.1:53659/api/shell/open-folder-with",
+      "body": "{\"folder_path\":\"/Users/wmm/.aionui/live-verify\",\"tool\":\"terminal\"}"
+    }
+  ],
+  "webviews": ["about:blank", "about:blank"],
+  "tabs": 2
+}

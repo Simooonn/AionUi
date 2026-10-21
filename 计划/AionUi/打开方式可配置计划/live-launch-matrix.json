@@ -1,0 +1,1970 @@
+[
+  {
+    "appId": "cursor",
+    "result": {
+      "ok": true
+    },
+    "ipcMs": 161,
+    "before": [
+      {
+        "owner": "Safari浏览器",
+        "pid": 5228
+      },
+      {
+        "owner": "iTerm2",
+        "pid": 25313
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Cursor",
+        "pid": 24662
+      },
+      {
+        "owner": "AionUi",
+        "pid": 45253
+      },
+      {
+        "owner": "Electron",
+        "pid": 17706
+      },
+      {
+        "owner": "微信",
+        "pid": 6523
+      },
+      {
+        "owner": "Lark",
+        "pid": 62547
+      },
+      {
+        "owner": "ChatGPT",
+        "pid": 83690
+      },
+      {
+        "owner": "DeepSeek Harness",
+        "pid": 30008
+      },
+      {
+        "owner": "CC Switch",
+        "pid": 33751
+      },
+      {
+        "owner": "Telegram",
+        "pid": 49770
+      },
+      {
+        "owner": "计算器",
+        "pid": 69617
+      },
+      {
+        "owner": "备忘录",
+        "pid": 14201
+      },
+      {
+        "owner": "访达",
+        "pid": 80459
+      },
+      {
+        "owner": "WPS Office",
+        "pid": 71423
+      },
+      {
+        "owner": "UU远程",
+        "pid": 621
+      },
+      {
+        "owner": "OrbStack",
+        "pid": 20315
+      },
+      {
+        "owner": "便笺",
+        "pid": 84766
+      },
+      {
+        "owner": "系统信息",
+        "pid": 98445
+      },
+      {
+        "owner": "Java Updater",
+        "pid": 41746
+      }
+    ],
+    "after": [
+      {
+        "owner": "Cursor",
+        "pid": 24662
+      },
+      {
+        "owner": "Safari浏览器",
+        "pid": 5228
+      },
+      {
+        "owner": "iTerm2",
+        "pid": 25313
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "AionUi",
+        "pid": 45253
+      },
+      {
+        "owner": "Electron",
+        "pid": 17706
+      },
+      {
+        "owner": "微信",
+        "pid": 6523
+      },
+      {
+        "owner": "Lark",
+        "pid": 62547
+      },
+      {
+        "owner": "ChatGPT",
+        "pid": 83690
+      },
+      {
+        "owner": "DeepSeek Harness",
+        "pid": 30008
+      },
+      {
+        "owner": "CC Switch",
+        "pid": 33751
+      },
+      {
+        "owner": "Telegram",
+        "pid": 49770
+      },
+      {
+        "owner": "计算器",
+        "pid": 69617
+      },
+      {
+        "owner": "备忘录",
+        "pid": 14201
+      },
+      {
+        "owner": "访达",
+        "pid": 80459
+      },
+      {
+        "owner": "WPS Office",
+        "pid": 71423
+      },
+      {
+        "owner": "UU远程",
+        "pid": 621
+      },
+      {
+        "owner": "OrbStack",
+        "pid": 20315
+      },
+      {
+        "owner": "便笺",
+        "pid": 84766
+      },
+      {
+        "owner": "系统信息",
+        "pid": 98445
+      },
+      {
+        "owner": "Java Updater",
+        "pid": 41746
+      }
+    ]
+  },
+  {
+    "appId": "goland",
+    "result": {
+      "ok": true
+    },
+    "ipcMs": 98,
+    "before": [
+      {
+        "owner": "Cursor",
+        "pid": 24662
+      },
+      {
+        "owner": "Safari浏览器",
+        "pid": 5228
+      },
+      {
+        "owner": "iTerm2",
+        "pid": 25313
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "AionUi",
+        "pid": 45253
+      },
+      {
+        "owner": "Electron",
+        "pid": 17706
+      },
+      {
+        "owner": "微信",
+        "pid": 6523
+      },
+      {
+        "owner": "Lark",
+        "pid": 62547
+      },
+      {
+        "owner": "ChatGPT",
+        "pid": 83690
+      },
+      {
+        "owner": "DeepSeek Harness",
+        "pid": 30008
+      },
+      {
+        "owner": "CC Switch",
+        "pid": 33751
+      },
+      {
+        "owner": "Telegram",
+        "pid": 49770
+      },
+      {
+        "owner": "计算器",
+        "pid": 69617
+      },
+      {
+        "owner": "备忘录",
+        "pid": 14201
+      },
+      {
+        "owner": "访达",
+        "pid": 80459
+      },
+      {
+        "owner": "WPS Office",
+        "pid": 71423
+      },
+      {
+        "owner": "UU远程",
+        "pid": 621
+      },
+      {
+        "owner": "OrbStack",
+        "pid": 20315
+      },
+      {
+        "owner": "便笺",
+        "pid": 84766
+      },
+      {
+        "owner": "系统信息",
+        "pid": 98445
+      },
+      {
+        "owner": "Java Updater",
+        "pid": 41746
+      }
+    ],
+    "after": [
+      {
+        "owner": "GoLand",
+        "pid": 34203
+      },
+      {
+        "owner": "Cursor",
+        "pid": 24662
+      },
+      {
+        "owner": "Safari浏览器",
+        "pid": 5228
+      },
+      {
+        "owner": "iTerm2",
+        "pid": 25313
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "AionUi",
+        "pid": 45253
+      },
+      {
+        "owner": "Electron",
+        "pid": 17706
+      },
+      {
+        "owner": "微信",
+        "pid": 6523
+      },
+      {
+        "owner": "Lark",
+        "pid": 62547
+      },
+      {
+        "owner": "ChatGPT",
+        "pid": 83690
+      },
+      {
+        "owner": "DeepSeek Harness",
+        "pid": 30008
+      },
+      {
+        "owner": "CC Switch",
+        "pid": 33751
+      },
+      {
+        "owner": "Telegram",
+        "pid": 49770
+      },
+      {
+        "owner": "计算器",
+        "pid": 69617
+      },
+      {
+        "owner": "备忘录",
+        "pid": 14201
+      },
+      {
+        "owner": "访达",
+        "pid": 80459
+      },
+      {
+        "owner": "WPS Office",
+        "pid": 71423
+      },
+      {
+        "owner": "UU远程",
+        "pid": 621
+      },
+      {
+        "owner": "OrbStack",
+        "pid": 20315
+      },
+      {
+        "owner": "便笺",
+        "pid": 84766
+      },
+      {
+        "owner": "系统信息",
+        "pid": 98445
+      },
+      {
+        "owner": "Java Updater",
+        "pid": 41746
+      }
+    ]
+  },
+  {
+    "appId": "phpstorm",
+    "result": {
+      "ok": true
+    },
+    "ipcMs": 120,
+    "before": [
+      {
+        "owner": "GoLand",
+        "pid": 34203
+      },
+      {
+        "owner": "Cursor",
+        "pid": 24662
+      },
+      {
+        "owner": "Safari浏览器",
+        "pid": 5228
+      },
+      {
+        "owner": "iTerm2",
+        "pid": 25313
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "AionUi",
+        "pid": 45253
+      },
+      {
+        "owner": "Electron",
+        "pid": 17706
+      },
+      {
+        "owner": "微信",
+        "pid": 6523
+      },
+      {
+        "owner": "Lark",
+        "pid": 62547
+      },
+      {
+        "owner": "ChatGPT",
+        "pid": 83690
+      },
+      {
+        "owner": "DeepSeek Harness",
+        "pid": 30008
+      },
+      {
+        "owner": "CC Switch",
+        "pid": 33751
+      },
+      {
+        "owner": "Telegram",
+        "pid": 49770
+      },
+      {
+        "owner": "计算器",
+        "pid": 69617
+      },
+      {
+        "owner": "备忘录",
+        "pid": 14201
+      },
+      {
+        "owner": "访达",
+        "pid": 80459
+      },
+      {
+        "owner": "WPS Office",
+        "pid": 71423
+      },
+      {
+        "owner": "UU远程",
+        "pid": 621
+      },
+      {
+        "owner": "OrbStack",
+        "pid": 20315
+      },
+      {
+        "owner": "便笺",
+        "pid": 84766
+      },
+      {
+        "owner": "系统信息",
+        "pid": 98445
+      },
+      {
+        "owner": "Java Updater",
+        "pid": 41746
+      }
+    ],
+    "after": [
+      {
+        "owner": "PhpStorm",
+        "pid": 34240
+      },
+      {
+        "owner": "GoLand",
+        "pid": 34203
+      },
+      {
+        "owner": "Cursor",
+        "pid": 24662
+      },
+      {
+        "owner": "Safari浏览器",
+        "pid": 5228
+      },
+      {
+        "owner": "iTerm2",
+        "pid": 25313
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "AionUi",
+        "pid": 45253
+      },
+      {
+        "owner": "Electron",
+        "pid": 17706
+      },
+      {
+        "owner": "微信",
+        "pid": 6523
+      },
+      {
+        "owner": "Lark",
+        "pid": 62547
+      },
+      {
+        "owner": "ChatGPT",
+        "pid": 83690
+      },
+      {
+        "owner": "DeepSeek Harness",
+        "pid": 30008
+      },
+      {
+        "owner": "CC Switch",
+        "pid": 33751
+      },
+      {
+        "owner": "Telegram",
+        "pid": 49770
+      },
+      {
+        "owner": "计算器",
+        "pid": 69617
+      },
+      {
+        "owner": "备忘录",
+        "pid": 14201
+      },
+      {
+        "owner": "访达",
+        "pid": 80459
+      },
+      {
+        "owner": "WPS Office",
+        "pid": 71423
+      },
+      {
+        "owner": "UU远程",
+        "pid": 621
+      },
+      {
+        "owner": "OrbStack",
+        "pid": 20315
+      },
+      {
+        "owner": "便笺",
+        "pid": 84766
+      },
+      {
+        "owner": "系统信息",
+        "pid": 98445
+      },
+      {
+        "owner": "Java Updater",
+        "pid": 41746
+      }
+    ]
+  },
+  {
+    "appId": "terminal",
+    "result": {
+      "ok": true
+    },
+    "ipcMs": 47,
+    "before": [
+      {
+        "owner": "PhpStorm",
+        "pid": 34240
+      },
+      {
+        "owner": "GoLand",
+        "pid": 34203
+      },
+      {
+        "owner": "Cursor",
+        "pid": 24662
+      },
+      {
+        "owner": "Safari浏览器",
+        "pid": 5228
+      },
+      {
+        "owner": "iTerm2",
+        "pid": 25313
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "AionUi",
+        "pid": 45253
+      },
+      {
+        "owner": "Electron",
+        "pid": 17706
+      },
+      {
+        "owner": "微信",
+        "pid": 6523
+      },
+      {
+        "owner": "Lark",
+        "pid": 62547
+      },
+      {
+        "owner": "ChatGPT",
+        "pid": 83690
+      },
+      {
+        "owner": "DeepSeek Harness",
+        "pid": 30008
+      },
+      {
+        "owner": "CC Switch",
+        "pid": 33751
+      },
+      {
+        "owner": "Telegram",
+        "pid": 49770
+      },
+      {
+        "owner": "计算器",
+        "pid": 69617
+      },
+      {
+        "owner": "备忘录",
+        "pid": 14201
+      },
+      {
+        "owner": "访达",
+        "pid": 80459
+      },
+      {
+        "owner": "WPS Office",
+        "pid": 71423
+      },
+      {
+        "owner": "UU远程",
+        "pid": 621
+      },
+      {
+        "owner": "OrbStack",
+        "pid": 20315
+      },
+      {
+        "owner": "便笺",
+        "pid": 84766
+      },
+      {
+        "owner": "系统信息",
+        "pid": 98445
+      },
+      {
+        "owner": "Java Updater",
+        "pid": 41746
+      }
+    ],
+    "after": [
+      {
+        "owner": "GoLand",
+        "pid": 34203
+      },
+      {
+        "owner": "Cursor",
+        "pid": 24662
+      },
+      {
+        "owner": "PhpStorm",
+        "pid": 34240
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Safari浏览器",
+        "pid": 5228
+      },
+      {
+        "owner": "iTerm2",
+        "pid": 25313
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "AionUi",
+        "pid": 45253
+      },
+      {
+        "owner": "Electron",
+        "pid": 17706
+      },
+      {
+        "owner": "微信",
+        "pid": 6523
+      },
+      {
+        "owner": "Lark",
+        "pid": 62547
+      },
+      {
+        "owner": "ChatGPT",
+        "pid": 83690
+      },
+      {
+        "owner": "DeepSeek Harness",
+        "pid": 30008
+      },
+      {
+        "owner": "CC Switch",
+        "pid": 33751
+      },
+      {
+        "owner": "Telegram",
+        "pid": 49770
+      },
+      {
+        "owner": "计算器",
+        "pid": 69617
+      },
+      {
+        "owner": "备忘录",
+        "pid": 14201
+      },
+      {
+        "owner": "访达",
+        "pid": 80459
+      },
+      {
+        "owner": "WPS Office",
+        "pid": 71423
+      },
+      {
+        "owner": "UU远程",
+        "pid": 621
+      },
+      {
+        "owner": "OrbStack",
+        "pid": 20315
+      },
+      {
+        "owner": "便笺",
+        "pid": 84766
+      },
+      {
+        "owner": "系统信息",
+        "pid": 98445
+      },
+      {
+        "owner": "Java Updater",
+        "pid": 41746
+      }
+    ]
+  },
+  {
+    "appId": "iterm2",
+    "result": {
+      "ok": true
+    },
+    "ipcMs": 52,
+    "before": [
+      {
+        "owner": "GoLand",
+        "pid": 34203
+      },
+      {
+        "owner": "Cursor",
+        "pid": 24662
+      },
+      {
+        "owner": "PhpStorm",
+        "pid": 34240
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Safari浏览器",
+        "pid": 5228
+      },
+      {
+        "owner": "iTerm2",
+        "pid": 25313
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "AionUi",
+        "pid": 45253
+      },
+      {
+        "owner": "Electron",
+        "pid": 17706
+      },
+      {
+        "owner": "微信",
+        "pid": 6523
+      },
+      {
+        "owner": "Lark",
+        "pid": 62547
+      },
+      {
+        "owner": "ChatGPT",
+        "pid": 83690
+      },
+      {
+        "owner": "DeepSeek Harness",
+        "pid": 30008
+      },
+      {
+        "owner": "CC Switch",
+        "pid": 33751
+      },
+      {
+        "owner": "Telegram",
+        "pid": 49770
+      },
+      {
+        "owner": "计算器",
+        "pid": 69617
+      },
+      {
+        "owner": "备忘录",
+        "pid": 14201
+      },
+      {
+        "owner": "访达",
+        "pid": 80459
+      },
+      {
+        "owner": "WPS Office",
+        "pid": 71423
+      },
+      {
+        "owner": "UU远程",
+        "pid": 621
+      },
+      {
+        "owner": "OrbStack",
+        "pid": 20315
+      },
+      {
+        "owner": "便笺",
+        "pid": 84766
+      },
+      {
+        "owner": "系统信息",
+        "pid": 98445
+      },
+      {
+        "owner": "Java Updater",
+        "pid": 41746
+      }
+    ],
+    "after": [
+      {
+        "owner": "iTerm2",
+        "pid": 25313
+      },
+      {
+        "owner": "Cursor",
+        "pid": 24662
+      },
+      {
+        "owner": "PhpStorm",
+        "pid": 34240
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Safari浏览器",
+        "pid": 5228
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "AionUi",
+        "pid": 45253
+      },
+      {
+        "owner": "Electron",
+        "pid": 17706
+      },
+      {
+        "owner": "微信",
+        "pid": 6523
+      },
+      {
+        "owner": "Lark",
+        "pid": 62547
+      },
+      {
+        "owner": "ChatGPT",
+        "pid": 83690
+      },
+      {
+        "owner": "DeepSeek Harness",
+        "pid": 30008
+      },
+      {
+        "owner": "CC Switch",
+        "pid": 33751
+      },
+      {
+        "owner": "Telegram",
+        "pid": 49770
+      },
+      {
+        "owner": "计算器",
+        "pid": 69617
+      },
+      {
+        "owner": "备忘录",
+        "pid": 14201
+      },
+      {
+        "owner": "访达",
+        "pid": 80459
+      },
+      {
+        "owner": "WPS Office",
+        "pid": 71423
+      },
+      {
+        "owner": "UU远程",
+        "pid": 621
+      },
+      {
+        "owner": "OrbStack",
+        "pid": 20315
+      },
+      {
+        "owner": "便笺",
+        "pid": 84766
+      },
+      {
+        "owner": "系统信息",
+        "pid": 98445
+      },
+      {
+        "owner": "Java Updater",
+        "pid": 41746
+      }
+    ]
+  },
+  {
+    "appId": "chrome",
+    "result": {
+      "ok": true
+    },
+    "ipcMs": 118,
+    "before": [
+      {
+        "owner": "GoLand",
+        "pid": 34203
+      },
+      {
+        "owner": "iTerm2",
+        "pid": 25313
+      },
+      {
+        "owner": "Cursor",
+        "pid": 24662
+      },
+      {
+        "owner": "PhpStorm",
+        "pid": 34240
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Safari浏览器",
+        "pid": 5228
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "AionUi",
+        "pid": 45253
+      },
+      {
+        "owner": "Electron",
+        "pid": 17706
+      },
+      {
+        "owner": "微信",
+        "pid": 6523
+      },
+      {
+        "owner": "Lark",
+        "pid": 62547
+      },
+      {
+        "owner": "ChatGPT",
+        "pid": 83690
+      },
+      {
+        "owner": "DeepSeek Harness",
+        "pid": 30008
+      },
+      {
+        "owner": "CC Switch",
+        "pid": 33751
+      },
+      {
+        "owner": "Telegram",
+        "pid": 49770
+      },
+      {
+        "owner": "计算器",
+        "pid": 69617
+      },
+      {
+        "owner": "备忘录",
+        "pid": 14201
+      },
+      {
+        "owner": "访达",
+        "pid": 80459
+      },
+      {
+        "owner": "WPS Office",
+        "pid": 71423
+      },
+      {
+        "owner": "UU远程",
+        "pid": 621
+      },
+      {
+        "owner": "OrbStack",
+        "pid": 20315
+      },
+      {
+        "owner": "便笺",
+        "pid": 84766
+      },
+      {
+        "owner": "系统信息",
+        "pid": 98445
+      },
+      {
+        "owner": "Java Updater",
+        "pid": 41746
+      }
+    ],
+    "after": [
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "GoLand",
+        "pid": 34203
+      },
+      {
+        "owner": "iTerm2",
+        "pid": 25313
+      },
+      {
+        "owner": "Cursor",
+        "pid": 24662
+      },
+      {
+        "owner": "PhpStorm",
+        "pid": 34240
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Safari浏览器",
+        "pid": 5228
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "AionUi",
+        "pid": 45253
+      },
+      {
+        "owner": "Electron",
+        "pid": 17706
+      },
+      {
+        "owner": "微信",
+        "pid": 6523
+      },
+      {
+        "owner": "Lark",
+        "pid": 62547
+      },
+      {
+        "owner": "ChatGPT",
+        "pid": 83690
+      },
+      {
+        "owner": "DeepSeek Harness",
+        "pid": 30008
+      },
+      {
+        "owner": "CC Switch",
+        "pid": 33751
+      },
+      {
+        "owner": "Telegram",
+        "pid": 49770
+      },
+      {
+        "owner": "计算器",
+        "pid": 69617
+      },
+      {
+        "owner": "备忘录",
+        "pid": 14201
+      },
+      {
+        "owner": "访达",
+        "pid": 80459
+      },
+      {
+        "owner": "WPS Office",
+        "pid": 71423
+      },
+      {
+        "owner": "UU远程",
+        "pid": 621
+      },
+      {
+        "owner": "OrbStack",
+        "pid": 20315
+      },
+      {
+        "owner": "便笺",
+        "pid": 84766
+      },
+      {
+        "owner": "系统信息",
+        "pid": 98445
+      },
+      {
+        "owner": "Java Updater",
+        "pid": 41746
+      }
+    ]
+  },
+  {
+    "appId": "safari",
+    "result": {
+      "ok": true
+    },
+    "ipcMs": 245,
+    "before": [
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "GoLand",
+        "pid": 34203
+      },
+      {
+        "owner": "iTerm2",
+        "pid": 25313
+      },
+      {
+        "owner": "Cursor",
+        "pid": 24662
+      },
+      {
+        "owner": "PhpStorm",
+        "pid": 34240
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Safari浏览器",
+        "pid": 5228
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "AionUi",
+        "pid": 45253
+      },
+      {
+        "owner": "Electron",
+        "pid": 17706
+      },
+      {
+        "owner": "微信",
+        "pid": 6523
+      },
+      {
+        "owner": "Lark",
+        "pid": 62547
+      },
+      {
+        "owner": "ChatGPT",
+        "pid": 83690
+      },
+      {
+        "owner": "DeepSeek Harness",
+        "pid": 30008
+      },
+      {
+        "owner": "CC Switch",
+        "pid": 33751
+      },
+      {
+        "owner": "Telegram",
+        "pid": 49770
+      },
+      {
+        "owner": "计算器",
+        "pid": 69617
+      },
+      {
+        "owner": "备忘录",
+        "pid": 14201
+      },
+      {
+        "owner": "访达",
+        "pid": 80459
+      },
+      {
+        "owner": "WPS Office",
+        "pid": 71423
+      },
+      {
+        "owner": "UU远程",
+        "pid": 621
+      },
+      {
+        "owner": "OrbStack",
+        "pid": 20315
+      },
+      {
+        "owner": "便笺",
+        "pid": 84766
+      },
+      {
+        "owner": "系统信息",
+        "pid": 98445
+      },
+      {
+        "owner": "Java Updater",
+        "pid": 41746
+      }
+    ],
+    "after": [
+      {
+        "owner": "Safari浏览器",
+        "pid": 5228
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "GoLand",
+        "pid": 34203
+      },
+      {
+        "owner": "iTerm2",
+        "pid": 25313
+      },
+      {
+        "owner": "Cursor",
+        "pid": 24662
+      },
+      {
+        "owner": "PhpStorm",
+        "pid": 34240
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "AionUi",
+        "pid": 45253
+      },
+      {
+        "owner": "Electron",
+        "pid": 17706
+      },
+      {
+        "owner": "微信",
+        "pid": 6523
+      },
+      {
+        "owner": "Lark",
+        "pid": 62547
+      },
+      {
+        "owner": "ChatGPT",
+        "pid": 83690
+      },
+      {
+        "owner": "DeepSeek Harness",
+        "pid": 30008
+      },
+      {
+        "owner": "CC Switch",
+        "pid": 33751
+      },
+      {
+        "owner": "Telegram",
+        "pid": 49770
+      },
+      {
+        "owner": "计算器",
+        "pid": 69617
+      },
+      {
+        "owner": "备忘录",
+        "pid": 14201
+      },
+      {
+        "owner": "访达",
+        "pid": 80459
+      },
+      {
+        "owner": "WPS Office",
+        "pid": 71423
+      },
+      {
+        "owner": "UU远程",
+        "pid": 621
+      },
+      {
+        "owner": "OrbStack",
+        "pid": 20315
+      },
+      {
+        "owner": "便笺",
+        "pid": 84766
+      },
+      {
+        "owner": "系统信息",
+        "pid": 98445
+      },
+      {
+        "owner": "Java Updater",
+        "pid": 41746
+      }
+    ]
+  },
+  {
+    "appId": "firefox",
+    "result": {
+      "ok": true
+    },
+    "ipcMs": 162,
+    "before": [
+      {
+        "owner": "Safari浏览器",
+        "pid": 5228
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "GoLand",
+        "pid": 34203
+      },
+      {
+        "owner": "iTerm2",
+        "pid": 25313
+      },
+      {
+        "owner": "Cursor",
+        "pid": 24662
+      },
+      {
+        "owner": "PhpStorm",
+        "pid": 34240
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "AionUi",
+        "pid": 45253
+      },
+      {
+        "owner": "Electron",
+        "pid": 17706
+      },
+      {
+        "owner": "微信",
+        "pid": 6523
+      },
+      {
+        "owner": "Lark",
+        "pid": 62547
+      },
+      {
+        "owner": "ChatGPT",
+        "pid": 83690
+      },
+      {
+        "owner": "DeepSeek Harness",
+        "pid": 30008
+      },
+      {
+        "owner": "CC Switch",
+        "pid": 33751
+      },
+      {
+        "owner": "Telegram",
+        "pid": 49770
+      },
+      {
+        "owner": "计算器",
+        "pid": 69617
+      },
+      {
+        "owner": "备忘录",
+        "pid": 14201
+      },
+      {
+        "owner": "访达",
+        "pid": 80459
+      },
+      {
+        "owner": "WPS Office",
+        "pid": 71423
+      },
+      {
+        "owner": "UU远程",
+        "pid": 621
+      },
+      {
+        "owner": "OrbStack",
+        "pid": 20315
+      },
+      {
+        "owner": "便笺",
+        "pid": 84766
+      },
+      {
+        "owner": "系统信息",
+        "pid": 98445
+      },
+      {
+        "owner": "Java Updater",
+        "pid": 41746
+      }
+    ],
+    "after": [
+      {
+        "owner": "Firefox",
+        "pid": 35605
+      },
+      {
+        "owner": "Safari浏览器",
+        "pid": 5228
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "GoLand",
+        "pid": 34203
+      },
+      {
+        "owner": "iTerm2",
+        "pid": 25313
+      },
+      {
+        "owner": "Cursor",
+        "pid": 24662
+      },
+      {
+        "owner": "PhpStorm",
+        "pid": 34240
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "终端",
+        "pid": 28905
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "Google Chrome",
+        "pid": 84729
+      },
+      {
+        "owner": "AionUi",
+        "pid": 45253
+      },
+      {
+        "owner": "Electron",
+        "pid": 17706
+      },
+      {
+        "owner": "微信",
+        "pid": 6523
+      },
+      {
+        "owner": "Lark",
+        "pid": 62547
+      },
+      {
+        "owner": "ChatGPT",
+        "pid": 83690
+      },
+      {
+        "owner": "DeepSeek Harness",
+        "pid": 30008
+      },
+      {
+        "owner": "CC Switch",
+        "pid": 33751
+      },
+      {
+        "owner": "Telegram",
+        "pid": 49770
+      },
+      {
+        "owner": "计算器",
+        "pid": 69617
+      },
+      {
+        "owner": "备忘录",
+        "pid": 14201
+      },
+      {
+        "owner": "访达",
+        "pid": 80459
+      },
+      {
+        "owner": "WPS Office",
+        "pid": 71423
+      },
+      {
+        "owner": "UU远程",
+        "pid": 621
+      },
+      {
+        "owner": "OrbStack",
+        "pid": 20315
+      },
+      {
+        "owner": "便笺",
+        "pid": 84766
+      },
+      {
+        "owner": "系统信息",
+        "pid": 98445
+      },
+      {
+        "owner": "Java Updater",
+        "pid": 41746
+      }
+    ]
+  }
+]

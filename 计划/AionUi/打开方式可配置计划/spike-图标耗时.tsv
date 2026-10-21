@@ -1,0 +1,19 @@
+# createThumbnailFromPath(realpath, 64x64), Electron 37.10.3; columns: pass, app, ms, sha256(png)[:8], dataURL length, isEmpty
+cold	/Applications/Cursor.app	325	8a5e92e2	3290	false
+cold	/Applications/Antigravity.app	35	4b1fe6ee	3518	false
+cold	/Applications/GoLand.app	10	f2d3e1ef	5698	false
+cold	/Applications/PhpStorm.app	9	6f22d606	5170	false
+cold	/System/Applications/Utilities/Terminal.app	10	e1dab97a	3502	false
+cold	/Applications/iTerm.app	8	85da0996	3998	false
+cold	/Applications/Google Chrome.app	9	c2c5f602	7350	false
+cold	/Applications/Safari.app	14	4b657ed0	7646	false
+cold	/Applications/Firefox.app	9	9d06e184	6342	false
+warm	/Applications/Cursor.app	7	8a5e92e2	3290	false
+warm	/Applications/Antigravity.app	8	4b1fe6ee	3518	false
+warm	/Applications/GoLand.app	13	f2d3e1ef	5698	false
+warm	/Applications/PhpStorm.app	9	6f22d606	5170	false
+warm	/System/Applications/Utilities/Terminal.app	8	e1dab97a	3502	false
+warm	/Applications/iTerm.app	8	85da0996	3998	false
+warm	/Applications/Google Chrome.app	8	c2c5f602	7350	false
+warm	/Applications/Safari.app	8	4b657ed0	7646	false
+warm	/Applications/Firefox.app	8	9d06e184	6342	false

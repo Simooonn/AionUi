@@ -1,0 +1,138 @@
+{
+  "apps": [
+    {
+      "id": "cursor",
+      "category": "editor",
+      "name": "Cursor"
+    },
+    {
+      "id": "goland",
+      "category": "editor",
+      "name": "GoLand"
+    },
+    {
+      "id": "phpstorm",
+      "category": "editor",
+      "name": "PhpStorm"
+    },
+    {
+      "id": "terminal",
+      "category": "terminal",
+      "name": "Terminal"
+    },
+    {
+      "id": "iterm2",
+      "category": "terminal",
+      "name": "iTerm2"
+    },
+    {
+      "id": "chrome",
+      "category": "browser",
+      "name": "Chrome"
+    },
+    {
+      "id": "safari",
+      "category": "browser",
+      "name": "Safari"
+    },
+    {
+      "id": "firefox",
+      "category": "browser",
+      "name": "Firefox"
+    }
+  ],
+  "ms": 3.5999999046325684,
+  "icons": [
+    {
+      "id": "cursor",
+      "png": true,
+      "sha256": "58427c28fb840aa2452992bbbb6793710e826e235702fe8feced6ddd3118b26f"
+    },
+    {
+      "id": "goland",
+      "png": true,
+      "sha256": "8bece2ac17b94e3109fefecbf1a08d09ed9f17b1e9b74d6fcffe86fbba9e30b0"
+    },
+    {
+      "id": "phpstorm",
+      "png": true,
+      "sha256": "458dc42ee682d4fdee5e90ba23a89a6bba5eccec2922f4e5eecbe02614b86429"
+    },
+    {
+      "id": "terminal",
+      "png": true,
+      "sha256": "509a4deab86711163398f3961514a178d7aad25eaadc0081ff5e6d586e58912c"
+    },
+    {
+      "id": "iterm2",
+      "png": true,
+      "sha256": "95f92d1f52ab74d33b3c8082efe4d0d6802749b2d98aff679ce77a67866fde04"
+    },
+    {
+      "id": "chrome",
+      "png": true,
+      "sha256": "2b298447978babddf8fc7acbc3b66581eae38fc83f61884c757e1ef3ee75067b"
+    },
+    {
+      "id": "safari",
+      "png": true,
+      "sha256": "c3ffb4dc0d1f6e271b4900b3de8e9dd1d3e1df4086875400e044d3aaf69a30ec"
+    },
+    {
+      "id": "firefox",
+      "png": true,
+      "sha256": "9c4e06e8010d4875812b4727a2f1bf25af22e218c2641f4f106ca94048481c09"
+    }
+  ],
+  "negative": [
+    {
+      "request": {
+        "appId": "zed",
+        "folderPath": "/Users/wmm/.aionui/live-verify"
+      },
+      "result": {
+        "ok": false,
+        "reason": "not-installed"
+      }
+    },
+    {
+      "request": {
+        "appId": "../../bin/sh"
+      },
+      "result": {
+        "ok": false,
+        "reason": "unknown-app"
+      }
+    },
+    {
+      "request": {
+        "appId": "iterm2",
+        "folderPath": "relative"
+      },
+      "result": {
+        "ok": false,
+        "reason": "invalid-folder"
+      }
+    },
+    {
+      "request": {
+        "appId": "iterm2",
+        "folderPath": "/nonexistent"
+      },
+      "result": {
+        "ok": false,
+        "reason": "invalid-folder"
+      }
+    },
+    {
+      "request": {
+        "appId": "iterm2",
+        "folderPath": "/etc/hosts"
+      },
+      "result": {
+        "ok": false,
+        "reason": "invalid-folder"
+      }
+    }
+  ]
+}

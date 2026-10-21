@@ -1,0 +1,11 @@
+{
+  "deleted": {
+    "status": 200,
+    "body": "{\"success\":true}"
+  },
+  "storageRestored": true,
+  "devPid": 17706,
+  "vitePid": 17604,
+  "ideaBefore": false,
+  "paidMessages": 0
+}

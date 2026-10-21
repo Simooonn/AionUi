@@ -1,0 +1,443 @@
+{
+  "/Users/wmm/Library/Application Support/AionUi-Dev/aionui/aionui-backend.db": {
+    "checkedAt": "2026-10-19T03:12:00.389Z",
+    "readOnly": true,
+    "queryOnly": true,
+    "journal": {
+      "journal_mode": "wal"
+    },
+    "counts": {
+      "consistent": 0,
+      "inconsistent": 0,
+      "unverified": 0
+    },
+    "conversations": []
+  },
+  "/Users/wmm/Library/Application Support/AionUi/aionui/aionui-backend.db": {
+    "checkedAt": "2026-10-19T03:12:16.624Z",
+    "readOnly": true,
+    "queryOnly": true,
+    "journal": {
+      "journal_mode": "wal"
+    },
+    "counts": {
+      "consistent": 12,
+      "inconsistent": 0,
+      "unverified": 28
+    },
+    "conversations": [
+      {
+        "id": "231903eb",
+        "cliAt": 1789958716764,
+        "persisted": 0,
+        "generated": 370,
+        "status": "consistent",
+        "reasons": [],
+        "source": "claude-code",
+        "files": ["/Users/wmm/.claude/projects/-Users-wmm-Downloads-----/0b033b42-dfe0-4310-b26b-28b9fd9a9ba8.jsonl"]
+      },
+      {
+        "id": "be1b9572",
+        "cliAt": 1789961399130,
+        "persisted": 0,
+        "generated": 3,
+        "status": "consistent",
+        "reasons": [],
+        "source": "claude-code",
+        "files": ["/Users/wmm/.claude/projects/-Users-wmm-Downloads-----/65529203-e622-4052-abfa-bf7b229fcb8b.jsonl"]
+      },
+      {
+        "id": "27d6c73d",
+        "cliAt": null,
+        "persisted": 115,
+        "generated": 115,
+        "status": "consistent",
+        "reasons": [],
+        "source": "claude-code",
+        "files": ["/Users/wmm/.claude/projects/-Users-wmm-Downloads--------/c560839c-d329-4cbd-be5d-1d72b9e3cce7.jsonl"]
+      },
+      {
+        "id": "7c74d416",
+        "cliAt": 1789541674628,
+        "persisted": 0,
+        "generated": 46,
+        "status": "consistent",
+        "reasons": [],
+        "source": "claude-code",
+        "files": [
+          "/Users/wmm/.claude/projects/-Users-wmm-wmm-code-ace-diy-AceHub/544dbbeb-078b-4e99-8923-2b77d5badf77.jsonl"
+        ]
+      },
+      {
+        "id": "7e38a82f",
+        "cliAt": null,
+        "persisted": 169,
+        "generated": 169,
+        "status": "consistent",
+        "reasons": [],
+        "source": "claude-code",
+        "files": ["/Users/wmm/.claude/projects/-Users-wmm-wmm-code-ai---/945e83fd-4a46-4e37-a244-edcd61e6f004.jsonl"]
+      },
+      {
+        "id": "d4d4dfd8",
+        "cliAt": 1791204620405,
+        "persisted": 0,
+        "generated": 137,
+        "status": "consistent",
+        "reasons": [],
+        "source": "claude-code",
+        "files": [
+          "/Users/wmm/.claude/projects/-Users-wmm-wmm-code-roam-roam-lark-alert/3e6ed630-b7c0-4ab6-a207-f1e4756b4659.jsonl"
+        ]
+      },
+      {
+        "id": "687a459d",
+        "cliAt": 1790528813054,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "de42bda5",
+        "cliAt": 1790131153293,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "5d669d0a",
+        "cliAt": 1789924257535,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "6a942cd2",
+        "cliAt": 1788485398589,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "ee34038e",
+        "cliAt": 1787730220022,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "0e8316d8",
+        "cliAt": 1790686146459,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "79b2eb5b",
+        "cliAt": 1790670914054,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "a53cd78b",
+        "cliAt": 1786555298018,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "3859ca47",
+        "cliAt": 1786090090387,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "3e9eef4c",
+        "cliAt": 1786072706137,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "8e5a9fb9",
+        "cliAt": 1786026730115,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "b3496764",
+        "cliAt": 1785477667043,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "2b739331",
+        "cliAt": 1785679330504,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "22d601c3",
+        "cliAt": 1785423292615,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "17d05425",
+        "cliAt": 1785318014380,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "fc334734",
+        "cliAt": null,
+        "persisted": 119,
+        "generated": 119,
+        "status": "consistent",
+        "reasons": [],
+        "source": "codex",
+        "files": [
+          "/Users/wmm/.codex/sessions/2026/07/23/rollout-2026-07-23T02-00-54-019f8afc-da6b-7322-80fc-b09aa491c273.jsonl"
+        ]
+      },
+      {
+        "id": "f8c9a0bc",
+        "cliAt": null,
+        "persisted": 532,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "f7d12229",
+        "cliAt": 1785308802795,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "fa353b77",
+        "cliAt": 1785405921536,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "3e146032",
+        "cliAt": 1785461354612,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "c67a53f3",
+        "cliAt": 1785408415398,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "9589b620",
+        "cliAt": 1785406202714,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "96cc0276",
+        "cliAt": 1785409999822,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "27cd5da1",
+        "cliAt": 1785414368514,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "047e869c",
+        "cliAt": 1785423077943,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "29acb345",
+        "cliAt": 1785456439207,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "33f87de7",
+        "cliAt": 1785487137548,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "f1491b86",
+        "cliAt": 1785488540904,
+        "persisted": 0,
+        "generated": 0,
+        "source": "codex",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "82baee5d",
+        "cliAt": 1785910941530,
+        "persisted": 0,
+        "generated": 0,
+        "source": "opencode",
+        "files": [],
+        "status": "unverified",
+        "reasons": ["source-files-missing"]
+      },
+      {
+        "id": "d32b424a",
+        "cliAt": null,
+        "persisted": 88,
+        "generated": 88,
+        "status": "consistent",
+        "reasons": [],
+        "source": "claude-code",
+        "files": ["/Users/wmm/.claude/projects/-Users-wmm-Downloads--------/cadad941-c448-4dff-bf5c-b993bd03ad66.jsonl"]
+      },
+      {
+        "id": "9f27b69b",
+        "cliAt": null,
+        "persisted": 440,
+        "generated": 440,
+        "status": "consistent",
+        "reasons": [],
+        "source": "claude-code",
+        "files": ["/Users/wmm/.claude/projects/-Users-wmm-wmm-code-ai-ops/41ae24c6-2360-44e0-8e58-f2b41e059d42.jsonl"]
+      },
+      {
+        "id": "f0919f2b",
+        "cliAt": null,
+        "persisted": 83,
+        "generated": 83,
+        "status": "consistent",
+        "reasons": [],
+        "source": "claude-code",
+        "files": [
+          "/Users/wmm/.claude/projects/-Users-wmm-wmm-code-dappworks-ai-ops-ai-old-claude/979d8548-ec94-4aaa-8c7d-30db745aeb31.jsonl"
+        ]
+      },
+      {
+        "id": "3ba74ae6",
+        "cliAt": 1792115422793,
+        "persisted": 0,
+        "generated": 3,
+        "status": "consistent",
+        "reasons": [],
+        "source": "codex",
+        "files": [
+          "/Users/wmm/.codex/sessions/2026/10/16/rollout-2026-10-16T09-49-28-01a14266-62fb-7633-96c4-4e88b603a962.jsonl"
+        ]
+      },
+      {
+        "id": "6228c269",
+        "cliAt": 1792055289973,
+        "persisted": 0,
+        "generated": 2,
+        "status": "consistent",
+        "reasons": [],
+        "source": "codex",
+        "files": [
+          "/Users/wmm/.codex/sessions/2026/10/15/rollout-2026-10-15T17-06-43-01a13ed0-5568-7431-8819-c3c7d1d125e5.jsonl"
+        ]
+      }
+    ]
+  }
+}

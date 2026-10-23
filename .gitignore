@@ -239,3 +239,6 @@ graphify-out/
 .analysis/
 temp/
 .playwright-mcp/
+
+# Local patched aioncore bundle for AIONUI_BACKEND_LOCAL_BUNDLE_DIR (kept outside resources/bundled-aioncore)
+.local/

@@ -407,7 +407,7 @@ Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没
 ### marker 挂点（均有 `// ace:` marker）
 
 - `renderer/utils/emitter.ts`：`EventTypes['sendbox.submit']`（`conversation_id / input / ack / resolve / reject`）。
-- `packages/shared-scripts/src/prepare-aioncore.js`：`AIONUI_BACKEND_LOCAL_BUNDLE_DIR` 指向打包目标目录本身时直接报错（脚本会先清空目标目录再复制，指向自身会毁掉补丁二进制）；本地打包用法：`AIONUI_BACKEND_LOCAL_BUNDLE_DIR=/Users/wmm/wmm-code/ace-diy/aioncore-local-bundle/darwin-arm64 bun run build-mac:arm64`。
+- `packages/shared-scripts/src/prepare-aioncore.js`：`AIONUI_BACKEND_LOCAL_BUNDLE_DIR` 指向打包目标目录本身时直接报错（脚本会先清空目标目录再复制，指向自身会毁掉补丁二进制）；本地打包用法：`AIONUI_BACKEND_LOCAL_BUNDLE_DIR=.local/aioncore-bundle/darwin-arm64 bun run build-mac:arm64`。
 - `packages/shared-scripts/src/prepare-aioncore.js` + `scripts/prepareAioncore.js` 头注释：下载源改为 `AIONUI_BACKEND_OWNER` / `AIONUI_BACKEND_REPO` 环境变量，默认 `Simooonn/AionCore`（带补丁的 fork；fork 无 release，须配 `AIONUI_BACKEND_RUN_ID` 指向 fork 的 Manual Build 运行号，否则脚本直接失败而不是用官方包覆盖补丁二进制）。
 - `renderer/pages/conversation/platforms/acp/AcpSendBox.tsx`：导入并在 `executeCommand` 定义后调用 `useSendBoxSubmitListener`。
 - `common/chat/chatLib.ts`：`IMessageAsk.content.source?: 'live' | 'history'`。

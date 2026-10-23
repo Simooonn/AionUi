@@ -1,1 +1,453 @@
-{"url":"https://api.github.com/repos/iOfficeAI/AionUi/compare/Simooonn:main...iOfficeAI:main","html_url":"https://github.com/iOfficeAI/AionUi/compare/Simooonn:main...iOfficeAI:main","permalink_url":"https://github.com/Simooonn/AionUi/compare/Simooonn:6744099...iOfficeAI:886dcbd","diff_url":"https://github.com/iOfficeAI/AionUi/compare/Simooonn:main...iOfficeAI:main.diff","patch_url":"https://github.com/iOfficeAI/AionUi/compare/Simooonn:main...iOfficeAI:main.patch","base_commit":{"sha":"6744099b279b991c17e31c243f0920477bd31cb6","node_id":"C_kwDOS2RgltoAKDY3NDQwOTliMjc5Yjk5MWMxN2UzMWMyNDNmMDkyMDQ3N2JkMzFjYjY","commit":{"author":{"name":"zynx","email":"3362922+piorpua@users.noreply.github.com","date":"2026-09-09T07:56:13Z"},"committer":{"name":"GitHub","email":"noreply@github.com","date":"2026-09-09T07:56:13Z"},"message":"chore: bump version to 2.2.2 and aioncore to v0.2.2 (#4236)\n\nCo-authored-by: zynx <>","tree":{"sha":"fc7bc2ab182624354b94adc159365d4bf1ca876d","url":"https://api.github.com/repos/iOfficeAI/AionUi/git/trees/fc7bc2ab182624354b94adc159365d4bf1ca876d"},"url":"https://api.github.com/repos/iOfficeAI/AionUi/git/commits/6744099b279b991c17e31c243f0920477bd31cb6","comment_count":0,"verification":{"verified":true,"reason":"valid","signature":"-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqoREdCRC1aQ7uu5UhlAAAaqUQAIlXwb/4r297A2Ae6f61gsJ4\n75pD8KOQZx5iGjdUu3ocTE46XEKTS7iGbSR/3F2PqozxcSz/GzZdu1MMkoBQV0Zn\niCJfpRseicjww0tP8cBoM3ut23PUWxuU7OdbAW/kva7rOwOj8tnYebonRc57FbAE\nBQrakcrNtU9LdJ7K2QoNNxB2jl9oaYpcvGWCaLMyEzn3woILfNa0l5Uy7Z9i6hP8\nJVj6rmdbQpsjhpwvfaFnXILqV3dakGqWugsCBvWuom3zviNMJk0fKx3qNNQ1A3mA\nWOmBBiFzXPjHAuRfC8Kt4/kvF+cPok1UR+LEElNzbQ55HBSzjrFExYie5JLx5QJo\n64AkKmS5JcjX7YOR1X02OXwXTkx7ecuqnqCOnWt0r7TsmXMnL5R7ItUg9PPXWl/l\n2zJ0g5iE2/mQsPEwZq4KRLeSLOFmUQ0nxyU+EgiDtTc2mgc1dzvInoMFztWAEMro\nUatBDPsdl9MiW5cG/kAtHCmz/Gp+qmdDhajlFwnC5gzg4uywQEkfhDa3rbi+Ossi\np9absqWZMkdxXeZjPZwc42OhnMFruVAI+iI7aAYre/gPB86W+LVhTiGwchgEYVbE\nxB/kDMjnqmfvWjfbcmCr0hZzftBhC3q8LcLqnKht2pT6ChLbu1Ou//vAq3EjSs3C\nlcFBz8amEwKqnsNJ1NE4\n=pYO3\n-----END PGP SIGNATURE-----\n","payload":"tree fc7bc2ab182624354b94adc159365d4bf1ca876d\nparent 6a7fed3d580170b1271b8f09e8b3bf63786d4e89\nauthor zynx <3362922+piorpua@users.noreply.github.com> 1788940573 +0800\ncommitter GitHub <noreply@github.com> 1788940573 +0000\n\nchore: bump version to 2.2.2 and aioncore to v0.2.2 (#4236)\n\nCo-authored-by: zynx <>","verified_at":"2026-09-09T07:56:13Z"}},"url":"https://api.github.com/repos/iOfficeAI/AionUi/commits/6744099b279b991c17e31c243f0920477bd31cb6","html_url":"https://github.com/iOfficeAI/AionUi/commit/6744099b279b991c17e31c243f0920477bd31cb6","comments_url":"https://api.github.com/repos/iOfficeAI/AionUi/commits/6744099b279b991c17e31c243f0920477bd31cb6/comments","author":{"login":"piorpua","id":3362922,"node_id":"MDQ6VXNlcjMzNjI5MjI=","avatar_url":"https://avatars.githubusercontent.com/u/3362922?v=4","gravatar_id":"","url":"https://api.github.com/users/piorpua","html_url":"https://github.com/piorpua","followers_url":"https://api.github.com/users/piorpua/followers","following_url":"https://api.github.com/users/piorpua/following{/other_user}","gists_url":"https://api.github.com/users/piorpua/gists{/gist_id}","starred_url":"https://api.github.com/users/piorpua/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/piorpua/subscriptions","organizations_url":"https://api.github.com/users/piorpua/orgs","repos_url":"https://api.github.com/users/piorpua/repos","events_url":"https://api.github.com/users/piorpua/events{/privacy}","received_events_url":"https://api.github.com/users/piorpua/received_events","type":"User","user_view_type":"public","site_admin":false},"committer":{"login":"web-flow","id":19864447,"node_id":"MDQ6VXNlcjE5ODY0NDQ3","avatar_url":"https://avatars.githubusercontent.com/u/19864447?v=4","gravatar_id":"","url":"https://api.github.com/users/web-flow","html_url":"https://github.com/web-flow","followers_url":"https://api.github.com/users/web-flow/followers","following_url":"https://api.github.com/users/web-flow/following{/other_user}","gists_url":"https://api.github.com/users/web-flow/gists{/gist_id}","starred_url":"https://api.github.com/users/web-flow/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/web-flow/subscriptions","organizations_url":"https://api.github.com/users/web-flow/orgs","repos_url":"https://api.github.com/users/web-flow/repos","events_url":"https://api.github.com/users/web-flow/events{/privacy}","received_events_url":"https://api.github.com/users/web-flow/received_events","type":"User","user_view_type":"public","site_admin":false},"parents":[{"sha":"6a7fed3d580170b1271b8f09e8b3bf63786d4e89","url":"https://api.github.com/repos/iOfficeAI/AionUi/commits/6a7fed3d580170b1271b8f09e8b3bf63786d4e89","html_url":"https://github.com/iOfficeAI/AionUi/commit/6a7fed3d580170b1271b8f09e8b3bf63786d4e89"}]},"merge_base_commit":{"sha":"6744099b279b991c17e31c243f0920477bd31cb6","node_id":"C_kwDOPZ417toAKDY3NDQwOTliMjc5Yjk5MWMxN2UzMWMyNDNmMDkyMDQ3N2JkMzFjYjY","commit":{"author":{"name":"zynx","email":"3362922+piorpua@users.noreply.github.com","date":"2026-09-09T07:56:13Z"},"committer":{"name":"GitHub","email":"noreply@github.com","date":"2026-09-09T07:56:13Z"},"message":"chore: bump version to 2.2.2 and aioncore to v0.2.2 (#4236)\n\nCo-authored-by: zynx <>","tree":{"sha":"fc7bc2ab182624354b94adc159365d4bf1ca876d","url":"https://api.github.com/repos/iOfficeAI/AionUi/git/trees/fc7bc2ab182624354b94adc159365d4bf1ca876d"},"url":"https://api.github.com/repos/iOfficeAI/AionUi/git/commits/6744099b279b991c17e31c243f0920477bd31cb6","comment_count":0,"verification":{"verified":true,"reason":"valid","signature":"-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqoREdCRC1aQ7uu5UhlAAAaqUQAIlXwb/4r297A2Ae6f61gsJ4\n75pD8KOQZx5iGjdUu3ocTE46XEKTS7iGbSR/3F2PqozxcSz/GzZdu1MMkoBQV0Zn\niCJfpRseicjww0tP8cBoM3ut23PUWxuU7OdbAW/kva7rOwOj8tnYebonRc57FbAE\nBQrakcrNtU9LdJ7K2QoNNxB2jl9oaYpcvGWCaLMyEzn3woILfNa0l5Uy7Z9i6hP8\nJVj6rmdbQpsjhpwvfaFnXILqV3dakGqWugsCBvWuom3zviNMJk0fKx3qNNQ1A3mA\nWOmBBiFzXPjHAuRfC8Kt4/kvF+cPok1UR+LEElNzbQ55HBSzjrFExYie5JLx5QJo\n64AkKmS5JcjX7YOR1X02OXwXTkx7ecuqnqCOnWt0r7TsmXMnL5R7ItUg9PPXWl/l\n2zJ0g5iE2/mQsPEwZq4KRLeSLOFmUQ0nxyU+EgiDtTc2mgc1dzvInoMFztWAEMro\nUatBDPsdl9MiW5cG/kAtHCmz/Gp+qmdDhajlFwnC5gzg4uywQEkfhDa3rbi+Ossi\np9absqWZMkdxXeZjPZwc42OhnMFruVAI+iI7aAYre/gPB86W+LVhTiGwchgEYVbE\nxB/kDMjnqmfvWjfbcmCr0hZzftBhC3q8LcLqnKht2pT6ChLbu1Ou//vAq3EjSs3C\nlcFBz8amEwKqnsNJ1NE4\n=pYO3\n-----END PGP SIGNATURE-----\n","payload":"tree fc7bc2ab182624354b94adc159365d4bf1ca876d\nparent 6a7fed3d580170b1271b8f09e8b3bf63786d4e89\nauthor zynx <3362922+piorpua@users.noreply.github.com> 1788940573 +0800\ncommitter GitHub <noreply@github.com> 1788940573 +0000\n\nchore: bump version to 2.2.2 and aioncore to v0.2.2 (#4236)\n\nCo-authored-by: zynx <>","verified_at":"2026-09-09T07:56:13Z"}},"url":"https://api.github.com/repos/iOfficeAI/AionUi/commits/6744099b279b991c17e31c243f0920477bd31cb6","html_url":"https://github.com/iOfficeAI/AionUi/commit/6744099b279b991c17e31c243f0920477bd31cb6","comments_url":"https://api.github.com/repos/iOfficeAI/AionUi/commits/6744099b279b991c17e31c243f0920477bd31cb6/comments","author":{"login":"piorpua","id":3362922,"node_id":"MDQ6VXNlcjMzNjI5MjI=","avatar_url":"https://avatars.githubusercontent.com/u/3362922?v=4","gravatar_id":"","url":"https://api.github.com/users/piorpua","html_url":"https://github.com/piorpua","followers_url":"https://api.github.com/users/piorpua/followers","following_url":"https://api.github.com/users/piorpua/following{/other_user}","gists_url":"https://api.github.com/users/piorpua/gists{/gist_id}","starred_url":"https://api.github.com/users/piorpua/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/piorpua/subscriptions","organizations_url":"https://api.github.com/users/piorpua/orgs","repos_url":"https://api.github.com/users/piorpua/repos","events_url":"https://api.github.com/users/piorpua/events{/privacy}","received_events_url":"https://api.github.com/users/piorpua/received_events","type":"User","user_view_type":"public","site_admin":false},"committer":{"login":"web-flow","id":19864447,"node_id":"MDQ6VXNlcjE5ODY0NDQ3","avatar_url":"https://avatars.githubusercontent.com/u/19864447?v=4","gravatar_id":"","url":"https://api.github.com/users/web-flow","html_url":"https://github.com/web-flow","followers_url":"https://api.github.com/users/web-flow/followers","following_url":"https://api.github.com/users/web-flow/following{/other_user}","gists_url":"https://api.github.com/users/web-flow/gists{/gist_id}","starred_url":"https://api.github.com/users/web-flow/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/web-flow/subscriptions","organizations_url":"https://api.github.com/users/web-flow/orgs","repos_url":"https://api.github.com/users/web-flow/repos","events_url":"https://api.github.com/users/web-flow/events{/privacy}","received_events_url":"https://api.github.com/users/web-flow/received_events","type":"User","user_view_type":"public","site_admin":false},"parents":[{"sha":"6a7fed3d580170b1271b8f09e8b3bf63786d4e89","url":"https://api.github.com/repos/iOfficeAI/AionUi/commits/6a7fed3d580170b1271b8f09e8b3bf63786d4e89","html_url":"https://github.com/iOfficeAI/AionUi/commit/6a7fed3d580170b1271b8f09e8b3bf63786d4e89"}]},"status":"ahead","ahead_by":2,"behind_by":0,"total_commits":2,"commits":[{"sha":"c140550d04e44f3d6f8a9830b40ae56e4689a977","node_id":"C_kwDOPZ417toAKGMxNDA1NTBkMDRlNDRmM2Q2ZjhhOTgzMGI0MGFlNTZlNDY4OWE5Nzc","commit":{"author":{"name":"瓦砾","email":"icey.liu1994@gmail.com","date":"2026-10-14T04:18:37Z"},"committer":{"name":"GitHub","email":"noreply@github.com","date":"2026-10-14T04:18:37Z"},"message":"chore(docs): update WeChat group QR code to wx-24 (#4320)\n\n- Replace wx-23.png with wx-24.png across all README files\n- Update references in main README and localized versions\n- Remove outdated wx-23.png image","tree":{"sha":"855ebff54e29a1dd1b344453473b3b996d064ff1","url":"https://api.github.com/repos/iOfficeAI/AionUi/git/trees/855ebff54e29a1dd1b344453473b3b996d064ff1"},"url":"https://api.github.com/repos/iOfficeAI/AionUi/git/commits/c140550d04e44f3d6f8a9830b40ae56e4689a977","comment_count":0,"verification":{"verified":true,"reason":"valid","signature":"-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqzwKdCRC1aQ7uu5UhlAAACx8QAJu6t0IA95HhKpXg5fXBVFIf\n2ndcjha01FqAvApC8ujzP2Jnvr0+2YaKA4+BmvnIkMAkRGeU7gLZMM9chWH1ecLh\n7KLBdqf6E+XabmD6VBX8+MyBN5kxM+G4+WeWsFmUQfQVd0Y+AKs2QKodnF8rvZQS\nBYtqoB5LijCGkS0QQa2/GI0iFuEvJQVExmf2p1j82LCwpLd8FogBDT5msJ+K7HFz\nHP5mNHDUMAxBB9peZ1h3HSL93OOaryHeBiywpW3/x0JhBoMmlroJdVjcxhgMdru+\nRLs1OvrgfUKvDqCN5jBmlJvjyIxSglxhPyrboB9osKQ1ALTKK5GTJyHPqplQ55wV\ntGpioJ/RAiK8bRG1Ir5ObpJgO6ifg6pzN2zy2d0DOqZugTYtudXsGhAbrJLEsTU/\nnlgLMji083I9qj74wE2lsrh54N1wq6JO9a2ifflmVm1Itb9QgbuMybPO3xSLYq8X\nDHHrXgNY/rKcEIOQsX6ytvuowe0fIlzwLISI4YoZhD3g+UbnaarHofBlNxXYPnu+\nA6hHl2a4rSX6NR/NaG36H8guE2hstaYc0bt5CgNkIHRLuZlD1nQqYayRC+iVFJbe\nHUdvBjobSK7qYTWgj2Fo6vnlD63YZDJOmlBX1mIkQEheI+uL22wJ+KvJbdNFBn/0\ne+TYW0RJdg831GyU22+0\n=/0qF\n-----END PGP SIGNATURE-----\n","payload":"tree 855ebff54e29a1dd1b344453473b3b996d064ff1\nparent 6744099b279b991c17e31c243f0920477bd31cb6\nauthor 瓦砾 <icey.liu1994@gmail.com> 1791951517 +0800\ncommitter GitHub <noreply@github.com> 1791951517 +0000\n\nchore(docs): update WeChat group QR code to wx-24 (#4320)\n\n- Replace wx-23.png with wx-24.png across all README files\n- Update references in main README and localized versions\n- Remove outdated wx-23.png image","verified_at":"2026-10-14T04:18:38Z"}},"url":"https://api.github.com/repos/iOfficeAI/AionUi/commits/c140550d04e44f3d6f8a9830b40ae56e4689a977","html_url":"https://github.com/iOfficeAI/AionUi/commit/c140550d04e44f3d6f8a9830b40ae56e4689a977","comments_url":"https://api.github.com/repos/iOfficeAI/AionUi/commits/c140550d04e44f3d6f8a9830b40ae56e4689a977/comments","author":{"login":"IceyLiu","id":10683426,"node_id":"MDQ6VXNlcjEwNjgzNDI2","avatar_url":"https://avatars.githubusercontent.com/u/10683426?v=4","gravatar_id":"","url":"https://api.github.com/users/IceyLiu","html_url":"https://github.com/IceyLiu","followers_url":"https://api.github.com/users/IceyLiu/followers","following_url":"https://api.github.com/users/IceyLiu/following{/other_user}","gists_url":"https://api.github.com/users/IceyLiu/gists{/gist_id}","starred_url":"https://api.github.com/users/IceyLiu/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/IceyLiu/subscriptions","organizations_url":"https://api.github.com/users/IceyLiu/orgs","repos_url":"https://api.github.com/users/IceyLiu/repos","events_url":"https://api.github.com/users/IceyLiu/events{/privacy}","received_events_url":"https://api.github.com/users/IceyLiu/received_events","type":"User","user_view_type":"public","site_admin":false},"committer":{"login":"web-flow","id":19864447,"node_id":"MDQ6VXNlcjE5ODY0NDQ3","avatar_url":"https://avatars.githubusercontent.com/u/19864447?v=4","gravatar_id":"","url":"https://api.github.com/users/web-flow","html_url":"https://github.com/web-flow","followers_url":"https://api.github.com/users/web-flow/followers","following_url":"https://api.github.com/users/web-flow/following{/other_user}","gists_url":"https://api.github.com/users/web-flow/gists{/gist_id}","starred_url":"https://api.github.com/users/web-flow/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/web-flow/subscriptions","organizations_url":"https://api.github.com/users/web-flow/orgs","repos_url":"https://api.github.com/users/web-flow/repos","events_url":"https://api.github.com/users/web-flow/events{/privacy}","received_events_url":"https://api.github.com/users/web-flow/received_events","type":"User","user_view_type":"public","site_admin":false},"parents":[{"sha":"6744099b279b991c17e31c243f0920477bd31cb6","url":"https://api.github.com/repos/iOfficeAI/AionUi/commits/6744099b279b991c17e31c243f0920477bd31cb6","html_url":"https://github.com/iOfficeAI/AionUi/commit/6744099b279b991c17e31c243f0920477bd31cb6"}]},{"sha":"886dcbdeabeee77867daf47ed99548140f05b378","node_id":"C_kwDOPZ417toAKDg4NmRjYmRlYWJlZWU3Nzg2N2RhZjQ3ZWQ5OTU0ODE0MGYwNWIzNzg","commit":{"author":{"name":"瓦砾","email":"icey.liu1994@gmail.com","date":"2026-10-19T13:25:45Z"},"committer":{"name":"GitHub","email":"noreply@github.com","date":"2026-10-19T13:25:45Z"},"message":"chore(docs): update WeChat group QR code to wx-25 (#4337)\n\n- Replace wx-24.png with wx-25.png across all README files\n- Update references in main README and localized versions\n- Remove outdated wx-24.png image","tree":{"sha":"eb2b10be35341753e61420d240a488817682a33f","url":"https://api.github.com/repos/iOfficeAI/AionUi/git/trees/eb2b10be35341753e61420d240a488817682a33f"},"url":"https://api.github.com/repos/iOfficeAI/AionUi/git/commits/886dcbdeabeee77867daf47ed99548140f05b378","comment_count":0,"verification":{"verified":true,"reason":"valid","signature":"-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJq1hpZCRC1aQ7uu5UhlAAAy5sQABh4OzP09SicID/JK/DSIEvN\ntfR7zg+l/wlyLRB1vcJsVYm6qRivrcIYqib9mMU8THPfpmPXCQdTP5FnMJtZOo1L\nhAdDsVDVMCwt3ZemqhJMhZOKK1cqPbv2YvbsYH1zIpKcsY532CR7TqYrwsFSUDiX\nb0TZYIVrbz76VflDiJh2KJ0NnQGtoBcmQjGbUv7/0VUQroekEBrJhnxhnUcvDGzZ\n5tpftlXCOpDlcNl4Ijvh1q6+jeip3LqtYbCS+IvZ4hZeFBzPtZfttYtN29VH5Dhm\nM/Q3HJLBFtEFXsGEM+fAhfzN+FkLen0pg030P8WnAkDQxMo808PIUW3i4MNpWgOF\nK6+vcB4dWdDvY82JR7y1Q9shGFKa/6tIw7AGl2cdUPmqqldh4RkBbmTaB7yvXhJk\npU4CcwobqO8jTQKLfTbuQ7/zyMiB9UoX+5WhgRjfrQlmjhEQnAvaQfgY++Cc0toH\nY355gXaT3PlaQPisizJuPeIC7KSKz6odpsO4pZc3mtL9SrCh4NLY+nZgO9ydLZh5\nAC4aS9ss/sVz+bhuSqLG42pSvJ3OQINHpm5J9Y0iVmLwmI7jIpmDcso9Yl0G8+H0\nwpfErZJDEOJxVMPhCpSlMW9LqOuk/wLkC5LTx4oK1i/iF89Std6agDxd/a5ndc0k\niQQ4J/M7yqt4ix7hyXVU\n=7dsY\n-----END PGP SIGNATURE-----\n","payload":"tree eb2b10be35341753e61420d240a488817682a33f\nparent c140550d04e44f3d6f8a9830b40ae56e4689a977\nauthor 瓦砾 <icey.liu1994@gmail.com> 1792416345 +0800\ncommitter GitHub <noreply@github.com> 1792416345 +0000\n\nchore(docs): update WeChat group QR code to wx-25 (#4337)\n\n- Replace wx-24.png with wx-25.png across all README files\n- Update references in main README and localized versions\n- Remove outdated wx-24.png image","verified_at":"2026-10-19T13:25:45Z"}},"url":"https://api.github.com/repos/iOfficeAI/AionUi/commits/886dcbdeabeee77867daf47ed99548140f05b378","html_url":"https://github.com/iOfficeAI/AionUi/commit/886dcbdeabeee77867daf47ed99548140f05b378","comments_url":"https://api.github.com/repos/iOfficeAI/AionUi/commits/886dcbdeabeee77867daf47ed99548140f05b378/comments","author":{"login":"IceyLiu","id":10683426,"node_id":"MDQ6VXNlcjEwNjgzNDI2","avatar_url":"https://avatars.githubusercontent.com/u/10683426?v=4","gravatar_id":"","url":"https://api.github.com/users/IceyLiu","html_url":"https://github.com/IceyLiu","followers_url":"https://api.github.com/users/IceyLiu/followers","following_url":"https://api.github.com/users/IceyLiu/following{/other_user}","gists_url":"https://api.github.com/users/IceyLiu/gists{/gist_id}","starred_url":"https://api.github.com/users/IceyLiu/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/IceyLiu/subscriptions","organizations_url":"https://api.github.com/users/IceyLiu/orgs","repos_url":"https://api.github.com/users/IceyLiu/repos","events_url":"https://api.github.com/users/IceyLiu/events{/privacy}","received_events_url":"https://api.github.com/users/IceyLiu/received_events","type":"User","user_view_type":"public","site_admin":false},"committer":{"login":"web-flow","id":19864447,"node_id":"MDQ6VXNlcjE5ODY0NDQ3","avatar_url":"https://avatars.githubusercontent.com/u/19864447?v=4","gravatar_id":"","url":"https://api.github.com/users/web-flow","html_url":"https://github.com/web-flow","followers_url":"https://api.github.com/users/web-flow/followers","following_url":"https://api.github.com/users/web-flow/following{/other_user}","gists_url":"https://api.github.com/users/web-flow/gists{/gist_id}","starred_url":"https://api.github.com/users/web-flow/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/web-flow/subscriptions","organizations_url":"https://api.github.com/users/web-flow/orgs","repos_url":"https://api.github.com/users/web-flow/repos","events_url":"https://api.github.com/users/web-flow/events{/privacy}","received_events_url":"https://api.github.com/users/web-flow/received_events","type":"User","user_view_type":"public","site_admin":false},"parents":[{"sha":"c140550d04e44f3d6f8a9830b40ae56e4689a977","url":"https://api.github.com/repos/iOfficeAI/AionUi/commits/c140550d04e44f3d6f8a9830b40ae56e4689a977","html_url":"https://github.com/iOfficeAI/AionUi/commit/c140550d04e44f3d6f8a9830b40ae56e4689a977"}]}],"files":[{"sha":"daed4b9a7373ad8a38a305dd02d9c4f2a73bcfd9","filename":"docs/readme/readme_ch.md","status":"modified","additions":2,"deletions":2,"changes":4,"blob_url":"https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_ch.md","raw_url":"https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_ch.md","contents_url":"https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_ch.md?ref=886dcbdeabeee77867daf47ed99548140f05b378","patch":"@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 社区：</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 社区：</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -691,7 +691,7 @@ brew install aionui\n - [报告问题](https://github.com/iOfficeAI/AionUi/issues) — 遇到 bug 或有新功能想法？告诉我们\n - [发布更新](https://github.com/iOfficeAI/AionUi/releases) — 获取最新版本\n - [Discord 社区](https://discord.gg/2QAwJn7Egx) — 英语社区\n-- [微信群](../../resources/wx-23.png) — 中文社区\n+- [微信群](../../resources/wx-25.png) — 中文社区\n \n ### 贡献\n "},{"sha":"9375a7a31618841ae59a1c325a31778b23507ad8","filename":"docs/readme/readme_es.md","status":"modified","additions":2,"deletions":2,"changes":4,"blob_url":"https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_es.md","raw_url":"https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_es.md","contents_url":"https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_es.md?ref=886dcbdeabeee77867daf47ed99548140f05b378","patch":"@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 Comunidad:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 Comunidad:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -688,7 +688,7 @@ brew install aionui\n - [Reportar problemas](https://github.com/iOfficeAI/AionUi/issues) — errores y solicitudes de funciones\n - [Actualizaciones de lanzamiento](https://github.com/iOfficeAI/AionUi/releases) — obtén la última versión\n - [Comunidad Discord](https://discord.gg/2QAwJn7Egx) — comunidad en inglés\n-- [Grupo WeChat](../../resources/wx-23.png) — comunidad china\n+- [Grupo WeChat](../../resources/wx-25.png) — comunidad china\n \n ### Contribuir\n "},{"sha":"8d9f130ff851b7b38dcd8ff3216c9cbf9290163b","filename":"docs/readme/readme_jp.md","status":"modified","additions":2,"deletions":2,"changes":4,"blob_url":"https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_jp.md","raw_url":"https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_jp.md","contents_url":"https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_jp.md?ref=886dcbdeabeee77867daf47ed99548140f05b378","patch":"@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 コミュニティ：</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 コミュニティ：</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -688,7 +688,7 @@ brew install aionui\n - [問題を報告](https://github.com/iOfficeAI/AionUi/issues) — バグと機能リクエスト\n - [リリース更新](https://github.com/iOfficeAI/AionUi/releases) — 最新版を取得\n - [Discord コミュニティ](https://discord.gg/2QAwJn7Egx) — 英語コミュニティ\n-- [WeChat グループ](../../resources/wx-23.png) — 中国語コミュニティ\n+- [WeChat グループ](../../resources/wx-25.png) — 中国語コミュニティ\n \n ### 貢献\n "},{"sha":"6bc65b4b96ef6d1a21006ecdcead82da70c6dfe2","filename":"docs/readme/readme_ko.md","status":"modified","additions":2,"deletions":2,"changes":4,"blob_url":"https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_ko.md","raw_url":"https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_ko.md","contents_url":"https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_ko.md?ref=886dcbdeabeee77867daf47ed99548140f05b378","patch":"@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 커뮤니티:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 커뮤니티:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -688,7 +688,7 @@ brew install aionui\n - [문제 보고](https://github.com/iOfficeAI/AionUi/issues) — 버그 및 기능 요청\n - [릴리스 업데이트](https://github.com/iOfficeAI/AionUi/releases) — 최신 버전 받기\n - [Discord 커뮤니티](https://discord.gg/2QAwJn7Egx) — 영어 커뮤니티\n-- [WeChat 그룹](../../resources/wx-23.png) — 중국어 커뮤니티\n+- [WeChat 그룹](../../resources/wx-25.png) — 중국어 커뮤니티\n \n ### 기여하기\n "},{"sha":"2f0b79e8b255f75254ce5fa8ced91099750351cb","filename":"docs/readme/readme_pt.md","status":"modified","additions":2,"deletions":2,"changes":4,"blob_url":"https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_pt.md","raw_url":"https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_pt.md","contents_url":"https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_pt.md?ref=886dcbdeabeee77867daf47ed99548140f05b378","patch":"@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 Comunidade:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 Comunidade:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -688,7 +688,7 @@ brew install aionui\n - [Reportar problemas](https://github.com/iOfficeAI/AionUi/issues) — bugs e solicitações de recursos\n - [Atualizações de lançamento](https://github.com/iOfficeAI/AionUi/releases) — obtenha a última versão\n - [Comunidade Discord](https://discord.gg/2QAwJn7Egx) — comunidade em inglês\n-- [Grupo WeChat](../../resources/wx-23.png) — comunidade chinesa\n+- [Grupo WeChat](../../resources/wx-25.png) — comunidade chinesa\n \n ### Contribuindo\n "},{"sha":"bad590fcfcfa27f59a1423ef764351db08801f66","filename":"docs/readme/readme_ru.md","status":"modified","additions":2,"deletions":2,"changes":4,"blob_url":"https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_ru.md","raw_url":"https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_ru.md","contents_url":"https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_ru.md?ref=886dcbdeabeee77867daf47ed99548140f05b378","patch":"@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 Сообщество:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 Сообщество:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -706,7 +706,7 @@ brew install aionui\n - [Сообщить о проблемах](https://github.com/iOfficeAI/AionUi/issues) — ошибки и запросы функций\n - [Обновления релизов](https://github.com/iOfficeAI/AionUi/releases) — получите последнюю версию\n - [Сообщество Discord](https://discord.gg/2QAwJn7Egx) — англоязычное сообщество\n-- [Группа WeChat](../../resources/wx-23.png) — китайское сообщество\n+- [Группа WeChat](../../resources/wx-25.png) — китайское сообщество\n \n ### Вклад в проект\n "},{"sha":"19278fc268145e2520d104c7e21c668a88bba852","filename":"docs/readme/readme_tr.md","status":"modified","additions":2,"deletions":2,"changes":4,"blob_url":"https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_tr.md","raw_url":"https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_tr.md","contents_url":"https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_tr.md?ref=886dcbdeabeee77867daf47ed99548140f05b378","patch":"@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 Topluluk:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 Topluluk:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -688,7 +688,7 @@ brew install aionui\n - [Sorun Bildir](https://github.com/iOfficeAI/AionUi/issues) — hatalar ve özellik istekleri\n - [Sürüm Güncellemeleri](https://github.com/iOfficeAI/AionUi/releases) — en son sürümü alın\n - [Discord Topluluğu](https://discord.gg/2QAwJn7Egx) — İngilizce topluluk\n-- [WeChat Grubu](../../resources/wx-23.png) — Çince topluluk\n+- [WeChat Grubu](../../resources/wx-25.png) — Çince topluluk\n \n ### Katkıda Bulunma\n "},{"sha":"a89f331626c83c7ffbf434dfa055a4d83d850e32","filename":"docs/readme/readme_tw.md","status":"modified","additions":2,"deletions":2,"changes":4,"blob_url":"https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_tw.md","raw_url":"https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_tw.md","contents_url":"https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_tw.md?ref=886dcbdeabeee77867daf47ed99548140f05b378","patch":"@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 社群：</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 社群：</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -691,7 +691,7 @@ brew install aionui\n - [報告問題](https://github.com/iOfficeAI/AionUi/issues) — 遇到 bug 或有新功能想法？告訴我們\n - [發布更新](https://github.com/iOfficeAI/AionUi/releases) — 取得最新版本\n - [Discord 社群](https://discord.gg/2QAwJn7Egx) — 英語社群\n-- [微信群](../../resources/wx-23.png) — 中文社群\n+- [微信群](../../resources/wx-25.png) — 中文社群\n \n ### 貢獻\n "},{"sha":"2e473c8042e97a32ca70dd880091e558e6a4925c","filename":"docs/readme/readme_uk.md","status":"modified","additions":1,"deletions":1,"changes":2,"blob_url":"https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_uk.md","raw_url":"https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_uk.md","contents_url":"https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_uk.md?ref=886dcbdeabeee77867daf47ed99548140f05b378","patch":"@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 Спільнота:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 Спільнота:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---"},{"sha":"5ea848ccf4a75344fd1b418219a5753479997807","filename":"readme.md","status":"modified","additions":2,"deletions":2,"changes":4,"blob_url":"https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/readme.md","raw_url":"https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/readme.md","contents_url":"https://api.github.com/repos/iOfficeAI/AionUi/contents/readme.md?ref=886dcbdeabeee77867daf47ed99548140f05b378","patch":"@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 Community:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"./resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 Community:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"./resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -696,7 +696,7 @@ brew install aionui\n - [Report Issues](https://github.com/iOfficeAI/AionUi/issues) — bugs and feature requests\n - [Release Updates](https://github.com/iOfficeAI/AionUi/releases) — get the latest version\n - [Discord Community](https://discord.gg/2QAwJn7Egx) — English community\n-- [WeChat Group](./resources/wx-23.png) — Chinese community\n+- [WeChat Group](./resources/wx-25.png) — Chinese community\n \n ### Contributing\n "},{"sha":"1889ce279b454070e7ed891ea0a31043466ea659","filename":"resources/wx-23.png","status":"removed","additions":0,"deletions":0,"changes":0,"blob_url":"https://github.com/iOfficeAI/AionUi/blob/6744099b279b991c17e31c243f0920477bd31cb6/resources%2Fwx-23.png","raw_url":"https://github.com/iOfficeAI/AionUi/raw/6744099b279b991c17e31c243f0920477bd31cb6/resources%2Fwx-23.png","contents_url":"https://api.github.com/repos/iOfficeAI/AionUi/contents/resources%2Fwx-23.png?ref=6744099b279b991c17e31c243f0920477bd31cb6"},{"sha":"e7cd8e62a821868fda2c5f1b50419a39293b1de2","filename":"resources/wx-25.png","status":"added","additions":0,"deletions":0,"changes":0,"blob_url":"https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/resources%2Fwx-25.png","raw_url":"https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/resources%2Fwx-25.png","contents_url":"https://api.github.com/repos/iOfficeAI/AionUi/contents/resources%2Fwx-25.png?ref=886dcbdeabeee77867daf47ed99548140f05b378"}]}
+{
+  "url": "https://api.github.com/repos/iOfficeAI/AionUi/compare/Simooonn:main...iOfficeAI:main",
+  "html_url": "https://github.com/iOfficeAI/AionUi/compare/Simooonn:main...iOfficeAI:main",
+  "permalink_url": "https://github.com/Simooonn/AionUi/compare/Simooonn:6744099...iOfficeAI:886dcbd",
+  "diff_url": "https://github.com/iOfficeAI/AionUi/compare/Simooonn:main...iOfficeAI:main.diff",
+  "patch_url": "https://github.com/iOfficeAI/AionUi/compare/Simooonn:main...iOfficeAI:main.patch",
+  "base_commit": {
+    "sha": "6744099b279b991c17e31c243f0920477bd31cb6",
+    "node_id": "C_kwDOS2RgltoAKDY3NDQwOTliMjc5Yjk5MWMxN2UzMWMyNDNmMDkyMDQ3N2JkMzFjYjY",
+    "commit": {
+      "author": { "name": "zynx", "email": "3362922+piorpua@users.noreply.github.com", "date": "2026-09-09T07:56:13Z" },
+      "committer": { "name": "GitHub", "email": "noreply@github.com", "date": "2026-09-09T07:56:13Z" },
+      "message": "chore: bump version to 2.2.2 and aioncore to v0.2.2 (#4236)\n\nCo-authored-by: zynx <>",
+      "tree": {
+        "sha": "fc7bc2ab182624354b94adc159365d4bf1ca876d",
+        "url": "https://api.github.com/repos/iOfficeAI/AionUi/git/trees/fc7bc2ab182624354b94adc159365d4bf1ca876d"
+      },
+      "url": "https://api.github.com/repos/iOfficeAI/AionUi/git/commits/6744099b279b991c17e31c243f0920477bd31cb6",
+      "comment_count": 0,
+      "verification": {
+        "verified": true,
+        "reason": "valid",
+        "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqoREdCRC1aQ7uu5UhlAAAaqUQAIlXwb/4r297A2Ae6f61gsJ4\n75pD8KOQZx5iGjdUu3ocTE46XEKTS7iGbSR/3F2PqozxcSz/GzZdu1MMkoBQV0Zn\niCJfpRseicjww0tP8cBoM3ut23PUWxuU7OdbAW/kva7rOwOj8tnYebonRc57FbAE\nBQrakcrNtU9LdJ7K2QoNNxB2jl9oaYpcvGWCaLMyEzn3woILfNa0l5Uy7Z9i6hP8\nJVj6rmdbQpsjhpwvfaFnXILqV3dakGqWugsCBvWuom3zviNMJk0fKx3qNNQ1A3mA\nWOmBBiFzXPjHAuRfC8Kt4/kvF+cPok1UR+LEElNzbQ55HBSzjrFExYie5JLx5QJo\n64AkKmS5JcjX7YOR1X02OXwXTkx7ecuqnqCOnWt0r7TsmXMnL5R7ItUg9PPXWl/l\n2zJ0g5iE2/mQsPEwZq4KRLeSLOFmUQ0nxyU+EgiDtTc2mgc1dzvInoMFztWAEMro\nUatBDPsdl9MiW5cG/kAtHCmz/Gp+qmdDhajlFwnC5gzg4uywQEkfhDa3rbi+Ossi\np9absqWZMkdxXeZjPZwc42OhnMFruVAI+iI7aAYre/gPB86W+LVhTiGwchgEYVbE\nxB/kDMjnqmfvWjfbcmCr0hZzftBhC3q8LcLqnKht2pT6ChLbu1Ou//vAq3EjSs3C\nlcFBz8amEwKqnsNJ1NE4\n=pYO3\n-----END PGP SIGNATURE-----\n",
+        "payload": "tree fc7bc2ab182624354b94adc159365d4bf1ca876d\nparent 6a7fed3d580170b1271b8f09e8b3bf63786d4e89\nauthor zynx <3362922+piorpua@users.noreply.github.com> 1788940573 +0800\ncommitter GitHub <noreply@github.com> 1788940573 +0000\n\nchore: bump version to 2.2.2 and aioncore to v0.2.2 (#4236)\n\nCo-authored-by: zynx <>",
+        "verified_at": "2026-09-09T07:56:13Z"
+      }
+    },
+    "url": "https://api.github.com/repos/iOfficeAI/AionUi/commits/6744099b279b991c17e31c243f0920477bd31cb6",
+    "html_url": "https://github.com/iOfficeAI/AionUi/commit/6744099b279b991c17e31c243f0920477bd31cb6",
+    "comments_url": "https://api.github.com/repos/iOfficeAI/AionUi/commits/6744099b279b991c17e31c243f0920477bd31cb6/comments",
+    "author": {
+      "login": "piorpua",
+      "id": 3362922,
+      "node_id": "MDQ6VXNlcjMzNjI5MjI=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3362922?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/piorpua",
+      "html_url": "https://github.com/piorpua",
+      "followers_url": "https://api.github.com/users/piorpua/followers",
+      "following_url": "https://api.github.com/users/piorpua/following{/other_user}",
+      "gists_url": "https://api.github.com/users/piorpua/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/piorpua/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/piorpua/subscriptions",
+      "organizations_url": "https://api.github.com/users/piorpua/orgs",
+      "repos_url": "https://api.github.com/users/piorpua/repos",
+      "events_url": "https://api.github.com/users/piorpua/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/piorpua/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "web-flow",
+      "id": 19864447,
+      "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/web-flow",
+      "html_url": "https://github.com/web-flow",
+      "followers_url": "https://api.github.com/users/web-flow/followers",
+      "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+      "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+      "organizations_url": "https://api.github.com/users/web-flow/orgs",
+      "repos_url": "https://api.github.com/users/web-flow/repos",
+      "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/web-flow/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "6a7fed3d580170b1271b8f09e8b3bf63786d4e89",
+        "url": "https://api.github.com/repos/iOfficeAI/AionUi/commits/6a7fed3d580170b1271b8f09e8b3bf63786d4e89",
+        "html_url": "https://github.com/iOfficeAI/AionUi/commit/6a7fed3d580170b1271b8f09e8b3bf63786d4e89"
+      }
+    ]
+  },
+  "merge_base_commit": {
+    "sha": "6744099b279b991c17e31c243f0920477bd31cb6",
+    "node_id": "C_kwDOPZ417toAKDY3NDQwOTliMjc5Yjk5MWMxN2UzMWMyNDNmMDkyMDQ3N2JkMzFjYjY",
+    "commit": {
+      "author": { "name": "zynx", "email": "3362922+piorpua@users.noreply.github.com", "date": "2026-09-09T07:56:13Z" },
+      "committer": { "name": "GitHub", "email": "noreply@github.com", "date": "2026-09-09T07:56:13Z" },
+      "message": "chore: bump version to 2.2.2 and aioncore to v0.2.2 (#4236)\n\nCo-authored-by: zynx <>",
+      "tree": {
+        "sha": "fc7bc2ab182624354b94adc159365d4bf1ca876d",
+        "url": "https://api.github.com/repos/iOfficeAI/AionUi/git/trees/fc7bc2ab182624354b94adc159365d4bf1ca876d"
+      },
+      "url": "https://api.github.com/repos/iOfficeAI/AionUi/git/commits/6744099b279b991c17e31c243f0920477bd31cb6",
+      "comment_count": 0,
+      "verification": {
+        "verified": true,
+        "reason": "valid",
+        "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqoREdCRC1aQ7uu5UhlAAAaqUQAIlXwb/4r297A2Ae6f61gsJ4\n75pD8KOQZx5iGjdUu3ocTE46XEKTS7iGbSR/3F2PqozxcSz/GzZdu1MMkoBQV0Zn\niCJfpRseicjww0tP8cBoM3ut23PUWxuU7OdbAW/kva7rOwOj8tnYebonRc57FbAE\nBQrakcrNtU9LdJ7K2QoNNxB2jl9oaYpcvGWCaLMyEzn3woILfNa0l5Uy7Z9i6hP8\nJVj6rmdbQpsjhpwvfaFnXILqV3dakGqWugsCBvWuom3zviNMJk0fKx3qNNQ1A3mA\nWOmBBiFzXPjHAuRfC8Kt4/kvF+cPok1UR+LEElNzbQ55HBSzjrFExYie5JLx5QJo\n64AkKmS5JcjX7YOR1X02OXwXTkx7ecuqnqCOnWt0r7TsmXMnL5R7ItUg9PPXWl/l\n2zJ0g5iE2/mQsPEwZq4KRLeSLOFmUQ0nxyU+EgiDtTc2mgc1dzvInoMFztWAEMro\nUatBDPsdl9MiW5cG/kAtHCmz/Gp+qmdDhajlFwnC5gzg4uywQEkfhDa3rbi+Ossi\np9absqWZMkdxXeZjPZwc42OhnMFruVAI+iI7aAYre/gPB86W+LVhTiGwchgEYVbE\nxB/kDMjnqmfvWjfbcmCr0hZzftBhC3q8LcLqnKht2pT6ChLbu1Ou//vAq3EjSs3C\nlcFBz8amEwKqnsNJ1NE4\n=pYO3\n-----END PGP SIGNATURE-----\n",
+        "payload": "tree fc7bc2ab182624354b94adc159365d4bf1ca876d\nparent 6a7fed3d580170b1271b8f09e8b3bf63786d4e89\nauthor zynx <3362922+piorpua@users.noreply.github.com> 1788940573 +0800\ncommitter GitHub <noreply@github.com> 1788940573 +0000\n\nchore: bump version to 2.2.2 and aioncore to v0.2.2 (#4236)\n\nCo-authored-by: zynx <>",
+        "verified_at": "2026-09-09T07:56:13Z"
+      }
+    },
+    "url": "https://api.github.com/repos/iOfficeAI/AionUi/commits/6744099b279b991c17e31c243f0920477bd31cb6",
+    "html_url": "https://github.com/iOfficeAI/AionUi/commit/6744099b279b991c17e31c243f0920477bd31cb6",
+    "comments_url": "https://api.github.com/repos/iOfficeAI/AionUi/commits/6744099b279b991c17e31c243f0920477bd31cb6/comments",
+    "author": {
+      "login": "piorpua",
+      "id": 3362922,
+      "node_id": "MDQ6VXNlcjMzNjI5MjI=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3362922?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/piorpua",
+      "html_url": "https://github.com/piorpua",
+      "followers_url": "https://api.github.com/users/piorpua/followers",
+      "following_url": "https://api.github.com/users/piorpua/following{/other_user}",
+      "gists_url": "https://api.github.com/users/piorpua/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/piorpua/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/piorpua/subscriptions",
+      "organizations_url": "https://api.github.com/users/piorpua/orgs",
+      "repos_url": "https://api.github.com/users/piorpua/repos",
+      "events_url": "https://api.github.com/users/piorpua/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/piorpua/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "web-flow",
+      "id": 19864447,
+      "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/web-flow",
+      "html_url": "https://github.com/web-flow",
+      "followers_url": "https://api.github.com/users/web-flow/followers",
+      "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+      "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+      "organizations_url": "https://api.github.com/users/web-flow/orgs",
+      "repos_url": "https://api.github.com/users/web-flow/repos",
+      "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/web-flow/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "6a7fed3d580170b1271b8f09e8b3bf63786d4e89",
+        "url": "https://api.github.com/repos/iOfficeAI/AionUi/commits/6a7fed3d580170b1271b8f09e8b3bf63786d4e89",
+        "html_url": "https://github.com/iOfficeAI/AionUi/commit/6a7fed3d580170b1271b8f09e8b3bf63786d4e89"
+      }
+    ]
+  },
+  "status": "ahead",
+  "ahead_by": 2,
+  "behind_by": 0,
+  "total_commits": 2,
+  "commits": [
+    {
+      "sha": "c140550d04e44f3d6f8a9830b40ae56e4689a977",
+      "node_id": "C_kwDOPZ417toAKGMxNDA1NTBkMDRlNDRmM2Q2ZjhhOTgzMGI0MGFlNTZlNDY4OWE5Nzc",
+      "commit": {
+        "author": { "name": "瓦砾", "email": "icey.liu1994@gmail.com", "date": "2026-10-14T04:18:37Z" },
+        "committer": { "name": "GitHub", "email": "noreply@github.com", "date": "2026-10-14T04:18:37Z" },
+        "message": "chore(docs): update WeChat group QR code to wx-24 (#4320)\n\n- Replace wx-23.png with wx-24.png across all README files\n- Update references in main README and localized versions\n- Remove outdated wx-23.png image",
+        "tree": {
+          "sha": "855ebff54e29a1dd1b344453473b3b996d064ff1",
+          "url": "https://api.github.com/repos/iOfficeAI/AionUi/git/trees/855ebff54e29a1dd1b344453473b3b996d064ff1"
+        },
+        "url": "https://api.github.com/repos/iOfficeAI/AionUi/git/commits/c140550d04e44f3d6f8a9830b40ae56e4689a977",
+        "comment_count": 0,
+        "verification": {
+          "verified": true,
+          "reason": "valid",
+          "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqzwKdCRC1aQ7uu5UhlAAACx8QAJu6t0IA95HhKpXg5fXBVFIf\n2ndcjha01FqAvApC8ujzP2Jnvr0+2YaKA4+BmvnIkMAkRGeU7gLZMM9chWH1ecLh\n7KLBdqf6E+XabmD6VBX8+MyBN5kxM+G4+WeWsFmUQfQVd0Y+AKs2QKodnF8rvZQS\nBYtqoB5LijCGkS0QQa2/GI0iFuEvJQVExmf2p1j82LCwpLd8FogBDT5msJ+K7HFz\nHP5mNHDUMAxBB9peZ1h3HSL93OOaryHeBiywpW3/x0JhBoMmlroJdVjcxhgMdru+\nRLs1OvrgfUKvDqCN5jBmlJvjyIxSglxhPyrboB9osKQ1ALTKK5GTJyHPqplQ55wV\ntGpioJ/RAiK8bRG1Ir5ObpJgO6ifg6pzN2zy2d0DOqZugTYtudXsGhAbrJLEsTU/\nnlgLMji083I9qj74wE2lsrh54N1wq6JO9a2ifflmVm1Itb9QgbuMybPO3xSLYq8X\nDHHrXgNY/rKcEIOQsX6ytvuowe0fIlzwLISI4YoZhD3g+UbnaarHofBlNxXYPnu+\nA6hHl2a4rSX6NR/NaG36H8guE2hstaYc0bt5CgNkIHRLuZlD1nQqYayRC+iVFJbe\nHUdvBjobSK7qYTWgj2Fo6vnlD63YZDJOmlBX1mIkQEheI+uL22wJ+KvJbdNFBn/0\ne+TYW0RJdg831GyU22+0\n=/0qF\n-----END PGP SIGNATURE-----\n",
+          "payload": "tree 855ebff54e29a1dd1b344453473b3b996d064ff1\nparent 6744099b279b991c17e31c243f0920477bd31cb6\nauthor 瓦砾 <icey.liu1994@gmail.com> 1791951517 +0800\ncommitter GitHub <noreply@github.com> 1791951517 +0000\n\nchore(docs): update WeChat group QR code to wx-24 (#4320)\n\n- Replace wx-23.png with wx-24.png across all README files\n- Update references in main README and localized versions\n- Remove outdated wx-23.png image",
+          "verified_at": "2026-10-14T04:18:38Z"
+        }
+      },
+      "url": "https://api.github.com/repos/iOfficeAI/AionUi/commits/c140550d04e44f3d6f8a9830b40ae56e4689a977",
+      "html_url": "https://github.com/iOfficeAI/AionUi/commit/c140550d04e44f3d6f8a9830b40ae56e4689a977",
+      "comments_url": "https://api.github.com/repos/iOfficeAI/AionUi/commits/c140550d04e44f3d6f8a9830b40ae56e4689a977/comments",
+      "author": {
+        "login": "IceyLiu",
+        "id": 10683426,
+        "node_id": "MDQ6VXNlcjEwNjgzNDI2",
+        "avatar_url": "https://avatars.githubusercontent.com/u/10683426?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/IceyLiu",
+        "html_url": "https://github.com/IceyLiu",
+        "followers_url": "https://api.github.com/users/IceyLiu/followers",
+        "following_url": "https://api.github.com/users/IceyLiu/following{/other_user}",
+        "gists_url": "https://api.github.com/users/IceyLiu/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/IceyLiu/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/IceyLiu/subscriptions",
+        "organizations_url": "https://api.github.com/users/IceyLiu/orgs",
+        "repos_url": "https://api.github.com/users/IceyLiu/repos",
+        "events_url": "https://api.github.com/users/IceyLiu/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/IceyLiu/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "web-flow",
+        "id": 19864447,
+        "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+        "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/web-flow",
+        "html_url": "https://github.com/web-flow",
+        "followers_url": "https://api.github.com/users/web-flow/followers",
+        "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+        "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+        "organizations_url": "https://api.github.com/users/web-flow/orgs",
+        "repos_url": "https://api.github.com/users/web-flow/repos",
+        "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/web-flow/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "6744099b279b991c17e31c243f0920477bd31cb6",
+          "url": "https://api.github.com/repos/iOfficeAI/AionUi/commits/6744099b279b991c17e31c243f0920477bd31cb6",
+          "html_url": "https://github.com/iOfficeAI/AionUi/commit/6744099b279b991c17e31c243f0920477bd31cb6"
+        }
+      ]
+    },
+    {
+      "sha": "886dcbdeabeee77867daf47ed99548140f05b378",
+      "node_id": "C_kwDOPZ417toAKDg4NmRjYmRlYWJlZWU3Nzg2N2RhZjQ3ZWQ5OTU0ODE0MGYwNWIzNzg",
+      "commit": {
+        "author": { "name": "瓦砾", "email": "icey.liu1994@gmail.com", "date": "2026-10-19T13:25:45Z" },
+        "committer": { "name": "GitHub", "email": "noreply@github.com", "date": "2026-10-19T13:25:45Z" },
+        "message": "chore(docs): update WeChat group QR code to wx-25 (#4337)\n\n- Replace wx-24.png with wx-25.png across all README files\n- Update references in main README and localized versions\n- Remove outdated wx-24.png image",
+        "tree": {
+          "sha": "eb2b10be35341753e61420d240a488817682a33f",
+          "url": "https://api.github.com/repos/iOfficeAI/AionUi/git/trees/eb2b10be35341753e61420d240a488817682a33f"
+        },
+        "url": "https://api.github.com/repos/iOfficeAI/AionUi/git/commits/886dcbdeabeee77867daf47ed99548140f05b378",
+        "comment_count": 0,
+        "verification": {
+          "verified": true,
+          "reason": "valid",
+          "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJq1hpZCRC1aQ7uu5UhlAAAy5sQABh4OzP09SicID/JK/DSIEvN\ntfR7zg+l/wlyLRB1vcJsVYm6qRivrcIYqib9mMU8THPfpmPXCQdTP5FnMJtZOo1L\nhAdDsVDVMCwt3ZemqhJMhZOKK1cqPbv2YvbsYH1zIpKcsY532CR7TqYrwsFSUDiX\nb0TZYIVrbz76VflDiJh2KJ0NnQGtoBcmQjGbUv7/0VUQroekEBrJhnxhnUcvDGzZ\n5tpftlXCOpDlcNl4Ijvh1q6+jeip3LqtYbCS+IvZ4hZeFBzPtZfttYtN29VH5Dhm\nM/Q3HJLBFtEFXsGEM+fAhfzN+FkLen0pg030P8WnAkDQxMo808PIUW3i4MNpWgOF\nK6+vcB4dWdDvY82JR7y1Q9shGFKa/6tIw7AGl2cdUPmqqldh4RkBbmTaB7yvXhJk\npU4CcwobqO8jTQKLfTbuQ7/zyMiB9UoX+5WhgRjfrQlmjhEQnAvaQfgY++Cc0toH\nY355gXaT3PlaQPisizJuPeIC7KSKz6odpsO4pZc3mtL9SrCh4NLY+nZgO9ydLZh5\nAC4aS9ss/sVz+bhuSqLG42pSvJ3OQINHpm5J9Y0iVmLwmI7jIpmDcso9Yl0G8+H0\nwpfErZJDEOJxVMPhCpSlMW9LqOuk/wLkC5LTx4oK1i/iF89Std6agDxd/a5ndc0k\niQQ4J/M7yqt4ix7hyXVU\n=7dsY\n-----END PGP SIGNATURE-----\n",
+          "payload": "tree eb2b10be35341753e61420d240a488817682a33f\nparent c140550d04e44f3d6f8a9830b40ae56e4689a977\nauthor 瓦砾 <icey.liu1994@gmail.com> 1792416345 +0800\ncommitter GitHub <noreply@github.com> 1792416345 +0000\n\nchore(docs): update WeChat group QR code to wx-25 (#4337)\n\n- Replace wx-24.png with wx-25.png across all README files\n- Update references in main README and localized versions\n- Remove outdated wx-24.png image",
+          "verified_at": "2026-10-19T13:25:45Z"
+        }
+      },
+      "url": "https://api.github.com/repos/iOfficeAI/AionUi/commits/886dcbdeabeee77867daf47ed99548140f05b378",
+      "html_url": "https://github.com/iOfficeAI/AionUi/commit/886dcbdeabeee77867daf47ed99548140f05b378",
+      "comments_url": "https://api.github.com/repos/iOfficeAI/AionUi/commits/886dcbdeabeee77867daf47ed99548140f05b378/comments",
+      "author": {
+        "login": "IceyLiu",
+        "id": 10683426,
+        "node_id": "MDQ6VXNlcjEwNjgzNDI2",
+        "avatar_url": "https://avatars.githubusercontent.com/u/10683426?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/IceyLiu",
+        "html_url": "https://github.com/IceyLiu",
+        "followers_url": "https://api.github.com/users/IceyLiu/followers",
+        "following_url": "https://api.github.com/users/IceyLiu/following{/other_user}",
+        "gists_url": "https://api.github.com/users/IceyLiu/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/IceyLiu/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/IceyLiu/subscriptions",
+        "organizations_url": "https://api.github.com/users/IceyLiu/orgs",
+        "repos_url": "https://api.github.com/users/IceyLiu/repos",
+        "events_url": "https://api.github.com/users/IceyLiu/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/IceyLiu/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "web-flow",
+        "id": 19864447,
+        "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+        "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/web-flow",
+        "html_url": "https://github.com/web-flow",
+        "followers_url": "https://api.github.com/users/web-flow/followers",
+        "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+        "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+        "organizations_url": "https://api.github.com/users/web-flow/orgs",
+        "repos_url": "https://api.github.com/users/web-flow/repos",
+        "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/web-flow/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "c140550d04e44f3d6f8a9830b40ae56e4689a977",
+          "url": "https://api.github.com/repos/iOfficeAI/AionUi/commits/c140550d04e44f3d6f8a9830b40ae56e4689a977",
+          "html_url": "https://github.com/iOfficeAI/AionUi/commit/c140550d04e44f3d6f8a9830b40ae56e4689a977"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "sha": "daed4b9a7373ad8a38a305dd02d9c4f2a73bcfd9",
+      "filename": "docs/readme/readme_ch.md",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_ch.md",
+      "raw_url": "https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_ch.md",
+      "contents_url": "https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_ch.md?ref=886dcbdeabeee77867daf47ed99548140f05b378",
+      "patch": "@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 社区：</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 社区：</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -691,7 +691,7 @@ brew install aionui\n - [报告问题](https://github.com/iOfficeAI/AionUi/issues) — 遇到 bug 或有新功能想法？告诉我们\n - [发布更新](https://github.com/iOfficeAI/AionUi/releases) — 获取最新版本\n - [Discord 社区](https://discord.gg/2QAwJn7Egx) — 英语社区\n-- [微信群](../../resources/wx-23.png) — 中文社区\n+- [微信群](../../resources/wx-25.png) — 中文社区\n \n ### 贡献\n "
+    },
+    {
+      "sha": "9375a7a31618841ae59a1c325a31778b23507ad8",
+      "filename": "docs/readme/readme_es.md",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_es.md",
+      "raw_url": "https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_es.md",
+      "contents_url": "https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_es.md?ref=886dcbdeabeee77867daf47ed99548140f05b378",
+      "patch": "@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 Comunidad:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 Comunidad:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -688,7 +688,7 @@ brew install aionui\n - [Reportar problemas](https://github.com/iOfficeAI/AionUi/issues) — errores y solicitudes de funciones\n - [Actualizaciones de lanzamiento](https://github.com/iOfficeAI/AionUi/releases) — obtén la última versión\n - [Comunidad Discord](https://discord.gg/2QAwJn7Egx) — comunidad en inglés\n-- [Grupo WeChat](../../resources/wx-23.png) — comunidad china\n+- [Grupo WeChat](../../resources/wx-25.png) — comunidad china\n \n ### Contribuir\n "
+    },
+    {
+      "sha": "8d9f130ff851b7b38dcd8ff3216c9cbf9290163b",
+      "filename": "docs/readme/readme_jp.md",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_jp.md",
+      "raw_url": "https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_jp.md",
+      "contents_url": "https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_jp.md?ref=886dcbdeabeee77867daf47ed99548140f05b378",
+      "patch": "@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 コミュニティ：</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 コミュニティ：</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -688,7 +688,7 @@ brew install aionui\n - [問題を報告](https://github.com/iOfficeAI/AionUi/issues) — バグと機能リクエスト\n - [リリース更新](https://github.com/iOfficeAI/AionUi/releases) — 最新版を取得\n - [Discord コミュニティ](https://discord.gg/2QAwJn7Egx) — 英語コミュニティ\n-- [WeChat グループ](../../resources/wx-23.png) — 中国語コミュニティ\n+- [WeChat グループ](../../resources/wx-25.png) — 中国語コミュニティ\n \n ### 貢献\n "
+    },
+    {
+      "sha": "6bc65b4b96ef6d1a21006ecdcead82da70c6dfe2",
+      "filename": "docs/readme/readme_ko.md",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_ko.md",
+      "raw_url": "https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_ko.md",
+      "contents_url": "https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_ko.md?ref=886dcbdeabeee77867daf47ed99548140f05b378",
+      "patch": "@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 커뮤니티:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 커뮤니티:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -688,7 +688,7 @@ brew install aionui\n - [문제 보고](https://github.com/iOfficeAI/AionUi/issues) — 버그 및 기능 요청\n - [릴리스 업데이트](https://github.com/iOfficeAI/AionUi/releases) — 최신 버전 받기\n - [Discord 커뮤니티](https://discord.gg/2QAwJn7Egx) — 영어 커뮤니티\n-- [WeChat 그룹](../../resources/wx-23.png) — 중국어 커뮤니티\n+- [WeChat 그룹](../../resources/wx-25.png) — 중국어 커뮤니티\n \n ### 기여하기\n "
+    },
+    {
+      "sha": "2f0b79e8b255f75254ce5fa8ced91099750351cb",
+      "filename": "docs/readme/readme_pt.md",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_pt.md",
+      "raw_url": "https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_pt.md",
+      "contents_url": "https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_pt.md?ref=886dcbdeabeee77867daf47ed99548140f05b378",
+      "patch": "@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 Comunidade:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 Comunidade:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -688,7 +688,7 @@ brew install aionui\n - [Reportar problemas](https://github.com/iOfficeAI/AionUi/issues) — bugs e solicitações de recursos\n - [Atualizações de lançamento](https://github.com/iOfficeAI/AionUi/releases) — obtenha a última versão\n - [Comunidade Discord](https://discord.gg/2QAwJn7Egx) — comunidade em inglês\n-- [Grupo WeChat](../../resources/wx-23.png) — comunidade chinesa\n+- [Grupo WeChat](../../resources/wx-25.png) — comunidade chinesa\n \n ### Contribuindo\n "
+    },
+    {
+      "sha": "bad590fcfcfa27f59a1423ef764351db08801f66",
+      "filename": "docs/readme/readme_ru.md",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_ru.md",
+      "raw_url": "https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_ru.md",
+      "contents_url": "https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_ru.md?ref=886dcbdeabeee77867daf47ed99548140f05b378",
+      "patch": "@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 Сообщество:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 Сообщество:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -706,7 +706,7 @@ brew install aionui\n - [Сообщить о проблемах](https://github.com/iOfficeAI/AionUi/issues) — ошибки и запросы функций\n - [Обновления релизов](https://github.com/iOfficeAI/AionUi/releases) — получите последнюю версию\n - [Сообщество Discord](https://discord.gg/2QAwJn7Egx) — англоязычное сообщество\n-- [Группа WeChat](../../resources/wx-23.png) — китайское сообщество\n+- [Группа WeChat](../../resources/wx-25.png) — китайское сообщество\n \n ### Вклад в проект\n "
+    },
+    {
+      "sha": "19278fc268145e2520d104c7e21c668a88bba852",
+      "filename": "docs/readme/readme_tr.md",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_tr.md",
+      "raw_url": "https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_tr.md",
+      "contents_url": "https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_tr.md?ref=886dcbdeabeee77867daf47ed99548140f05b378",
+      "patch": "@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 Topluluk:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 Topluluk:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -688,7 +688,7 @@ brew install aionui\n - [Sorun Bildir](https://github.com/iOfficeAI/AionUi/issues) — hatalar ve özellik istekleri\n - [Sürüm Güncellemeleri](https://github.com/iOfficeAI/AionUi/releases) — en son sürümü alın\n - [Discord Topluluğu](https://discord.gg/2QAwJn7Egx) — İngilizce topluluk\n-- [WeChat Grubu](../../resources/wx-23.png) — Çince topluluk\n+- [WeChat Grubu](../../resources/wx-25.png) — Çince topluluk\n \n ### Katkıda Bulunma\n "
+    },
+    {
+      "sha": "a89f331626c83c7ffbf434dfa055a4d83d850e32",
+      "filename": "docs/readme/readme_tw.md",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_tw.md",
+      "raw_url": "https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_tw.md",
+      "contents_url": "https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_tw.md?ref=886dcbdeabeee77867daf47ed99548140f05b378",
+      "patch": "@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 社群：</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 社群：</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -691,7 +691,7 @@ brew install aionui\n - [報告問題](https://github.com/iOfficeAI/AionUi/issues) — 遇到 bug 或有新功能想法？告訴我們\n - [發布更新](https://github.com/iOfficeAI/AionUi/releases) — 取得最新版本\n - [Discord 社群](https://discord.gg/2QAwJn7Egx) — 英語社群\n-- [微信群](../../resources/wx-23.png) — 中文社群\n+- [微信群](../../resources/wx-25.png) — 中文社群\n \n ### 貢獻\n "
+    },
+    {
+      "sha": "2e473c8042e97a32ca70dd880091e558e6a4925c",
+      "filename": "docs/readme/readme_uk.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_uk.md",
+      "raw_url": "https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/docs%2Freadme%2Freadme_uk.md",
+      "contents_url": "https://api.github.com/repos/iOfficeAI/AionUi/contents/docs%2Freadme%2Freadme_uk.md?ref=886dcbdeabeee77867daf47ed99548140f05b378",
+      "patch": "@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 Спільнота:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 Спільнота:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"../../resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---"
+    },
+    {
+      "sha": "5ea848ccf4a75344fd1b418219a5753479997807",
+      "filename": "readme.md",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/readme.md",
+      "raw_url": "https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/readme.md",
+      "contents_url": "https://api.github.com/repos/iOfficeAI/AionUi/contents/readme.md?ref=886dcbdeabeee77867daf47ed99548140f05b378",
+      "patch": "@@ -34,7 +34,7 @@\n </p>\n \n <p align=\"center\">\n-  <strong>💬 Community:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"./resources/wx-23.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n+  <strong>💬 Community:</strong> <a href=\"https://discord.gg/2QAwJn7Egx\" target=\"_blank\">Discord (English)</a> | <a href=\"./resources/wx-25.png\" target=\"_blank\">微信 (中文群)</a> | <a href=\"https://twitter.com/AionUI\" target=\"_blank\">Twitter</a>\n </p>\n \n ---\n@@ -696,7 +696,7 @@ brew install aionui\n - [Report Issues](https://github.com/iOfficeAI/AionUi/issues) — bugs and feature requests\n - [Release Updates](https://github.com/iOfficeAI/AionUi/releases) — get the latest version\n - [Discord Community](https://discord.gg/2QAwJn7Egx) — English community\n-- [WeChat Group](./resources/wx-23.png) — Chinese community\n+- [WeChat Group](./resources/wx-25.png) — Chinese community\n \n ### Contributing\n "
+    },
+    {
+      "sha": "1889ce279b454070e7ed891ea0a31043466ea659",
+      "filename": "resources/wx-23.png",
+      "status": "removed",
+      "additions": 0,
+      "deletions": 0,
+      "changes": 0,
+      "blob_url": "https://github.com/iOfficeAI/AionUi/blob/6744099b279b991c17e31c243f0920477bd31cb6/resources%2Fwx-23.png",
+      "raw_url": "https://github.com/iOfficeAI/AionUi/raw/6744099b279b991c17e31c243f0920477bd31cb6/resources%2Fwx-23.png",
+      "contents_url": "https://api.github.com/repos/iOfficeAI/AionUi/contents/resources%2Fwx-23.png?ref=6744099b279b991c17e31c243f0920477bd31cb6"
+    },
+    {
+      "sha": "e7cd8e62a821868fda2c5f1b50419a39293b1de2",
+      "filename": "resources/wx-25.png",
+      "status": "added",
+      "additions": 0,
+      "deletions": 0,
+      "changes": 0,
+      "blob_url": "https://github.com/iOfficeAI/AionUi/blob/886dcbdeabeee77867daf47ed99548140f05b378/resources%2Fwx-25.png",
+      "raw_url": "https://github.com/iOfficeAI/AionUi/raw/886dcbdeabeee77867daf47ed99548140f05b378/resources%2Fwx-25.png",
+      "contents_url": "https://api.github.com/repos/iOfficeAI/AionUi/contents/resources%2Fwx-25.png?ref=886dcbdeabeee77867daf47ed99548140f05b378"
+    }
+  ]
+}

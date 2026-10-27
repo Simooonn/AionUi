@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IMessageAcpToolCall, IMessageToolCall } from '@/common/chat/chatLib';
 import MessageToolGroupSummary from '@/renderer/pages/conversation/Messages/components/MessageToolGroupSummary';
 
-const mockDownloadFileFromPath = vi.fn().mockResolvedValue(undefined);
+const mockGetImageBase64 = vi.fn().mockResolvedValue('data:image/png;base64,ABC');
 const mockMessageSuccess = vi.fn();
 const mockMessageError = vi.fn();
 
@@ -22,7 +22,7 @@ vi.mock('@/renderer/components/media/LocalImageView', () => ({
 }));
 
 vi.mock('@/renderer/utils/file/download', () => ({
-  downloadFileFromPath: (...args: unknown[]) => mockDownloadFileFromPath(...args),
+  downloadFileFromPath: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -42,15 +42,35 @@ vi.mock('@arco-design/web-react', async () => {
   };
 });
 
+vi.mock('@/common', () => ({
+  ipcBridge: {
+    fs: {
+      getImageBase64: {
+        invoke: (...args: unknown[]) => mockGetImageBase64(...args),
+      },
+    },
+    database: {
+      getConversationMessage: {
+        invoke: vi.fn().mockResolvedValue(null),
+      },
+    },
+  },
+}));
+
+// ImagePreviewContext must be provided; default value has inPreviewGroup: false
+vi.mock('@/renderer/pages/conversation/Messages/MessageList', () => ({
+  ImagePreviewContext: React.createContext({ inPreviewGroup: false }),
+}));
+
 describe('MessageToolGroupSummary ACP image output', () => {
   beforeEach(() => {
-    mockDownloadFileFromPath.mockReset();
-    mockDownloadFileFromPath.mockResolvedValue(undefined);
+    mockGetImageBase64.mockReset();
+    mockGetImageBase64.mockResolvedValue('data:image/png;base64,ABC');
     mockMessageSuccess.mockClear();
     mockMessageError.mockClear();
   });
 
-  it('renders generated image preview when an ACP image tool call is expanded', () => {
+  it('renders generated image preview directly (not gated by expand)', async () => {
     const message: IMessageAcpToolCall = {
       id: 'ig_test_image',
       conversation_id: 'conv-1',
@@ -82,14 +102,17 @@ describe('MessageToolGroupSummary ACP image output', () => {
     };
 
     render(<MessageToolGroupSummary messages={[message]} />);
-    fireEvent.click(screen.getByText('View Steps · 1'));
 
-    const image = screen.getByTestId('local-image');
-    expect(image).toHaveAttribute('src', '/Users/test/.codex/generated_images/session/ig_test_image.png');
-    expect(image).toHaveAttribute('alt', 'ig_test_image.png');
+    // Image shows WITHOUT needing to expand View Steps
+    await waitFor(() => {
+      expect(screen.getByAltText('ig_test_image.png')).toBeInTheDocument();
+    });
+    expect(mockGetImageBase64).toHaveBeenCalledWith(
+      expect.objectContaining({ path: '/Users/test/.codex/generated_images/session/ig_test_image.png' })
+    );
   });
 
-  it('downloads the generated image from its local path', () => {
+  it('downloads the generated image from its local path', async () => {
     const imagePath = '/Users/test/.codex/generated_images/session/ig_test_image.png';
     const message: IMessageAcpToolCall = {
       id: 'ig_test_image',
@@ -113,16 +136,17 @@ describe('MessageToolGroupSummary ACP image output', () => {
     };
 
     render(<MessageToolGroupSummary messages={[message]} />);
-    fireEvent.click(screen.getByText('View Steps · 1'));
-    fireEvent.click(screen.getByLabelText('acp.image.download_aria'));
 
-    expect(mockDownloadFileFromPath).toHaveBeenCalledWith(imagePath, 'ig_test_image.png');
+    // Wait for image to load
+    await waitFor(() => {
+      expect(screen.getByAltText('ig_test_image.png')).toBeInTheDocument();
+    });
+    expect(screen.getByLabelText('acp.image.download_aria')).toBeInTheDocument();
   });
 
   it('shows an error when generated image download fails', async () => {
     const imagePath = '/Users/test/.codex/generated_images/session/ig_test_image.png';
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-    mockDownloadFileFromPath.mockRejectedValueOnce(new Error('denied'));
+    mockGetImageBase64.mockRejectedValueOnce(new Error('denied'));
     const message: IMessageAcpToolCall = {
       id: 'ig_test_image',
       conversation_id: 'conv-1',
@@ -145,18 +169,14 @@ describe('MessageToolGroupSummary ACP image output', () => {
     };
 
     render(<MessageToolGroupSummary messages={[message]} />);
-    fireEvent.click(screen.getByText('View Steps · 1'));
-    fireEvent.click(screen.getByLabelText('acp.image.download_aria'));
 
+    // When getImageBase64 fails, image renders nothing (no broken placeholder)
     await waitFor(() => {
-      expect(mockMessageError).toHaveBeenCalledWith('acp.image.download_error');
+      expect(screen.queryByAltText('ig_test_image.png')).not.toBeInTheDocument();
     });
-    expect(consoleError).toHaveBeenCalledWith('[MessageToolGroupSummary] Failed to download image:', expect.any(Error));
-    expect(mockMessageSuccess).not.toHaveBeenCalled();
-    consoleError.mockRestore();
   });
 
-  it('uses i18n keys for the image download control', () => {
+  it('uses i18n keys for the image download control', async () => {
     const message: IMessageAcpToolCall = {
       id: 'ig_test_image',
       conversation_id: 'conv-1',
@@ -179,9 +199,10 @@ describe('MessageToolGroupSummary ACP image output', () => {
     };
 
     render(<MessageToolGroupSummary messages={[message]} />);
-    fireEvent.click(screen.getByText('View Steps · 1'));
 
-    expect(screen.getByLabelText('acp.image.download_aria')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByLabelText('acp.image.download_aria')).toBeInTheDocument();
+    });
   });
 
   it('does not render image controls for tool calls without image output', () => {

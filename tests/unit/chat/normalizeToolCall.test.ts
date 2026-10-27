@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { IMessageAcpToolCall } from '@/common/chat/chatLib';
-import { normalizeAcpToolCall } from '@/common/chat/normalizeToolCall';
+import type { IMessageAcpToolCall, IMessageToolCall } from '@/common/chat/chatLib';
+import { normalizeAcpToolCall, normalizeToolCall } from '@/common/chat/normalizeToolCall';
 import { describe, expect, it } from 'vitest';
 
 describe('normalizeAcpToolCall', () => {
@@ -45,5 +45,23 @@ describe('normalizeAcpToolCall', () => {
     expect((normalized as { imagePath?: string } | undefined)?.imagePath).toBe(
       '/Users/test/.codex/generated_images/session/ig_test_image.png'
     );
+  });
+});
+
+describe('normalizeToolCall image output', () => {
+  const toolCall = (content: Partial<IMessageToolCall['content']>): IMessageToolCall => ({
+    id: 'exec-1',
+    conversation_id: 'conv-1',
+    type: 'tool_call',
+    content: { call_id: 'exec-1', name: 'imageGeneration', args: {}, status: 'completed', ...content },
+  });
+
+  it('carries the persisted image path as imagePath', () => {
+    const normalized = normalizeToolCall(toolCall({ image: { path: '/w/gen.png', mime_type: 'image/png' } }));
+    expect(normalized?.imagePath).toBe('/w/gen.png');
+  });
+
+  it('leaves imagePath undefined when the row has no image', () => {
+    expect(normalizeToolCall(toolCall({}))?.imagePath).toBeUndefined();
   });
 });

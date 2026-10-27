@@ -12,7 +12,7 @@
  * - aioncore is NOT involved; deletions are plain Node fs in the main process.
  */
 
-import { existsSync, lstatSync, rmSync, statSync } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, realpathSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, normalize, sep } from 'node:path';
 import { getDataPath } from '@process/utils';
@@ -437,4 +437,61 @@ export function checkWorkspacesExist(paths: string[]): Record<string, boolean> {
     }
   }
   return out;
+}
+
+// ---------------------------------------------------------------------------
+// Codex generated-image lookup by call_id
+// ---------------------------------------------------------------------------
+
+// In-memory cache for positive hits (call_id → absolute path).
+// Misses are NOT cached so the file can be found once it appears.
+const codexImageCache = new Map<string, string>();
+
+/** Image file extensions codex produces. */
+const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'webp', 'gif'] as const;
+
+/** Validate a codex call_id: only URL-safe characters, 4–200 chars. */
+const CALL_ID_RE = /^[A-Za-z0-9_:.-]{4,200}$/;
+
+/**
+ * Find a codex-generated image file by its call_id (the exec id that
+ * also appears as the file stem).  Scans ~/.codex/generated_images/<any>/
+ * and returns the absolute path, or `null` when not found.
+ *
+ * The `root` parameter is injectable for unit tests; defaults to
+ * `~/.codex/generated_images`.
+ */
+export function findCodexGeneratedImage(callId: string, root?: string): string | null {
+  if (!CALL_ID_RE.test(callId)) return null;
+
+  const cached = codexImageCache.get(callId);
+  if (cached) return cached;
+
+  let base: string;
+  let subdirs: string[];
+  try {
+    base = realpathSync(root ?? join(HOME_ROOT, '.codex', 'generated_images'));
+    subdirs = readdirSync(base, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
+  } catch {
+    return null;
+  }
+
+  for (const sub of subdirs) {
+    for (const ext of IMAGE_EXTS) {
+      const candidate = join(base, sub, `${callId}.${ext}`);
+      if (!existsSync(candidate)) continue;
+      try {
+        // Containment guard: a symlink must not lead outside the image root.
+        const resolved = realpathSync(candidate);
+        if (!resolved.startsWith(base + sep)) continue;
+        codexImageCache.set(callId, resolved);
+        return resolved;
+      } catch {
+        // Vanished between the existence check and realpath — keep looking.
+      }
+    }
+  }
+  return null;
 }

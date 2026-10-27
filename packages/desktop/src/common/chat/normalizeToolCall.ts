@@ -200,7 +200,7 @@ function normalizeToolCallStatus(status?: string): NormalizedToolStatus {
 }
 
 export function normalizeToolCall(message: IMessageToolCall): NormalizedToolCall | undefined {
-  const { call_id, name, status, input, output, args, description } = message.content;
+  const { call_id, name, status, input, output, args, description, image } = message.content;
   if (!call_id) return undefined;
 
   const displayInput = input
@@ -216,6 +216,10 @@ export function normalizeToolCall(message: IMessageToolCall): NormalizedToolCall
     description: description || undefined,
     input: displayInput,
     output,
+    // Carry the image path (aioncore persists it as content.image.path when the
+    // tool produced a file). The renderer uses this to show the image outside the
+    // collapsed View Steps panel, same as acp_tool_call images.
+    imagePath: image?.path,
   };
 }
 

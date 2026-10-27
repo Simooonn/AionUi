@@ -111,6 +111,8 @@ export type ParsedCliItem =
       status: 'completed' | 'failed';
       rawInput?: unknown;
       output?: string;
+      /** Image file produced by this tool (codex imageGeneration savedPath). */
+      imagePath?: string;
     };
 
 /** One CLI message turn (a record) with its content items. */

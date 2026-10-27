@@ -5,14 +5,14 @@
  * - deleteWithLocalFiles: DB-first order-zip (only unlink DB-success ids' files)
  */
 
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@process/utils', () => ({ getDataPath: () => '/tmp/ace-test-nonexistent' }));
 
-import { checkWorkspacesExist, unlinkSessionFiles } from '@process/ace/sessionFiles';
+import { checkWorkspacesExist, findCodexGeneratedImage, unlinkSessionFiles } from '@process/ace/sessionFiles';
 import { deleteConversationsWithFiles } from '@/renderer/ace/deleteWithLocalFiles';
 
 describe('sessionFiles.unlinkSessionFiles (path confinement)', () => {
@@ -385,5 +385,47 @@ describe('mixed-batch order-zip routing (file + opencode descriptors)', () => {
     const { dbResults, fileDeleteFailed } = await deleteConversationsWithFiles(['a'], async () => true);
     expect(dbResults).toEqual([true]);
     expect(fileDeleteFailed).toBe(false);
+  });
+});
+
+describe('sessionFiles.findCodexGeneratedImage (legacy row fallback)', () => {
+  const dirs: string[] = [];
+  afterEach(() => {
+    for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
+  });
+  const makeRoot = () => {
+    const root = mkdtempSync(join(tmpdir(), 'ace-codex-img-'));
+    dirs.push(root);
+    return root;
+  };
+
+  it('finds <callId>.png in any thread directory (no extra exec- prefix)', () => {
+    const root = makeRoot();
+    mkdirSync(join(root, 'thread-a'));
+    writeFileSync(join(root, 'thread-a', 'exec-abc123.png'), 'x');
+    expect(findCodexGeneratedImage('exec-abc123', root)).toMatch(/thread-a\/exec-abc123\.png$/);
+  });
+
+  it('returns null on a miss and finds the file once it appears (misses are not cached)', () => {
+    const root = makeRoot();
+    mkdirSync(join(root, 'thread-b'));
+    expect(findCodexGeneratedImage('exec-late01', root)).toBeNull();
+    writeFileSync(join(root, 'thread-b', 'exec-late01.webp'), 'x');
+    expect(findCodexGeneratedImage('exec-late01', root)).toMatch(/exec-late01\.webp$/);
+  });
+
+  it('rejects ids that could escape the root', () => {
+    const root = makeRoot();
+    expect(findCodexGeneratedImage('../../etc/passwd', root)).toBeNull();
+    expect(findCodexGeneratedImage('a/b', root)).toBeNull();
+  });
+
+  it('refuses a symlink that resolves outside the root', () => {
+    const root = makeRoot();
+    const outside = makeRoot();
+    writeFileSync(join(outside, 'secret.png'), 'x');
+    mkdirSync(join(root, 'thread-c'));
+    symlinkSync(join(outside, 'secret.png'), join(root, 'thread-c', 'exec-link01.png'));
+    expect(findCodexGeneratedImage('exec-link01', root)).toBeNull();
   });
 });

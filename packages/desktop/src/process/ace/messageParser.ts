@@ -374,7 +374,40 @@ function parseCodex(filePath: string, sessionId: string): ParsedCliMessage[] {
       arguments?: unknown;
       call_id?: unknown;
       output?: unknown;
+      // item_completed Extension shape
+      item?: Record<string, unknown>;
     };
+
+    // Codex image generation completed: event_msg / item_completed where the
+    // item is an Extension with kind = "image_gen.generation" and a savedPath.
+    // Wire-verified against two real rollout files (2026-10-20, 2026-10-27).
+    if (
+      payload.type === 'item_completed' &&
+      typeof payload.item === 'object' &&
+      payload.item !== null &&
+      (payload.item as Record<string, unknown>).type === 'Extension' &&
+      (payload.item as Record<string, unknown>).kind === 'image_gen.generation' &&
+      (payload.item as Record<string, unknown>).status === 'completed'
+    ) {
+      const item = payload.item as Record<string, unknown>;
+      const savedPath = typeof item.savedPath === 'string' ? item.savedPath : undefined;
+      const id = typeof item.id === 'string' ? item.id : undefined;
+      if (savedPath && id) {
+        const tool: ToolItem = {
+          kind: 'tool',
+          callId: id,
+          name: 'imageGeneration',
+          title: toolTitle('imageGeneration', undefined),
+          toolKind: 'other',
+          status: 'completed',
+          rawInput: undefined,
+          imagePath: savedPath,
+        };
+        push(o, [tool], 'assistant');
+      }
+      continue;
+    }
+
     // Tool executions (no role on these records).
     if (payload.type === 'function_call' && typeof payload.call_id === 'string' && typeof payload.name === 'string') {
       let args: unknown;

@@ -102,6 +102,20 @@ type ToolItem = Extract<ParsedCliItem, { kind: 'tool' }>;
  * so MessageAcpToolCall / tool grouping render it with zero new UI code.
  */
 export function toolCallContent(source: CliSource, sessionId: string, t: ToolItem): Record<string, unknown> {
+  // Build raw_output: if this tool produced an image file, emit the image
+  // metadata so getAcpImagePath() (acpToolCallOutput.ts:69) can extract the
+  // path from raw_output.image.path — the same slot used by live ACP images.
+  const rawOutput: Record<string, unknown> | string | undefined = t.imagePath
+    ? {
+        image: {
+          path: t.imagePath,
+          source: 'codex_image_generation',
+        },
+      }
+    : t.output
+      ? t.output
+      : undefined;
+
   return {
     ...(source === 'claude-code' ? { _meta: { claudeCode: { toolName: t.name } } } : {}),
     session_id: sessionId,
@@ -112,8 +126,10 @@ export function toolCallContent(source: CliSource, sessionId: string, t: ToolIte
       title: t.title,
       kind: t.toolKind,
       ...(t.rawInput !== undefined ? { raw_input: t.rawInput } : {}),
-      ...(t.output
-        ? { raw_output: t.output, content: [{ type: 'content', content: { type: 'text', text: t.output } }] }
+      ...(rawOutput !== undefined
+        ? typeof rawOutput === 'string'
+          ? { raw_output: rawOutput, content: [{ type: 'content', content: { type: 'text', text: rawOutput } }] }
+          : { raw_output: rawOutput, content: [] }
         : { content: [] }),
     },
   };
@@ -330,7 +346,11 @@ export async function importConversationMessages(conversationId: string): Promis
       (
         db
           .prepare(
-            `SELECT msg_id FROM messages WHERE conversation_id = ? AND id NOT LIKE '${CLI_ROW_ID_PREFIX}%' AND type = 'acp_tool_call'`
+            // Include both acp_tool_call (live ACP turns) and tool_call (live
+            // codex direct-CLI turns) so imageGeneration rows from a live turn
+            // are not re-imported as duplicates when the session is also present
+            // in the rollout file.
+            `SELECT msg_id FROM messages WHERE conversation_id = ? AND id NOT LIKE '${CLI_ROW_ID_PREFIX}%' AND type IN ('acp_tool_call','tool_call')`
           )
           .all(conversationId) as { msg_id: string }[]
       ).map((r) => r.msg_id)

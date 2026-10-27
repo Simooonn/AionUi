@@ -223,6 +223,9 @@ export type IMessageToolCall = IMessage<
     input?: Record<string, any>;
     output?: string;
     description?: string;
+    /** Image file produced by this call (codex imageGeneration).
+     *  Persisted by aioncore as { path, mime_type } in the content JSON. */
+    image?: { path: string; mime_type?: string };
   }
 >;
 

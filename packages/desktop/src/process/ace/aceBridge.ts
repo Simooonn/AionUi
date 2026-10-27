@@ -37,6 +37,7 @@ import { importConversationMessages } from './messageImporter';
 import {
   checkWorkspacesExist,
   deleteOpencodeSessions,
+  findCodexGeneratedImage,
   resolveConversationActivityTimes,
   resolveConversationFiles,
   resolveConversationMessageCounts,
@@ -173,6 +174,13 @@ ipcMain.handle('ace:check-workspaces-exist', async (_event, paths: string[]) => 
   } catch {
     return {};
   }
+});
+
+// Look up a codex-generated image file by its call_id.  Used by the renderer
+// to recover images for tool_call rows that predate the aioncore image field.
+ipcMain.handle('ace:find-codex-image', (_event, callId: unknown) => {
+  if (typeof callId !== 'string') return null;
+  return findCodexGeneratedImage(callId);
 });
 
 // ---------------------------------------------------------------------------

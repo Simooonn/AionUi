@@ -626,6 +626,59 @@ describe('tool-call extraction (compact "executed" rows)', () => {
   });
 });
 
+describe('codex generated images in imported history', () => {
+  const writeRollout = async (lines: unknown[]) => {
+    const { mkdtempSync, writeFileSync } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const file = join(mkdtempSync(join(tmpdir(), 'ace-img-')), 'rollout.jsonl');
+    writeFileSync(file, lines.map((l) => JSON.stringify(l)).join('\n'));
+    return file;
+  };
+  const imageEvent = (item: Record<string, unknown>) => ({
+    timestamp: '2026-10-20T03:00:00Z',
+    type: 'event_msg',
+    payload: { type: 'item_completed', item: { type: 'Extension', kind: 'image_gen.generation', ...item } },
+  });
+
+  it('turns a completed image_gen event into a tool item carrying savedPath', async () => {
+    const file = await writeRollout([
+      imageEvent({ id: 'exec-cat', status: 'completed', result: 'iVBORw0KGgo=', savedPath: '/g/t/exec-cat.png' }),
+    ]);
+    const parsed = parseSessionFile('codex', file, 'sid');
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].items[0]).toMatchObject({
+      kind: 'tool',
+      callId: 'exec-cat',
+      name: 'imageGeneration',
+      imagePath: '/g/t/exec-cat.png',
+    });
+  });
+
+  it('skips image events that are not completed or have no savedPath', async () => {
+    const file = await writeRollout([
+      imageEvent({ id: 'exec-a', status: 'in_progress', savedPath: '/g/t/a.png' }),
+      imageEvent({ id: 'exec-b', status: 'completed' }),
+    ]);
+    expect(parseSessionFile('codex', file, 'sid')).toEqual([]);
+  });
+
+  it('toolCallContent references the original file via raw_output.image', () => {
+    const content = toolCallContent('codex', 'sid', {
+      kind: 'tool',
+      callId: 'exec-cat',
+      name: 'imageGeneration',
+      title: 'imageGeneration',
+      toolKind: 'other',
+      status: 'completed',
+      imagePath: '/g/t/exec-cat.png',
+    });
+    const update = content.update as Record<string, unknown>;
+    expect(update.raw_output).toEqual({ image: { path: '/g/t/exec-cat.png', source: 'codex_image_generation' } });
+    expect(update.content).toEqual([]);
+  });
+});
+
 describe('escapeFilesMarker (literal marker in chat text)', () => {
   it('breaks the token invisibly so MessageText never splits on it', () => {
     const escaped = escapeFilesMarker('正文提到 [[AION_FILES]] 标记\n[[AION_FILES]]\n/not/a/file.png');

@@ -71,6 +71,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   unlinkSessionFiles: (paths: string[]) => ipcRenderer.invoke('ace:unlink-session-files', paths),
   deleteOpencodeSessions: (sessionIds: string[]) => ipcRenderer.invoke('ace:delete-opencode-sessions', sessionIds),
   checkWorkspacesExist: (paths: string[]) => ipcRenderer.invoke('ace:check-workspaces-exist', paths),
+  findCodexImage: (callId: string): Promise<string | null> => ipcRenderer.invoke('ace:find-codex-image', callId),
   messageCounts: (ids: string[]) => ipcRenderer.invoke('ace:message-counts', ids),
   conversationActivityTimes: (): Promise<ConversationActivityTimesResult> =>
     ipcRenderer.invoke('ace:conversation-activity-times'),

@@ -337,6 +337,10 @@ opencode 没有每会话文件——全部数据在 `<XDG_DATA_HOME|~/.local/sha
   （工厂注册、默认名 "Lark Bot (International)"、ConversationSource/格式化复用 Lark）。
 - 部署：`cargo build --release` 后替换 `resources/bundled-aioncore/darwin-arm64/aioncore`（已 ad-hoc 签名）。
   升级上游 aioncore 版本时需 rebase 该补丁（或等上游合并 domain 支持 PR）。
+- **2026-10-27 重新落地**：升级到 v0.2.2 本地 fork 时补丁曾漏带，`GET /api/channel/settings/lark_intl` 返回 400，
+  国际版卡片的助手 / 对话模型因此退化成「助手」/「自动跟随CLI运行时的模型」。现已 cherry-pick 到 fork 分支
+  `fix/pending-ask-keepalive`（commit `7e17abcb`，唯一冲突是 `formatter.rs` 补 `| PluginType::LarkIntl`），
+  与 keepalive、new-api `/v1` 补丁一起维护；以后升级 aioncore 三组补丁都要随之 rebase。前端无改动。
 
 **AionUi 侧（本仓库，ace 标记）**：
 
@@ -598,3 +602,21 @@ Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没
 - 应用被卸载时保留存储的选择，重装后自动恢复；设置页这时显示默认占位。
 - 未配置编辑器时仍走 aioncore 的 `code` 命令；本机 `code` 指向 Cursor。
 - 设置只存在本机 WebStorage，不同步到 WebUI。
+
+## codex 生成图片显示（2026-10-28）
+
+**涉及仓库：** AionCore fork `fix/pending-ask-keepalive` + AionUi 前端
+
+**问题：** codex 通过 `imagegen` skill 生成图片时，AionUi 只显示 "View Steps" 和文字，看不到图。
+
+**根因：** aioncore `session_agent.rs`（`translate_event` → `SessionEvent::ToolResult`）的 `tool_result_image()` 函数不存在，`ToolCallEventData.image` 字段也不存在，所以 `codex_conn.rs` 已正确提取出来的 `FilePath{mime:image/png}` 在映射层被丢弃；前端也没有在 View Steps 折叠区外渲染图片。
+
+**修复：**
+
+- **AionCore**（commit `77fdeb09`，未 push）：给 `ToolCallEventData` 加 `image: Option<ToolCallImage>`（`skip_serializing_if=None`，防 json_patch 覆盖）；`session_agent.rs` 新增 `tool_result_image()` 从 `mime image/*` 的 `FilePath` 提取图片字段；`codex_conn.rs` 按扩展名给 imageGeneration 的 FilePath 填 mime；新增 cargo 测试覆盖映射、序列化和 merge 三个场景。
+- **AionUi 实时**：`IMessageToolCall.content` 加 `image?`；`normalizeToolCall` 读 `content.image.path` 填 `imagePath`；`MessageToolGroupSummary` 在 View Steps 折叠区**外**渲染 `GeneratedImage` 卡片（Arco Image + 异步 base64 加载 + 下载按钮，失败时静默不显示）；`ToolItemDetail` 移除图片块（不再重复）。
+- **旧行回退**：`sessionFiles.ts` 加 `findCodexGeneratedImage(callId)`，主进程按 `<callId>.{png,jpg,jpeg,webp,gif}` 扫 `~/.codex/generated_images/*/`（call id 本身就是 `exec-…`；校验 id、realpath 防符号链接逃逸、未命中不缓存）；`aceBridge.ts` 加 `ace:find-codex-image` IPC；preload 暴露 `findCodexImage`；渲染端对已完成的 imageGeneration 且无 imagePath 的 tool_call 行触发一次 IPC 回退（WebUI 模式静默跳过）。
+- **导入历史**：`parseCodex` 识别 `item_completed / Extension / image_gen.generation` 事件，推出带 `imagePath` 的 tool 条目；`toolCallContent` 写 `raw_output.image` 供现有 `getAcpImagePath` 提取；`liveToolIds` 扩展到 `tool_call` 类型防重复导入。
+- **测试**：`MessageToolGroupSummary.dom.test.tsx` 改为验证折叠外直接显示；新增 `normalizeToolCall.test.ts`（tool_call 图片路径）、`ace-delete-files.test.ts`（回退查找 4 例）、`ace-cli-resume.test.ts`（导入生图 3 例）。
+- **验收（2026-10-28，dev）**：真实生图入库 `content.image.path` 已确认；实时行 id 与图片文件名一致（`exec-cc161ca3-…`），所以按 id 回退对新老数据都成立。
+- **二进制**：dev 版 `resources/bundled-aioncore/darwin-arm64/aioncore` 和 `.local/aioncore-bundle/darwin-arm64/aioncore` 均已替换为 sha `854c33d1`（从 target/release）；旧版 `3e09b1c2` 备份在 `.local/aioncore-bundle/darwin-arm64.bak-3e09b1c2/`；正式版待下次重装 AionUi 时生效。

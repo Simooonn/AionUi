@@ -620,3 +620,46 @@ Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没
 - **测试**：`MessageToolGroupSummary.dom.test.tsx` 改为验证折叠外直接显示；新增 `normalizeToolCall.test.ts`（tool_call 图片路径）、`ace-delete-files.test.ts`（回退查找 4 例）、`ace-cli-resume.test.ts`（导入生图 3 例）。
 - **验收（2026-10-28，dev）**：真实生图入库 `content.image.path` 已确认；实时行 id 与图片文件名一致（`exec-cc161ca3-…`），所以按 id 回退对新老数据都成立。
 - **二进制**：dev 版 `resources/bundled-aioncore/darwin-arm64/aioncore` 和 `.local/aioncore-bundle/darwin-arm64/aioncore` 均已替换为 sha `854c33d1`（从 target/release）；旧版 `3e09b1c2` 备份在 `.local/aioncore-bundle/darwin-arm64.bak-3e09b1c2/`；正式版待下次重装 AionUi 时生效。
+
+## 渠道会话归入渠道项目（2026-10-29）
+
+> 计划：`计划/AionUi/渠道会话归入渠道项目计划/渠道会话归入渠道项目计划.md`。
+
+**问题：** 通过 IM 渠道（Lark、Telegram 等）和机器人聊天时新建的会话，每条都用自己的临时目录。侧栏按工作目录分组，所以这些会话全部散落在「对话」分组里，不属于任何项目。
+
+**修复（只改 AionCore fork，AionUi 源码零改动）：** commit `f218d0fa`，未 push。渠道层新建会话时，把工作目录固定为 `<work_dir>/channels/<渠道名>/`（正式版即 `~/.aionui/channels/…`）。会话服务把它当作用户自选目录，按文件夹绑定一个 standard 项目；侧栏按工作目录分组，同一渠道的会话就归到同一个项目下，标签取目录名。
+
+| 渠道 | 目录名 |
+|---|---|
+| Telegram | `Telegram` |
+| 飞书 | `Lark` |
+| Lark 国际版 | `Lark-Intl` |
+| 钉钉 | `DingTalk` |
+| 微信 | `WeChat` |
+| Slack / Discord（预留） | `Slack` / `Discord` |
+
+- 目录建不出来时只记一条 warn（`channel workspace unavailable`），退回原来的临时目录，机器人照常回复，只是这条会话不归组。
+- 每次发消息前都会先确保目录存在，目录被手动删掉后会自动重建。
+- 后端存的项目名是大小写折叠后的形式（`lark-intl`），侧栏显示的仍是目录名「Lark-Intl」。
+
+**已知边界：**
+
+- 同一渠道的所有会话共享一个工作目录，文件可能互相覆盖。Claude 的会话记录、项目级 memory 也落在这个目录下。
+- 删除会话、删除项目都不会删这个目录。目录被删后，下一条消息会在 agent 冷启动前重建它；但 agent 进程如果还在运行，它的 cwd 仍指向被删掉的旧目录，要等进程被回收或重启后才完全恢复。
+- 旧会话不迁移。
+- 飞书显示为 `Lark`。
+- 按 cwd 共享的状态会互相影响：快照面板的「变更 / 丢弃」会看到其他聊天的改动；Antigravity 审批 hook 按 cwd 存；cron skill-suggest 用固定文件名。
+- **信任边界：** 渠道会话一律以 yolo 运行。该渠道任何已配对的用户（私聊或群聊）都能让 agent 往渠道目录写 `CLAUDE.md`、`.claude/skills/*` 或 cwd 级 memory，之后该渠道所有会话都会自动加载这些内容。未配对的用户只会拿到配对码，碰不到 agent。建议定期检查这个目录。
+- 在 Lark 里打字 `/new` 不会开新会话，会被当作普通消息发给 AI。卡片上的「➕ New Session」按钮在 Lark 国际版上点了也不生效：Lark 提示「目标回调服务超时未响应」，后端日志里没有收到 `session.new`。这是原本就有的问题，和本次改动无关，尚未排查。目前开新会话的办法是在 AionUi 里删掉当前绑定的会话，下一条消息会新建。
+
+**验证：**
+
+- `cargo test -p aionui-channel -p aionui-conversation` 931 个用例全部通过；clippy 与改动前基线相比没有新增警告。
+- 「目录被删后自愈」这条测试，去掉自愈代码会失败，加回后通过。
+- 临时后端：两条会话 workspace 相同，同属一个 standard 项目；删掉一条后，目录和项目都保留。
+- 正式版真机（Lark 国际版，2026-10-29）：
+  - 新会话 `f38069f2` 出现在「最近会话 · Lark-Intl」下，workspace 为 `~/.aionui/channels/Lark-Intl`；
+  - 删掉它之后再发消息，新会话 `de033099` 用的是同一个目录、同一个项目；
+  - `projects` 表里只有一条 `lark-intl`（standard）。
+
+**二进制：** target/release、仓库 `resources`、`.local/aioncore-bundle`、`/Applications` 四处都是 sha `03539d58`。正式版同时带上了 `77fdeb09`（codex 生图）。`/Applications` 用 `swap-aioncore.sh` 替换，可 `rollback`；旧版 `3e09b1c2` 备份在 `.local/aioncore-rollback/`，确认不需要回滚后再删除。

@@ -613,7 +613,7 @@ Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没
 
 **修复：**
 
-- **AionCore**（commit `77fdeb09`，未 push）：给 `ToolCallEventData` 加 `image: Option<ToolCallImage>`（`skip_serializing_if=None`，防 json_patch 覆盖）；`session_agent.rs` 新增 `tool_result_image()` 从 `mime image/*` 的 `FilePath` 提取图片字段；`codex_conn.rs` 按扩展名给 imageGeneration 的 FilePath 填 mime；新增 cargo 测试覆盖映射、序列化和 merge 三个场景。
+- **AionCore**（commit `77fdeb09`，2026-10-29 已推送）：给 `ToolCallEventData` 加 `image: Option<ToolCallImage>`（`skip_serializing_if=None`，防 json_patch 覆盖）；`session_agent.rs` 新增 `tool_result_image()` 从 `mime image/*` 的 `FilePath` 提取图片字段；`codex_conn.rs` 按扩展名给 imageGeneration 的 FilePath 填 mime；新增 cargo 测试覆盖映射、序列化和 merge 三个场景。
 - **AionUi 实时**：`IMessageToolCall.content` 加 `image?`；`normalizeToolCall` 读 `content.image.path` 填 `imagePath`；`MessageToolGroupSummary` 在 View Steps 折叠区**外**渲染 `GeneratedImage` 卡片（Arco Image + 异步 base64 加载 + 下载按钮，失败时静默不显示）；`ToolItemDetail` 移除图片块（不再重复）。
 - **旧行回退**：`sessionFiles.ts` 加 `findCodexGeneratedImage(callId)`，主进程按 `<callId>.{png,jpg,jpeg,webp,gif}` 扫 `~/.codex/generated_images/*/`（call id 本身就是 `exec-…`；校验 id、realpath 防符号链接逃逸、未命中不缓存）；`aceBridge.ts` 加 `ace:find-codex-image` IPC；preload 暴露 `findCodexImage`；渲染端对已完成的 imageGeneration 且无 imagePath 的 tool_call 行触发一次 IPC 回退（WebUI 模式静默跳过）。
 - **导入历史**：`parseCodex` 识别 `item_completed / Extension / image_gen.generation` 事件，推出带 `imagePath` 的 tool 条目；`toolCallContent` 写 `raw_output.image` 供现有 `getAcpImagePath` 提取；`liveToolIds` 扩展到 `tool_call` 类型防重复导入。
@@ -627,15 +627,15 @@ Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没
 
 **问题：** 通过 IM 渠道（Lark、Telegram 等）和机器人聊天时新建的会话，每条都用自己的临时目录。侧栏按工作目录分组，所以这些会话全部散落在「对话」分组里，不属于任何项目。
 
-**修复（只改 AionCore fork，AionUi 源码零改动）：** commit `f218d0fa`，未 push。渠道层新建会话时，把工作目录固定为 `<work_dir>/channels/<渠道名>/`（正式版即 `~/.aionui/channels/…`）。会话服务把它当作用户自选目录，按文件夹绑定一个 standard 项目；侧栏按工作目录分组，同一渠道的会话就归到同一个项目下，标签取目录名。
+**修复（只改 AionCore fork，AionUi 源码零改动）：** commit `f218d0fa`，2026-10-29 已推送。渠道层新建会话时，把工作目录固定为 `<work_dir>/channels/<渠道名>/`（正式版即 `~/.aionui/channels/…`）。会话服务把它当作用户自选目录，按文件夹绑定一个 standard 项目；侧栏按工作目录分组，同一渠道的会话就归到同一个项目下，标签取目录名。
 
-| 渠道 | 目录名 |
-|---|---|
-| Telegram | `Telegram` |
-| 飞书 | `Lark` |
-| Lark 国际版 | `Lark-Intl` |
-| 钉钉 | `DingTalk` |
-| 微信 | `WeChat` |
+| 渠道                    | 目录名              |
+| ----------------------- | ------------------- |
+| Telegram                | `Telegram`          |
+| 飞书                    | `Lark`              |
+| Lark 国际版             | `Lark-Intl`         |
+| 钉钉                    | `DingTalk`          |
+| 微信                    | `WeChat`            |
 | Slack / Discord（预留） | `Slack` / `Discord` |
 
 - 目录建不出来时只记一条 warn（`channel workspace unavailable`），退回原来的临时目录，机器人照常回复，只是这条会话不归组。
@@ -650,7 +650,7 @@ Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没
 - 飞书显示为 `Lark`。
 - 按 cwd 共享的状态会互相影响：快照面板的「变更 / 丢弃」会看到其他聊天的改动；Antigravity 审批 hook 按 cwd 存；cron skill-suggest 用固定文件名。
 - **信任边界：** 渠道会话一律以 yolo 运行。该渠道任何已配对的用户（私聊或群聊）都能让 agent 往渠道目录写 `CLAUDE.md`、`.claude/skills/*` 或 cwd 级 memory，之后该渠道所有会话都会自动加载这些内容。未配对的用户只会拿到配对码，碰不到 agent。建议定期检查这个目录。
-- 在 Lark 里打字 `/new` 不会开新会话，会被当作普通消息发给 AI。卡片上的「➕ New Session」按钮在 Lark 国际版上点了也不生效：Lark 提示「目标回调服务超时未响应」，后端日志里没有收到 `session.new`。这是原本就有的问题，和本次改动无关，尚未排查。目前开新会话的办法是在 AionUi 里删掉当前绑定的会话，下一条消息会新建。
+- 在 Lark 里打字 `/new` 不会开新会话，会被当作普通消息发给 AI。卡片上的「➕ New Session」按钮之前点了没反应（见下一节，已于 2026-10-29 修复）。目前开新会话的另一个办法是在 AionUi 里删掉当前绑定的会话，下一条消息会新建。
 
 **验证：**
 
@@ -663,3 +663,14 @@ Claude（direct-CLI）会话里 agent 调 `AskUserQuestion` 后若 180 秒内没
   - `projects` 表里只有一条 `lark-intl`（standard）。
 
 **二进制：** target/release、仓库 `resources`、`.local/aioncore-bundle`、`/Applications` 四处都是 sha `03539d58`。正式版同时带上了 `77fdeb09`（codex 生图）。`/Applications` 用 `swap-aioncore.sh` 替换，可 `rollback`；旧版 `3e09b1c2` 备份在 `.local/aioncore-rollback/`，确认不需要回滚后再删除。
+
+## Lark 卡片按钮回调修复（2026-10-29）
+
+上一节里提到的「➕ New Session」卡片按钮在 Lark 国际版点了无效、Lark 弹「目标回调服务超时未响应」、后端日志里没有 `session.new`，根因有两处，都已修复（AionCore fork commit `bc50d896`，2026-10-29 已推送到 fork 分支 `fix/pending-ask-keepalive`，AionUi 源码零改动）：
+
+1. **`build_ack_frame` 丢了 `instance_id`**：原来只回传 `type` / `message_id` / `trace_id` 三个 header，Feishu 靠 `instance_id` 把 ack 路由回对应的回调服务，少了它就 3 秒超时弹 toast。改为复制原始帧的全部 header，再追加 `biz_rt`（与官方 Lark SDK 行为一致）。
+2. **`card.action.trigger` 事件被静默丢弃**：v2 schema 的卡片回调包在 `event` 帧里，`event_type = "card.action.trigger"`，原来 `handle_ws_text` 的 match 只处理 `im.message.receive_v1` 和 `application.bot.menu_v6`，卡片回调落到 `_` 分支被丢弃。新增 `card.action.trigger` arm：从 `event.context` 把 `open_chat_id` / `open_message_id` 提升到顶层，再走现有 `handle_card_action`，不用改 `CardActionEvent` 结构。
+
+**验证：** `cargo test -p aionui-channel` 239 个 lib 用例全过，含新增的 `build_ack_frame_preserves_all_headers_including_instance_id`。全量 `cargo build --release` 通过。
+
+**二进制：** 四处（target/release、仓库 `resources`、`.local/aioncore-bundle`、`/Applications`）都是 sha `71fd2c7b`。fork 分支现在叠着六组补丁（keepalive、new-api `/v1`、lark_intl、codex 生图、渠道工作目录、卡片按钮回调），升级 aioncore 时要一起 rebase。`/Applications` 用 `swap-aioncore.sh` 替换，可 `rollback`；旧版 `3e09b1c2` 备份在 `.local/aioncore-rollback/`，确认不需要回滚后再删除。

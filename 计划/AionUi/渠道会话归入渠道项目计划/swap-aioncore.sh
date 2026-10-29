@@ -9,7 +9,7 @@ APP=$BUNDLE/Contents/Resources/bundled-aioncore/darwin-arm64
 NEW=/Users/wmm/wmm-code/ace-diy/AionCore/target/release/aioncore
 BAK=/Users/wmm/wmm-code/ace-diy/AionUi/.local/aioncore-rollback/aioncore-3e09b1c2
 # AionCore f218d0fa, built 2026-10-29.
-NEW_SHA=03539d581153133011d58f515efe614a8c69a771b4207858417037ea026d61e9
+NEW_SHA=71fd2c7b9406d69d1740d35a6ba4c21770dbdf0eeb95c7af83d193db1fad7094
 OLD_SHA_PREFIX=3e09b1c2
 
 # Match on the executable path only (pgrep -f would also hit claude processes that

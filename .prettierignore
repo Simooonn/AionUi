@@ -1,1 +1,4 @@
 mobile/
+
+# spec-workflow MCP server state
+.spec-workflow/

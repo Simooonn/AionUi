@@ -63,6 +63,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { classifyConversationBusyError } from '../conversationBusyError';
 import { buildSendFailureError } from './buildSendFailureError';
+// ace:start HUD statusline inside the context-usage popover
+import HudText from './hudStatusBar/HudText';
+import { useHudStatusline } from './hudStatusBar/useHudStatusline';
+// ace:end
 import { useAcpInitialMessage } from './useAcpInitialMessage';
 import type { UseAcpMessageReturn } from './useAcpMessage';
 
@@ -195,6 +199,16 @@ const AcpSendBox: React.FC<{
   });
   const runtimeMode = runtimeConfig.mode;
   const runtimeThoughtLevel = runtimeConfig.thoughtLevel;
+  // ace:start HUD statusline inside the context-usage popover
+  const hudText = useHudStatusline({
+    conversation_id,
+    workspace: conversationContext?.workspace,
+    model: runtimeConfig.model,
+    current_model_id,
+    context_limit,
+    enabled: !isMobile,
+  });
+  // ace:end
   // Surface runtime startup failures (e.g. a resumed CLI session whose rollout
   // the bundled agent cannot parse) instead of letting the toolbar pills vanish
   // silently: the ensure error used to die in a `.catch(() => {})`.
@@ -989,7 +1003,14 @@ Please check your local CLI tool authentication status`,
                 {t('team.interruptAndSend')}
               </Button>
             )}
-            {tokenUsage ? <ContextUsageIndicator tokenUsage={tokenUsage} context_limit={context_limit} /> : undefined}
+            {/* ace: the HUD statusline also opens from here (info icon when there is no usage yet) */}
+            {tokenUsage || hudText ? (
+              <ContextUsageIndicator
+                tokenUsage={tokenUsage}
+                context_limit={context_limit}
+                hudContent={hudText ? <HudText text={hudText} /> : undefined}
+              />
+            ) : undefined}
           </>
         }
         onAddToDraft={handleAddToQueue}

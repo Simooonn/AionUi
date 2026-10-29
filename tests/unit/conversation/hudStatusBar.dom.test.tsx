@@ -1,31 +1,27 @@
 /**
  * Tests for the ACP chat HUD statusline:
  * - ansiText.parseAnsiLine: minimal SGR parsing into styled segments
+ * - ctx-element stripping: the main-process stripContextSegment and its
+ *   renderer-side copy stripHudCtxSegment run the same cases
  * - process/ace/hudStatusline: param validation, the synthesized payload, the
- *   real context window (AC1/AC2/AC3/AC7), the no-data paths (AC6a/AC6b) and
- *   the ctx-segment stripping
- * - HudStatusBar component: renders lines when data exists, null otherwise
+ *   real context window (AC1/AC2/AC3/AC7) and the no-data paths (AC6a/AC6b)
+ * - useHudStatusline: the sendbox-level poller feeding the context popover
+ * - HudText: renders the statusline lines inside the popover
  */
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import type { AcpDerivedOption } from '@/renderer/hooks/agent/useAcpConfigOptions';
+import { act, cleanup, render, renderHook, screen, waitFor } from '@testing-library/react';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { parseAnsiLine } from '@/renderer/pages/conversation/platforms/acp/hudStatusBar/ansiText';
-import HudStatusBar from '@/renderer/pages/conversation/platforms/acp/hudStatusBar/HudStatusBar';
+import HudText from '@/renderer/pages/conversation/platforms/acp/hudStatusBar/HudText';
+import { parseAnsiLine, stripHudCtxSegment } from '@/renderer/pages/conversation/platforms/acp/hudStatusBar/ansiText';
+import {
+  type UseHudStatuslineOptions,
+  useHudStatusline,
+} from '@/renderer/pages/conversation/platforms/acp/hudStatusBar/useHudStatusline';
 import { parseHudStatuslineParams, readHudStatusline, stripContextSegment } from '@process/ace/hudStatusline';
-
-vi.mock('@/renderer/hooks/context/LayoutContext', () => ({
-  useLayoutContext: () => ({ isMobile: false }),
-}));
-
-// HudStatusBar reads the LIVE model from the shared config-options snapshot
-// (v0.1.41 removed the discrete /model endpoint).
-const useAcpConfigOptionsMock = vi.hoisted(() => vi.fn(() => ({ model: null })));
-vi.mock('@/renderer/hooks/agent/useAcpConfigOptions', () => ({
-  useAcpConfigOptions: useAcpConfigOptionsMock,
-}));
 
 const ESC = '\x1b';
 // OMC replaces every space with a NBSP outside safe mode.
@@ -119,7 +115,12 @@ describe('parseHudStatuslineParams', () => {
   });
 });
 
-describe('stripContextSegment', () => {
+// The renderer keeps its own copy of the main-process strip (it must not import
+// process/ code); both run the same cases so the copies cannot drift apart.
+describe.each([
+  ['stripContextSegment (main process)', stripContextSegment],
+  ['stripHudCtxSegment (renderer copy)', stripHudCtxSegment],
+])('%s', (_name, stripContextSegment) => {
   const SEP = `${ESC}[2m | ${ESC}[0m`;
   const NBSP_SEP = `${ESC}[2m${NBSP}|${NBSP}${ESC}[0m`;
 
@@ -166,6 +167,10 @@ describe('stripContextSegment', () => {
 
   it('removes the zh-CN 上下文 label too', () => {
     expect(stripContextSegment(`上下文:${ESC}[32m42%${ESC}[0m${SEP}model:x`)).toBe('model:x');
+  });
+
+  it('returns an empty string when the ctx element was the only output', () => {
+    expect(stripContextSegment(`ctx:[${ESC}[32m######----${ESC}[0m]64%`)).toBe('');
   });
 });
 
@@ -550,131 +555,194 @@ describe('readHudStatusline', () => {
   });
 });
 
-describe('HudStatusBar', () => {
+describe('useHudStatusline', () => {
+  const baseOptions: UseHudStatuslineOptions = {
+    conversation_id: 'c1',
+    workspace: '/tmp/ws',
+    model: null,
+    enabled: true,
+  };
+  const setApi = (hudStatusline: unknown) => {
+    (window as unknown as { electronAPI: unknown }).electronAPI = { hudStatusline };
+  };
+
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
     delete (window as unknown as { electronAPI?: unknown }).electronAPI;
-    useAcpConfigOptionsMock.mockReset();
-    useAcpConfigOptionsMock.mockReturnValue({ model: null });
   });
 
-  it('renders nothing when the ace API is unavailable', () => {
-    render(<HudStatusBar conversation_id='c1' workspace='/tmp/ws' />);
-    expect(screen.queryByTestId('chat-hud-statusline')).toBeNull();
+  it('returns null without calling anything when the ace API is unavailable', () => {
+    const { result } = renderHook(() => useHudStatusline(baseOptions));
+    expect(result.current).toBeNull();
   });
 
-  it('renders nothing when the IPC returns null', async () => {
-    (window as unknown as { electronAPI: unknown }).electronAPI = {
-      hudStatusline: vi.fn().mockResolvedValue(null),
-    };
-    render(<HudStatusBar conversation_id='c1' workspace='/tmp/ws' />);
-    await waitFor(() => {
-      expect(screen.queryByTestId('chat-hud-statusline')).toBeNull();
-    });
-  });
-
-  it('renders ANSI lines when the IPC returns text', async () => {
-    const hudStatusline = vi.fn().mockResolvedValue({ text: `${ESC}[32mbranch:main${ESC}[0m\nModel: Fable 5` });
-    (window as unknown as { electronAPI: unknown }).electronAPI = { hudStatusline };
-    render(<HudStatusBar conversation_id='c1' workspace='/tmp/ws' current_model_id='claude-fable-5' />);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('chat-hud-statusline')).toBeTruthy();
-    });
-    expect(screen.getByText('branch:main')).toBeTruthy();
-    expect(screen.getByText('Model: Fable 5')).toBeTruthy();
-    expect(hudStatusline).toHaveBeenCalledWith({
-      workspace: '/tmp/ws',
-      conversationId: 'c1',
-      modelId: 'claude-fable-5',
-      modelLabel: undefined,
-      contextLimit: undefined,
-    });
-  });
-
-  it('AC1: forwards context_limit and the plain live model id', async () => {
-    useAcpConfigOptionsMock.mockReturnValue({
-      model: {
-        id: 'model',
-        category: 'model',
-        currentValue: 'fable',
-        options: [{ value: 'fable', label: 'claude-fable-5-1', description: 'Custom Fable model' }],
-      },
-    });
+  it('does not poll when disabled (mobile)', () => {
     const hudStatusline = vi.fn().mockResolvedValue({ text: 'line' });
-    (window as unknown as { electronAPI: unknown }).electronAPI = { hudStatusline };
-    render(<HudStatusBar conversation_id='c1' workspace='/tmp/ws' context_limit={1_000_000} />);
+    setApi(hudStatusline);
+    const { result } = renderHook(() => useHudStatusline({ ...baseOptions, enabled: false }));
+    expect(result.current).toBeNull();
+    expect(hudStatusline).not.toHaveBeenCalled();
+  });
 
-    await waitFor(() => {
-      expect(hudStatusline).toHaveBeenCalledWith({
-        workspace: '/tmp/ws',
-        conversationId: 'c1',
-        modelId: 'fable',
-        modelLabel: 'claude-fable-5-1',
-        contextLimit: 1_000_000,
-      });
-    });
+  it('does not poll without a workspace', () => {
+    const hudStatusline = vi.fn().mockResolvedValue({ text: 'line' });
+    setApi(hudStatusline);
+    const { result } = renderHook(() => useHudStatusline({ ...baseOptions, workspace: undefined }));
+    expect(result.current).toBeNull();
+    expect(hudStatusline).not.toHaveBeenCalled();
+  });
 
-    // A "(1M context)" hint in the option text must NOT be folded into the id.
-    cleanup();
-    hudStatusline.mockClear();
-    useAcpConfigOptionsMock.mockReturnValue({
-      model: {
-        id: 'model',
-        category: 'model',
-        currentValue: 'sonnet',
-        options: [{ value: 'sonnet', label: 'claude-sonnet-5', description: 'Custom Sonnet model (1M context)' }],
-      },
-    });
-    render(<HudStatusBar conversation_id='c1' workspace='/tmp/ws' context_limit={200_000} />);
+  it('returns null when the IPC returns null', async () => {
+    const hudStatusline = vi.fn().mockResolvedValue(null);
+    setApi(hudStatusline);
+    const { result } = renderHook(() => useHudStatusline(baseOptions));
+    await waitFor(() => expect(hudStatusline).toHaveBeenCalledTimes(1));
+    expect(result.current).toBeNull();
+  });
 
-    await waitFor(() => {
+  it('returns null when the IPC rejects', async () => {
+    const hudStatusline = vi.fn().mockRejectedValue(new Error('boom'));
+    setApi(hudStatusline);
+    const { result } = renderHook(() => useHudStatusline(baseOptions));
+    await waitFor(() => expect(hudStatusline).toHaveBeenCalledTimes(1));
+    expect(result.current).toBeNull();
+  });
+
+  it('returns the statusline with the ctx element stripped', async () => {
+    const sep = `${ESC}[2m | ${ESC}[0m`;
+    setApi(vi.fn().mockResolvedValue({ text: `branch:main\nModel: Opus 5.5${sep}ctx:[######----]64%${sep}🔧309` }));
+    const { result } = renderHook(() => useHudStatusline(baseOptions));
+    await waitFor(() => expect(result.current).toBe(`branch:main\nModel: Opus 5.5${sep}🔧309`));
+  });
+
+  it('returns null when the ctx element was the only output', async () => {
+    const hudStatusline = vi.fn().mockResolvedValue({ text: 'ctx:[######----]64%' });
+    setApi(hudStatusline);
+    const { result } = renderHook(() => useHudStatusline(baseOptions));
+    await waitFor(() => expect(hudStatusline).toHaveBeenCalledTimes(1));
+    expect(result.current).toBeNull();
+  });
+
+  it('forwards context_limit and the live model id/label, not the option description', async () => {
+    const model: AcpDerivedOption = {
+      id: 'model',
+      category: 'model',
+      currentValue: 'sonnet',
+      options: [{ value: 'sonnet', label: 'claude-sonnet-5', description: 'Custom Sonnet model (1M context)' }],
+    };
+    const hudStatusline = vi.fn().mockResolvedValue({ text: 'line' });
+    setApi(hudStatusline);
+    renderHook(() =>
+      useHudStatusline({ ...baseOptions, model, current_model_id: 'persisted', context_limit: 1_000_000 })
+    );
+    await waitFor(() =>
       expect(hudStatusline).toHaveBeenCalledWith({
         workspace: '/tmp/ws',
         conversationId: 'c1',
         modelId: 'sonnet',
         modelLabel: 'claude-sonnet-5',
-        contextLimit: 200_000,
-      });
-    });
+        contextLimit: 1_000_000,
+      })
+    );
   });
 
-  it('omits contextLimit when the window size is unknown (0)', async () => {
+  it('falls back to the persisted model id and omits an unknown (0) window', async () => {
     const hudStatusline = vi.fn().mockResolvedValue({ text: 'line' });
-    (window as unknown as { electronAPI: unknown }).electronAPI = { hudStatusline };
-    render(<HudStatusBar conversation_id='c1' workspace='/tmp/ws' context_limit={0} />);
-
-    await waitFor(() => {
+    setApi(hudStatusline);
+    renderHook(() => useHudStatusline({ ...baseOptions, current_model_id: 'claude-fable-5', context_limit: 0 }));
+    await waitFor(() =>
       expect(hudStatusline).toHaveBeenCalledWith({
         workspace: '/tmp/ws',
         conversationId: 'c1',
-        modelId: undefined,
+        modelId: 'claude-fable-5',
         modelLabel: undefined,
         contextLimit: undefined,
-      });
-    });
+      })
+    );
   });
 
   it('re-polls with the new contextLimit when context_limit becomes known', async () => {
     const hudStatusline = vi.fn().mockResolvedValue({ text: 'line' });
-    (window as unknown as { electronAPI: unknown }).electronAPI = { hudStatusline };
-    const { rerender } = render(<HudStatusBar conversation_id='c1' workspace='/tmp/ws' context_limit={0} />);
-
-    await waitFor(() => {
-      expect(hudStatusline).toHaveBeenCalledTimes(1);
+    setApi(hudStatusline);
+    const { rerender } = renderHook((opts: UseHudStatuslineOptions) => useHudStatusline(opts), {
+      initialProps: { ...baseOptions, context_limit: 0 },
     });
+    await waitFor(() => expect(hudStatusline).toHaveBeenCalledTimes(1));
+    rerender({ ...baseOptions, context_limit: 200_000 });
+    await waitFor(() => expect(hudStatusline).toHaveBeenCalledTimes(2));
+    expect(hudStatusline).toHaveBeenLastCalledWith(expect.objectContaining({ contextLimit: 200_000 }));
+  });
 
-    rerender(<HudStatusBar conversation_id='c1' workspace='/tmp/ws' context_limit={200_000} />);
+  it('never shows the previous conversation text, even when its response lands late', async () => {
+    let resolveOld: (value: { text: string }) => void = () => {};
+    const hudStatusline = vi.fn(({ conversationId }: { conversationId: string }) =>
+      conversationId === 'old'
+        ? new Promise<{ text: string }>((resolve) => {
+            resolveOld = resolve;
+          })
+        : Promise.resolve({ text: 'new-text' })
+    );
+    setApi(hudStatusline);
+    const { result, rerender } = renderHook((opts: UseHudStatuslineOptions) => useHudStatusline(opts), {
+      initialProps: { ...baseOptions, conversation_id: 'old' },
+    });
+    await waitFor(() => expect(hudStatusline).toHaveBeenCalledTimes(1));
 
-    await waitFor(() => {
-      expect(hudStatusline).toHaveBeenCalledTimes(2);
+    rerender({ ...baseOptions, conversation_id: 'new' });
+    expect(result.current).toBeNull();
+    await waitFor(() => expect(result.current).toBe('new-text'));
+
+    await act(async () => {
+      resolveOld({ text: 'old-text' });
     });
-    expect(hudStatusline).toHaveBeenLastCalledWith({
-      workspace: '/tmp/ws',
-      conversationId: 'c1',
-      modelId: undefined,
-      modelLabel: undefined,
-      contextLimit: 200_000,
+    expect(result.current).toBe('new-text');
+  });
+
+  it('hides the previous conversation text immediately on switch', async () => {
+    const hudStatusline = vi.fn(({ conversationId }: { conversationId: string }) =>
+      conversationId === 'a' ? Promise.resolve({ text: 'a-text' }) : new Promise(() => {})
+    );
+    setApi(hudStatusline);
+    const { result, rerender } = renderHook((opts: UseHudStatuslineOptions) => useHudStatusline(opts), {
+      initialProps: { ...baseOptions, conversation_id: 'a' },
     });
+    await waitFor(() => expect(result.current).toBe('a-text'));
+    rerender({ ...baseOptions, conversation_id: 'b' });
+    expect(result.current).toBeNull();
+  });
+
+  it('polls every 30s and stops after unmount', async () => {
+    vi.useFakeTimers();
+    const hudStatusline = vi.fn().mockResolvedValue({ text: 'line' });
+    setApi(hudStatusline);
+    const { unmount } = renderHook(() => useHudStatusline(baseOptions));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(hudStatusline).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    expect(hudStatusline).toHaveBeenCalledTimes(2);
+
+    unmount();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(90_000);
+    });
+    expect(hudStatusline).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('HudText', () => {
+  afterEach(cleanup);
+
+  it('renders each statusline line with the escape codes removed', () => {
+    render(<HudText text={`${ESC}[32mbranch:main${ESC}[0m\nModel: Fable 5`} />);
+    expect(screen.getByTestId('chat-hud-statusline')).toBeTruthy();
+    expect(screen.getByText('branch:main')).toBeTruthy();
+    expect(screen.getByText('Model: Fable 5')).toBeTruthy();
+    expect(screen.getByTestId('chat-hud-statusline').textContent).not.toContain(ESC);
   });
 });

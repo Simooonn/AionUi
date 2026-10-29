@@ -6,9 +6,9 @@
 
 /**
  * Minimal ANSI SGR parser for statusline output. Turns a line of ANSI-colored
- * text into styled segments the HUD status bar renders as spans. Handles the
- * SGR subset statusline scripts actually emit (reset, bold, dim, italic,
- * underline, 16-color foregrounds); other escape sequences are stripped.
+ * text into styled segments `HudText` renders as spans. Handles the SGR subset
+ * statusline scripts actually emit (reset, bold, dim, italic, underline,
+ * 16-color foregrounds); other escape sequences are stripped.
  */
 
 export type AnsiSegment = {
@@ -83,6 +83,52 @@ function applySgr(params: string, state: SgrState): void {
 // CSI sequences (ESC [ ... final-byte); SGR is final byte "m".
 // eslint-disable-next-line no-control-regex
 const CSI_RE = /\x1b\[([0-9;]*)([\x40-\x7e])/g;
+
+// Renderer-side copy of `stripContextSegment` in process/ace/hudStatusline.ts
+// (the renderer must not import main-process modules). Keep the two in step;
+// tests/unit/conversation/hudStatusBar.dom.test.tsx checks they agree.
+// HUD elements are joined with dim(" | "); outside safe mode every space
+// becomes a NBSP, which JS `\s` matches as well.
+// eslint-disable-next-line no-control-regex
+const SEPARATOR_RE = /((?:\x1b\[2m)?\s\|\s(?:\x1b\[0m)?)/;
+// eslint-disable-next-line no-control-regex
+const SGR_RE = /\x1b\[[0-9;]*m/g;
+// A ctx element: `ctx`/`上下文` label, optional [bar], NN%, optional suffix.
+const CTX_RE = /^(?:ctx|上下文):(?:\[[^\]]*\])?\d{1,3}%(?:\s(?:CRITICAL|COMPRESS\?))?$/;
+
+const isContextSegment = (segment: string): boolean => CTX_RE.test(segment.replace(SGR_RE, '').trim());
+
+/**
+ * Remove the HUD's ctx element from statusline output shown in the
+ * context-usage popover, whose ring already reports context usage — two
+ * percentages from different sources would disagree side by side.
+ *
+ * A matching segment is dropped together with one adjacent separator; a line
+ * is dropped only when removing the ctx element emptied it. Returns '' when
+ * nothing printable is left.
+ */
+export function stripHudCtxSegment(text: string): string {
+  const keptLines: string[] = [];
+  for (const line of text.split('\n')) {
+    // Capturing split: [segment, separator, segment, separator, ...].
+    const parts = line.split(SEPARATOR_RE);
+    const out: string[] = [];
+    let removed = false;
+    for (let i = 0; i < parts.length; i += 2) {
+      if (isContextSegment(parts[i])) {
+        removed = true;
+        continue;
+      }
+      if (out.length > 0) out.push(parts[i - 1]);
+      out.push(parts[i]);
+    }
+    const rebuilt = out.join('');
+    if (removed && !rebuilt.trim()) continue;
+    keptLines.push(rebuilt);
+  }
+  const result = keptLines.join('\n');
+  return result.trim() ? result : '';
+}
 
 /** Parse one line of ANSI text into styled segments (escape-free). */
 export function parseAnsiLine(line: string): AnsiSegment[] {

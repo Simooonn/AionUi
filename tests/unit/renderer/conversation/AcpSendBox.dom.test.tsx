@@ -253,8 +253,21 @@ vi.mock('@/renderer/hooks/chat/useAutoTitle', () => ({
     checkAndUpdateTitle: checkAndUpdateTitleMock,
   }),
 }));
+// The HUD poller has its own tests (hudStatusBar.dom.test.tsx); here it is a
+// stub so these tests control whether the sendbox has HUD text.
+const { hudTextRef, useHudStatuslineSpy, conversationContextRef } = vi.hoisted(() => ({
+  hudTextRef: { current: null as string | null },
+  useHudStatuslineSpy: vi.fn(),
+  conversationContextRef: { current: null as { workspace?: string } | null },
+}));
+vi.mock('@/renderer/pages/conversation/platforms/acp/hudStatusBar/useHudStatusline', () => ({
+  useHudStatusline: (options: unknown) => {
+    useHudStatuslineSpy(options);
+    return hudTextRef.current;
+  },
+}));
 vi.mock('@/renderer/hooks/context/ConversationContext', () => ({
-  useConversationContextSafe: () => null,
+  useConversationContextSafe: () => conversationContextRef.current,
 }));
 vi.mock('@/renderer/hooks/context/LayoutContext', () => ({
   useLayoutContext: () => ({ isMobile: isMobileMock.current }),
@@ -369,6 +382,8 @@ describe('AcpSendBox', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     isMobileMock.current = false;
+    hudTextRef.current = null;
+    conversationContextRef.current = null;
     mobileActionSheetEntries.current = [];
     runtimeViewMock.hydrated = true;
     runtimeViewMock.state = 'idle';
@@ -456,6 +471,64 @@ describe('AcpSendBox', () => {
       />
     );
     expect(container.querySelector('.context-usage-indicator')).toBeNull();
+    expect(container.querySelector('.context-usage-hud-icon')).toBeNull();
+  });
+
+  it('shows the HUD info icon when there is HUD text but no usage report yet', () => {
+    hudTextRef.current = 'branch:main';
+    const { container } = render(
+      <AcpSendBox conversation_id='conv-1' backend='claude' messageState={makeMessageState()} />
+    );
+    expect(container.querySelector('.context-usage-hud-icon')).not.toBeNull();
+    expect(container.querySelector('.context-usage-indicator')).toBeNull();
+  });
+
+  it('keeps the usage ring when both usage and HUD text exist', () => {
+    hudTextRef.current = 'branch:main';
+    const { container } = render(
+      <AcpSendBox
+        conversation_id='conv-1'
+        backend='claude'
+        messageState={{ ...makeMessageState(), tokenUsage: { total_tokens: 500_000 }, context_limit: 1_000_000 }}
+      />
+    );
+    expect(container.querySelector('.context-usage-indicator')).not.toBeNull();
+    expect(container.querySelector('.context-usage-hud-icon')).toBeNull();
+  });
+
+  it('polls the HUD with the conversation workspace and live model, and not on mobile', () => {
+    conversationContextRef.current = { workspace: '/tmp/ws' };
+    useAcpConfigOptionsMock.mockReturnValue({
+      setStatus: { state: 'idle' },
+      mode: null,
+      model: { id: 'model', category: 'model', currentValue: 'opus', options: [] },
+      thoughtLevel: null,
+      reload: vi.fn(),
+      setConfigOption: vi.fn(),
+    });
+    const { unmount } = render(
+      <AcpSendBox
+        conversation_id='conv-1'
+        backend='claude'
+        current_model_id='persisted'
+        messageState={{ ...makeMessageState(), context_limit: 1_000_000 }}
+      />
+    );
+    expect(useHudStatuslineSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        conversation_id: 'conv-1',
+        workspace: '/tmp/ws',
+        model: expect.objectContaining({ currentValue: 'opus' }),
+        current_model_id: 'persisted',
+        context_limit: 1_000_000,
+        enabled: true,
+      })
+    );
+    unmount();
+
+    isMobileMock.current = true;
+    render(<AcpSendBox conversation_id='conv-1' backend='claude' messageState={makeMessageState()} />);
+    expect(useHudStatuslineSpy).toHaveBeenLastCalledWith(expect.objectContaining({ enabled: false }));
   });
 
   it('suppresses internal error cards and loading reset for active-turn busy conflicts', async () => {

@@ -75,6 +75,41 @@ describe('ContextUsageIndicator', () => {
   it('renders nothing without any usage report', () => {
     const { container } = render(<ContextUsageIndicator tokenUsage={null} context_limit={262_144} />);
     expect(container.querySelector('.context-usage-indicator')).toBeNull();
+    expect(container.querySelector('.context-usage-hud-icon')).toBeNull();
+  });
+
+  it('shows a neutral info icon opening the HUD alone when there is HUD content but no usage', () => {
+    const { container, getByTestId } = render(
+      <ContextUsageIndicator tokenUsage={null} context_limit={262_144} hudContent={<span>branch:main</span>} />
+    );
+
+    expect(getByTestId('context-usage-hud-icon')).toBeTruthy();
+    // No ring and no usage numbers: nothing to report yet, so nothing is invented.
+    expect(container.querySelector('.context-usage-indicator')).toBeNull();
+    expect(getByTestId('popover-content').textContent).toBe('branch:main');
+  });
+
+  it('keeps the ring and appends the HUD below the usage details when both exist', () => {
+    const { container, getByTestId, queryByTestId } = render(
+      <ContextUsageIndicator
+        tokenUsage={{ total_tokens: 12_600 }}
+        context_limit={262_144}
+        hudContent={<span>branch:main</span>}
+      />
+    );
+
+    expect(container.querySelector('.context-usage-indicator')).not.toBeNull();
+    expect(queryByTestId('context-usage-hud-icon')).toBeNull();
+    expect(getByTestId('context-usage-hud-section').textContent).toBe('branch:main');
+    const popover = getByTestId('popover-content').textContent ?? '';
+    expect(popover.indexOf('4.8% · 12.6K / 262.1K')).toBeLessThan(popover.indexOf('branch:main'));
+  });
+
+  it('adds no HUD section or divider when hudContent is absent', () => {
+    const { queryByTestId } = render(
+      <ContextUsageIndicator tokenUsage={{ total_tokens: 12_600 }} context_limit={262_144} />
+    );
+    expect(queryByTestId('context-usage-hud-section')).toBeNull();
   });
 
   it('shows session cost and per-turn breakdown when the agent reported them', () => {

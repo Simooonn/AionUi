@@ -1,9 +1,6 @@
-.statusBar {
-  flex-shrink: 0;
-  max-width: 800px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 4px 12px 8px;
+.hud {
+  /* Cap the popover width: a statusline line runs to ~90 monospace chars. */
+  max-width: min(520px, 80vw);
   font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
   font-size: 11px;
   line-height: 1.7;

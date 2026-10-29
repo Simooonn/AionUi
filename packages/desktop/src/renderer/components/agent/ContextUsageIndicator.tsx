@@ -5,6 +5,9 @@
  */
 
 import { Popover } from '@arco-design/web-react';
+// ace:start HUD popover slot
+import { Info } from '@icon-park/react';
+// ace:end
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -21,6 +24,14 @@ interface ContextUsageIndicatorProps {
   context_limit: number;
   className?: string;
   size?: number;
+  // ace:start HUD popover slot
+  /**
+   * Extra popover content shown below the usage details (the ACP HUD
+   * statusline). Pass `undefined` when there is none. With content but no
+   * usage report, the entry is a neutral info icon instead of the ring.
+   */
+  hudContent?: React.ReactNode;
+  // ace:end
 }
 
 const ContextUsageIndicator: React.FC<ContextUsageIndicatorProps> = ({
@@ -28,6 +39,7 @@ const ContextUsageIndicator: React.FC<ContextUsageIndicatorProps> = ({
   context_limit,
   className = '',
   size = 20,
+  hudContent, // ace: HUD popover slot
 }) => {
   const { t, i18n } = useTranslation();
   const locale = i18n.language;
@@ -75,6 +87,28 @@ const ContextUsageIndicator: React.FC<ContextUsageIndicatorProps> = ({
   }, [tokenUsage, context_limit, hasWindow, locale]);
 
   if (!tokenUsage) {
+    // ace:start HUD popover slot
+    // No usage report yet but HUD content exists: a neutral info icon opens
+    // the HUD alone — no ring, no percentage, no fabricated usage numbers.
+    if (hudContent) {
+      return (
+        <Popover
+          content={<div className='p-8px'>{hudContent}</div>}
+          position='top'
+          trigger='hover'
+          className='context-usage-popover'
+        >
+          <div
+            data-testid='context-usage-hud-icon'
+            className={`context-usage-hud-icon cursor-pointer flex items-center justify-center text-t-secondary ${className}`}
+            style={{ width: 32, height: 32 }}
+          >
+            <Info theme='outline' size='16' fill='currentColor' />
+          </div>
+        </Popover>
+      );
+    }
+    // ace:end
     return null;
   }
 
@@ -136,6 +170,13 @@ const ContextUsageIndicator: React.FC<ContextUsageIndicatorProps> = ({
       {breakdownParts.length > 0 && (
         <div className='text-12px text-t-secondary mt-4px'>{breakdownParts.join(' · ')}</div>
       )}
+      {/* ace:start HUD popover slot */}
+      {hudContent && (
+        <div data-testid='context-usage-hud-section' className='border-t border-arco-2 mt-8px pt-8px'>
+          {hudContent}
+        </div>
+      )}
+      {/* ace:end */}
     </>
   );
 

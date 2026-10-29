@@ -4,9 +4,9 @@
  * Case 1 only verifies the AC6b contract: with no conversation identity the
  * `hudStatusline` IPC returns null and executes no statusLine command. The
  * positive leg – actually running the command and showing its output in the
- * status bar of a real conversation – is case 2, which sends a real message
- * and is therefore disabled by default. Both cases skip gracefully on
- * machines without a configured statusLine command (e.g. CI).
+ * context-usage popover of a real conversation – is case 2, which sends a real
+ * message. Both cases skip gracefully on machines without a configured
+ * statusLine command (e.g. CI).
  */
 import fs from 'node:fs';
 import os from 'node:os';
@@ -21,7 +21,12 @@ import {
   AGENT_PILL,
 } from '../helpers';
 
-const STATUS_BAR = '[data-testid="chat-hud-statusline"]';
+const HUD_TEXT = '[data-testid="chat-hud-statusline"]';
+// The HUD opens from the context-usage entry: the usage ring, or a neutral
+// info icon while the agent has not reported usage yet.
+const HUD_ENTRY = '.context-usage-indicator, .context-usage-hud-icon';
+// A ctx element as OMC renders it (`ctx:[####]64%`, `ctx:64%`, `上下文:64%`).
+const CTX_ELEMENT_RE = /(?:ctx|上下文):(?:\[[^\]]*\])?\d{1,3}%/;
 
 type HudApi = {
   electronAPI?: {
@@ -75,8 +80,8 @@ test.describe('ACP chat HUD statusline', () => {
     expect(result).toBeNull();
   });
 
-  test('status bar appears at the bottom of a normal claude conversation', async ({ page }) => {
-    // Probe first: without a configured statusLine command the bar (correctly)
+  test('HUD shows inside the context-usage popover of a normal claude conversation', async ({ page }) => {
+    // Probe first: without a configured statusLine command the HUD (correctly)
     // never appears — skip instead of failing. Gate on the settings file, not
     // on an IPC call, because a call without a conversation is always null now.
     if (!readConfiguredStatusLine()) {
@@ -104,12 +109,24 @@ test.describe('ACP chat HUD statusline', () => {
     const conversationId = await sendMessageFromGuid(page, 'e2e hud status bar smoke');
     expect(conversationId).toBeTruthy();
 
+    // The bottom bar is gone: nothing HUD-like may render outside the popover.
+    expect(await page.locator(HUD_TEXT).count()).toBe(0);
+
     // First refresh fires on mount; the transcript may lag the first turn, so
-    // allow one 30s poll cycle before concluding.
-    const bar = page.locator(STATUS_BAR);
-    await bar.waitFor({ state: 'visible', timeout: 70_000 });
-    const text = await bar.innerText();
+    // allow a couple of 30s poll cycles. The popover content only mounts while
+    // it is open, so re-hover until the HUD text shows up.
+    const entry = page.locator(HUD_ENTRY).first();
+    const hud = page.locator(HUD_TEXT);
+    await expect(async () => {
+      await entry.hover({ timeout: 5_000 });
+      await hud.waitFor({ state: 'visible', timeout: 3_000 });
+    }).toPass({ timeout: 90_000, intervals: [2_000, 5_000, 10_000] });
+
+    const text = await hud.innerText();
     expect(text.trim().length).toBeGreaterThan(0);
+    // The popover header already reports context usage; the HUD's own ctx
+    // element is stripped so the two numbers never sit side by side.
+    expect(text).not.toMatch(CTX_ELEMENT_RE);
     await page.screenshot({ path: 'tests/e2e/results/hud-status-bar.png' });
 
     // Cleanup: remove the smoke-test conversation

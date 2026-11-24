@@ -20,6 +20,8 @@ type Props = {
   nameClassName?: string;
   nameStyle?: React.CSSProperties;
   nameTestId?: string;
+  /** When false, hide the name span and leader crown — avatar-only rendering (member avatar strip). */
+  nameVisible?: boolean;
   crownClassName?: string;
   /** 叠加在头像右下角的节点（如状态点）。传入时头像外层为 relative 定位容器。 */
   avatarOverlay?: React.ReactNode;
@@ -37,6 +39,7 @@ const TeamAgentIdentity: React.FC<Props> = ({
   nameClassName,
   nameStyle,
   nameTestId,
+  nameVisible = true,
   crownClassName,
   avatarOverlay,
 }) => {
@@ -112,14 +115,16 @@ const TeamAgentIdentity: React.FC<Props> = ({
       ) : (
         renderAvatar()
       )}
-      <span
-        data-testid={nameTestId}
-        className={['min-w-0 flex-1 truncate', nameClassName].filter(Boolean).join(' ')}
-        style={nameStyle}
-      >
-        {displayName}
-      </span>
-      {isLeader && (
+      {nameVisible && (
+        <span
+          data-testid={nameTestId}
+          className={['min-w-0 flex-1 truncate', nameClassName].filter(Boolean).join(' ')}
+          style={nameStyle}
+        >
+          {displayName}
+        </span>
+      )}
+      {nameVisible && isLeader && (
         <span
           data-testid='team-leader-crown'
           className={['shrink-0 leading-none drop-shadow-sm', crownClassName].filter(Boolean).join(' ')}

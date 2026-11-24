@@ -495,7 +495,7 @@ const AssistantChatSlot: React.FC<{
               />
             </div>
           )}
-          {/* 移除入口统一到顶部胶囊（team-tab-remove-*），抬头这里不再重复放 X。 */}
+          {/* 移除入口统一到成员列表浮层（member-list-panel-remove-*），抬头这里不再重复放 X。 */}
           <div
             className='shrink-0 flex items-center justify-center leading-none cursor-pointer hover:bg-[var(--fill-3)] p-4px rd-4px text-[color:var(--color-text-3)] hover:text-[color:var(--color-text-1)] transition-colors'
             onClick={() => onToggleFullscreen?.()}

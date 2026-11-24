@@ -96,6 +96,11 @@ export type WorkspaceGroupedHistoryProps = {
   batchMode?: boolean;
   onBatchModeChange?: (value: boolean) => void;
   afterPinnedContent?: ReactNode;
+  // ace:start sidebar-tabs — which non-pinned section is visible below the pinned region
+  /** Active sidebar view tab. The pinned region stays visible across all tabs.
+   *  When undefined (legacy direct usage), every section renders as before. */
+  activeTab?: 'recent' | 'team' | 'project';
+  // ace:end
 };
 
 export type DragItemType = 'conversation' | 'workspace';

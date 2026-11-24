@@ -99,9 +99,13 @@ test.describe('Team Member Slot UI', () => {
 
     await page.screenshot({ path: 'tests/e2e/results/team-member-fail-02.png' });
 
-    // [assert] A remove button/icon is accessible for the failed slot
-    await memberTab.hover();
-    const removeBtn = page.locator(`[data-testid="team-tab-remove-${slotId}"]`);
+    // [assert] A remove button/icon is accessible for the failed slot via the member-list popover
+    await tabBar.locator('[data-testid="member-list-btn"]').click();
+    const panel = page.locator('[data-testid="member-list-panel"]');
+    await expect(panel).toBeVisible({ timeout: 5_000 });
+    const memberRow = panel.locator(`[data-testid="member-list-panel-member-${slotId}"]`);
+    await memberRow.hover();
+    const removeBtn = memberRow.locator(`[data-testid="member-list-panel-remove-${slotId}"]`);
     await expect(removeBtn).toBeVisible({ timeout: 3_000 });
 
     await page.screenshot({ path: 'tests/e2e/results/team-member-fail-03.png' });

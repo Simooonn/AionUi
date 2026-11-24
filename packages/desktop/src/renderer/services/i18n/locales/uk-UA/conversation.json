@@ -114,7 +114,8 @@
     "archiving": "Archiving...",
     "folderStatusWaiting": "Розмови очікують на дію",
     "folderStatusGenerating": "Розмови виконуються",
-    "folderStatusUnread": "Розмови з непрочитаними результатами"
+    "folderStatusUnread": "Розмови з непрочитаними результатами",
+    "projectsEmpty": "No projects yet"
   },
   "historySearch": {
     "tooltip": "Пошук повідомлень",
@@ -852,5 +853,10 @@
     "progress": "{{completed}}/{{total}}",
     "expand": "Розгорнути план",
     "collapse": "Згорнути план"
+  },
+  "sider": {
+    "tabRecent": "Recent",
+    "tabTeam": "Teams",
+    "tabProject": "Projects"
   }
 }

@@ -110,7 +110,8 @@
     "archiving": "Archiving...",
     "folderStatusWaiting": "操作待ちの会話があります",
     "folderStatusGenerating": "進行中の会話があります",
-    "folderStatusUnread": "未読の完了済み会話があります"
+    "folderStatusUnread": "未読の完了済み会話があります",
+    "projectsEmpty": "No projects yet"
   },
   "historySearch": {
     "tooltip": "メッセージを検索",
@@ -836,5 +837,10 @@
     "progress": "{{completed}}/{{total}}",
     "expand": "プランを展開",
     "collapse": "プランを折りたたむ"
+  },
+  "sider": {
+    "tabRecent": "Recent",
+    "tabTeam": "Teams",
+    "tabProject": "Projects"
   }
 }

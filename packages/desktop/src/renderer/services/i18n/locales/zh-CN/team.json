@@ -18,7 +18,8 @@
     "deleteSuccess": "团队已删除",
     "archive": "归档",
     "archiveSuccess": "已归档团队",
-    "archiveFailed": "归档团队失败"
+    "archiveFailed": "归档团队失败",
+    "emptyHint": "还没有团队"
   },
   "newAgent": "新助手",
   "noMessages": "暂无消息。",
@@ -147,6 +148,11 @@
       "notApplied": "未能开始新上下文，当前上下文已保留。",
       "failed": "开始新上下文失败，请重试。"
     }
+  },
+  "memberList": {
+    "searchPlaceholder": "搜索成员",
+    "noResults": "未找到成员",
+    "collapsedCount": "更多成员"
   },
   "systemNotice": {
     "sender": "团队",

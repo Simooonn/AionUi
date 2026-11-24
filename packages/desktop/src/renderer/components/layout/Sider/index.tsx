@@ -10,6 +10,10 @@ import { useThemeContext } from '@renderer/hooks/context/ThemeContext';
 import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry, SiderAssistantEntry } from './SiderNav';
 import SiderFooter from './SiderFooter';
 import TeamSiderSection from './TeamSiderSection';
+// ace:start sidebar-tabs — three-view tab bar below the pinned region
+import SiderTabBar from './tabs/SiderTabBar';
+import { useSiderTab } from './tabs/useSiderTab';
+// ace:end
 import siderStyles from './Sider.module.css';
 
 const WorkspaceGroupedHistory = React.lazy(() => import('@renderer/pages/conversation/GroupedHistory'));
@@ -33,6 +37,9 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
   const [isBatchMode, setIsBatchMode] = useState(false);
   const isSettings = pathname.startsWith('/settings');
   const lastNonSettingsPathRef = useRef('/guid');
+  // ace:start sidebar-tabs
+  const { activeTab, setActiveTab } = useSiderTab();
+  // ace:end
   const showLogout =
     typeof window !== 'undefined' && !(window as { electronAPI?: unknown }).electronAPI && status === 'authenticated';
 
@@ -169,6 +176,9 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
     onSessionClick,
     batchMode: isBatchMode,
     onBatchModeChange: setIsBatchMode,
+    // ace:start sidebar-tabs
+    activeTab,
+    // ace:end
   };
 
   return (
@@ -223,6 +233,10 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
                 collapsed ? 'mx-6px' : 'mx-10px'
               )}
             />
+            {/* ace:start sidebar-tabs — the three-view tab bar sits between the divider
+                and the scrollable content; hidden when the sider is collapsed */}
+            {!collapsed && <SiderTabBar activeTab={activeTab} onTabChange={setActiveTab} disabled={isBatchMode} />}
+            {/* ace:end */}
             {/* Scrollable content: pinned → team (slot) → projects → conversations */}
             <div className={classNames('flex-1 min-h-0 overflow-y-auto', siderStyles.scrollArea)}>
               <Suspense fallback={<div className='min-h-200px' />}>

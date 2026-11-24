@@ -18,7 +18,8 @@
     "deleteSuccess": "팀이 삭제되었습니다",
     "archive": "Archive",
     "archiveSuccess": "Team archived",
-    "archiveFailed": "Failed to archive team"
+    "archiveFailed": "Failed to archive team",
+    "emptyHint": "No teams yet"
   },
   "newAgent": "새 어시스턴트",
   "noMessages": "No messages yet.",
@@ -147,6 +148,11 @@
       "notApplied": "새 컨텍스트를 시작하지 못했습니다. 현재 컨텍스트는 유지되었습니다.",
       "failed": "새 컨텍스트를 시작하지 못했습니다. 다시 시도하세요."
     }
+  },
+  "memberList": {
+    "searchPlaceholder": "Search members",
+    "noResults": "No members found",
+    "collapsedCount": "More members"
   },
   "systemNotice": {
     "sender": "팀",

@@ -18,7 +18,8 @@
     "deleteSuccess": "チームを削除しました",
     "archive": "Archive",
     "archiveSuccess": "Team archived",
-    "archiveFailed": "Failed to archive team"
+    "archiveFailed": "Failed to archive team",
+    "emptyHint": "No teams yet"
   },
   "newAgent": "新しいアシスタント",
   "noMessages": "No messages yet.",
@@ -147,6 +148,11 @@
       "notApplied": "新しいコンテキストを開始できませんでした。現在のコンテキストは保持されています。",
       "failed": "新しいコンテキストの開始に失敗しました。もう一度お試しください。"
     }
+  },
+  "memberList": {
+    "searchPlaceholder": "Search members",
+    "noResults": "No members found",
+    "collapsedCount": "More members"
   },
   "systemNotice": {
     "sender": "チーム",

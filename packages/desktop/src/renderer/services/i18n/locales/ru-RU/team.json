@@ -18,7 +18,8 @@
     "deleteSuccess": "Команда удалена",
     "archive": "Archive",
     "archiveSuccess": "Team archived",
-    "archiveFailed": "Failed to archive team"
+    "archiveFailed": "Failed to archive team",
+    "emptyHint": "No teams yet"
   },
   "newAgent": "Новый ассистент",
   "noMessages": "Пока нет сообщений.",
@@ -147,6 +148,11 @@
       "notApplied": "Не удалось начать новый контекст. Текущий контекст сохранён.",
       "failed": "Не удалось начать новый контекст. Повторите попытку."
     }
+  },
+  "memberList": {
+    "searchPlaceholder": "Search members",
+    "noResults": "No members found",
+    "collapsedCount": "More members"
   },
   "systemNotice": {
     "sender": "Команда",

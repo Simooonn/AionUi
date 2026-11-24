@@ -110,7 +110,8 @@
     "archiving": "Archiving...",
     "folderStatusWaiting": "İşlem bekleyen konuşmalar",
     "folderStatusGenerating": "Devam eden konuşmalar",
-    "folderStatusUnread": "Okunmamış sonuçlu konuşmalar"
+    "folderStatusUnread": "Okunmamış sonuçlu konuşmalar",
+    "projectsEmpty": "No projects yet"
   },
   "historySearch": {
     "tooltip": "Mesajları ara",
@@ -838,5 +839,10 @@
     "progress": "{{completed}}/{{total}}",
     "expand": "Planı genişlet",
     "collapse": "Planı daralt"
+  },
+  "sider": {
+    "tabRecent": "Recent",
+    "tabTeam": "Teams",
+    "tabProject": "Projects"
   }
 }

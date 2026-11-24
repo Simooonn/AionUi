@@ -18,7 +18,8 @@
     "deleteSuccess": "團隊已刪除",
     "archive": "封存",
     "archiveSuccess": "已封存團隊",
-    "archiveFailed": "封存團隊失敗"
+    "archiveFailed": "封存團隊失敗",
+    "emptyHint": "還沒有團隊"
   },
   "newAgent": "新助手",
   "noMessages": "No messages yet.",
@@ -147,6 +148,11 @@
       "notApplied": "未能開始新上下文，目前上下文已保留。",
       "failed": "開始新上下文失敗，請再試一次。"
     }
+  },
+  "memberList": {
+    "searchPlaceholder": "搜尋成員",
+    "noResults": "未找到成員",
+    "collapsedCount": "更多成員"
   },
   "systemNotice": {
     "sender": "團隊",

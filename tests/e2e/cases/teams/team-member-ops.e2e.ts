@@ -35,15 +35,21 @@ test.describe('Team Member Ops', () => {
     const leaderTab = tabBar.locator('[data-team-tab-role="leader"]').first();
     await expect(leaderTab).toBeVisible({ timeout: 10_000 });
 
-    const originalName = await leaderTab.locator('[data-testid^="team-tab-name-"]').first().textContent();
+    // Open the member-list popover (rename/remove now live there, not on the strip).
+    await tabBar.locator('[data-testid="member-list-btn"]').click();
+    const panel = page.locator('[data-testid="member-list-panel"]');
+    await expect(panel).toBeVisible({ timeout: 5_000 });
+
+    const leaderRow = panel.locator('[data-testid^="member-list-panel-member-"][data-active="true"]');
+    const originalName = await leaderRow.locator('[data-testid^="member-list-panel-name-"]').first().textContent();
     expect(originalName?.trim()).toBeTruthy();
 
     await page.screenshot({ path: 'tests/e2e/results/member-ops-01-before-rename.png' });
 
-    // Double-click the tab to enter edit mode
-    await leaderTab.dblclick();
+    // Double-click the leader row to enter edit mode
+    await leaderRow.dblclick();
 
-    const renameInput = leaderTab.locator('input');
+    const renameInput = leaderRow.locator('input');
     await expect(renameInput).toBeVisible({ timeout: 5_000 });
 
     await page.screenshot({ path: 'tests/e2e/results/member-ops-02-editing.png' });
@@ -56,8 +62,10 @@ test.describe('Team Member Ops', () => {
     // Input should disappear (editing committed)
     await expect(renameInput).toBeHidden({ timeout: 5_000 });
 
-    // Tab should now display the new name
-    await expect(leaderTab.locator('[data-testid^="team-tab-name-"]').first()).toHaveText(newName, { timeout: 10_000 });
+    // The leader row should now display the new name
+    await expect(leaderRow.locator('[data-testid^="member-list-panel-name-"]').first()).toHaveText(newName, {
+      timeout: 10_000,
+    });
 
     await page.screenshot({ path: 'tests/e2e/results/member-ops-03-renamed.png' });
   });
@@ -118,9 +126,16 @@ test.describe('Team Member Ops', () => {
     const tabsBefore = await tabBar.locator('[data-testid^="team-tab-"][data-team-tab-role]').count();
     expect(tabsBefore).toBeGreaterThanOrEqual(2);
 
-    await memberTab.hover();
+    // Open the member-list popover; remove now lives there.
+    await tabBar.locator('[data-testid="member-list-btn"]').click();
+    const panel = page.locator('[data-testid="member-list-panel"]');
+    await expect(panel).toBeVisible({ timeout: 5_000 });
 
-    const closeBtn = memberTab.locator(`[data-testid="team-tab-remove-${addResult.slot_id}"]`);
+    const memberRow = panel.locator(`[data-testid="member-list-panel-member-${addResult.slot_id}"]`);
+    await expect(memberRow).toBeVisible({ timeout: 5_000 });
+    await memberRow.hover();
+
+    const closeBtn = memberRow.locator(`[data-testid="member-list-panel-remove-${addResult.slot_id}"]`);
     await expect(closeBtn).toBeVisible({ timeout: 3_000 });
     await closeBtn.click();
 

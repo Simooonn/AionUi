@@ -18,7 +18,8 @@
     "deleteSuccess": "Team deleted",
     "archive": "Archive",
     "archiveSuccess": "Team archived",
-    "archiveFailed": "Failed to archive team"
+    "archiveFailed": "Failed to archive team",
+    "emptyHint": "No teams yet"
   },
   "newAgent": "New Assistant",
   "noMessages": "No messages yet.",
@@ -147,6 +148,11 @@
       "notApplied": "Could not start a new context. The current context was kept.",
       "failed": "Failed to start a new context. Please try again."
     }
+  },
+  "memberList": {
+    "searchPlaceholder": "Search members",
+    "noResults": "No members found",
+    "collapsedCount": "More members"
   },
   "systemNotice": {
     "sender": "Team",

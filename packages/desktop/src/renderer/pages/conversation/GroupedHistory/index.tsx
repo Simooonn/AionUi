@@ -68,6 +68,9 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
   batchMode = false,
   onBatchModeChange,
   afterPinnedContent,
+  // ace:start sidebar-tabs — undefined keeps the legacy all-sections behavior for direct callers
+  activeTab,
+  // ace:end
 }) => {
   const { id } = useParams();
   const { t } = useTranslation();
@@ -670,14 +673,34 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
       </div>
     ) : null;
 
+  // ace:start sidebar-tabs — section visibility: undefined (legacy) shows everything
+  const showRecentTab = activeTab === undefined || activeTab === 'recent';
+  const showTeamTab = activeTab === undefined || activeTab === 'team';
+  const showProjectTab = activeTab === undefined || activeTab === 'project';
+  // ace:end
+
   if (timelineSections.length === 0 && pinnedConversations.length === 0) {
     return (
       <>
         {listStatus}
-        {afterPinnedContent}
-        <div className='py-48px flex-center'>
-          <Empty description={t('conversation.history.noHistory')} />
-        </div>
+        {/* ace:start sidebar-tabs — the empty-state early return must respect the active tab
+            the same way the main return does: team tab shows the team slot, project tab
+            shows the project empty card, recent/legacy shows the generic no-history empty. */}
+        {showTeamTab && afterPinnedContent}
+        {showProjectTab && activeTab === 'project' ? (
+          <div
+            data-testid='project-tab-empty-state'
+            className='flex flex-col items-center gap-8px rounded-10px border border-dashed border-[color:var(--border-3)] px-12px py-16px'
+          >
+            <FolderClose theme='outline' size='20' fill='currentColor' className='text-t-tertiary' />
+            <span className='text-13px text-t-secondary text-center'>{t('conversation.history.projectsEmpty')}</span>
+          </div>
+        ) : (
+          <div className='py-48px flex-center'>
+            <Empty description={t('conversation.history.noHistory')} />
+          </div>
+        )}
+        {/* ace:end */}
       </>
     );
   }
@@ -885,7 +908,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         )}
 
         {/* ace:start recent-section — every conversation, newest first, above the Team slot */}
-        {showRecentSection && (
+        {showRecentTab && showRecentSection && (
           <div className='min-w-0' data-testid='recent-conversations-section'>
             <SectionLabel sectionKey={RECENT_SECTION_KEY} label={t('conversation.history.recentSection')} />
             {isSectionOpen(collapsedSections, RECENT_SECTION_KEY) && (
@@ -901,10 +924,13 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         {/* ace:end */}
 
         {/* Slot 由父级（Sider）填入：例如 Team / CronJob sections，位于「置顶」之后、「项目」之前 */}
-        {afterPinnedContent}
+        {/* ace:start sidebar-tabs — the slot only shows on the team tab */}
+        {showTeamTab && afterPinnedContent}
+        {/* ace:end */}
 
         {/* L1: Projects section — workspace folders, peer to conversations (pinned ones excluded) */}
-        {unpinnedProjectGroups.length > 0 && (
+        {/* ace:start sidebar-tabs — projects only render on the project tab */}
+        {showProjectTab && unpinnedProjectGroups.length > 0 && (
           <div className='min-w-0'>
             {!collapsed && (
               <SectionLabel
@@ -1006,7 +1032,8 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         )}
 
         {/* L1: Conversations section — peer to projects, internally split by timeline */}
-        {conversationOnlySections.length > 0 && (
+        {/* ace:start sidebar-tabs — conversations only render on the project tab */}
+        {showProjectTab && conversationOnlySections.length > 0 && (
           <div className='min-w-0'>
             {!collapsed && (
               <SectionLabel sectionKey='conversations' label={t('conversation.history.conversationsSection')} />
@@ -1026,6 +1053,21 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
               ))}
           </div>
         )}
+
+        {/* ace:start sidebar-tabs — project tab empty-state when there are no projects and no free conversations */}
+        {showProjectTab &&
+          activeTab === 'project' &&
+          unpinnedProjectGroups.length === 0 &&
+          conversationOnlySections.length === 0 && (
+            <div
+              data-testid='project-tab-empty-state'
+              className='flex flex-col items-center gap-8px rounded-10px border border-dashed border-[color:var(--border-3)] px-12px py-16px'
+            >
+              <FolderClose theme='outline' size='20' fill='currentColor' className='text-t-tertiary' />
+              <span className='text-13px text-t-secondary text-center'>{t('conversation.history.projectsEmpty')}</span>
+            </div>
+          )}
+        {/* ace:end */}
       </div>
     </>
   );

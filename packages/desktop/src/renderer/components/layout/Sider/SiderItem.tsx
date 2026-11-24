@@ -22,6 +22,12 @@ export type SiderItemProps = {
   name: string;
   selected?: boolean;
   pinned?: boolean;
+  // ace:start workspace-label — optional directory label rendered after the name
+  /** Last path segment of the item's workspace, shown after the name (team sider rows). */
+  workspaceLabel?: string;
+  /** Full workspace path, shown in the hover tooltip for `workspaceLabel`. */
+  workspacePath?: string;
+  // ace:end
   menuItems?: SiderMenuItem[];
   onMenuAction?: (key: string) => void;
   onClick?: () => void;
@@ -33,6 +39,8 @@ const SiderItem: React.FC<SiderItemProps> = ({
   name,
   selected,
   pinned,
+  workspaceLabel,
+  workspacePath,
   menuItems,
   onMenuAction,
   onClick,
@@ -90,6 +98,32 @@ const SiderItem: React.FC<SiderItemProps> = ({
             <span className='block overflow-hidden text-ellipsis whitespace-nowrap'>{name}</span>
           </div>
         </div>
+
+        {/* ace:start workspace-label — directory label after the name; mirrors the
+            recent-section projectLabel in ConversationRow (same truncation + tertiary
+            color + menu-button clearance). The name div is min-w-0 so the name yields first. */}
+        {workspaceLabel && (
+          <Tooltip
+            content={workspacePath}
+            disabled={!workspacePath}
+            trigger='hover'
+            popupVisible={workspacePath ? undefined : false}
+            unmountOnExit
+            popupHoverStay={false}
+            position='top'
+          >
+            <span
+              className={classNames(
+                'shrink-0 max-w-96px truncate text-12px font-[400] text-t-tertiary',
+                isMobile || menuVisible ? 'me-16px' : 'group-hover:me-16px'
+              )}
+              data-testid='sider-item-workspace-label'
+            >
+              {workspaceLabel}
+            </span>
+          </Tooltip>
+        )}
+        {/* ace:end */}
 
         {/* Hover/active actions: three-dot menu */}
         {hasMenu && (

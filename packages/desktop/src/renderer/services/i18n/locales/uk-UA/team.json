@@ -18,7 +18,8 @@
     "deleteSuccess": "Команду видалено",
     "archive": "Archive",
     "archiveSuccess": "Team archived",
-    "archiveFailed": "Failed to archive team"
+    "archiveFailed": "Failed to archive team",
+    "emptyHint": "No teams yet"
   },
   "newAgent": "Новий асистент",
   "noMessages": "Повідомлень ще немає.",
@@ -147,6 +148,11 @@
       "notApplied": "Не вдалося почати новий контекст. Поточний контекст збережено.",
       "failed": "Не вдалося почати новий контекст. Спробуйте ще раз."
     }
+  },
+  "memberList": {
+    "searchPlaceholder": "Search members",
+    "noResults": "No members found",
+    "collapsedCount": "More members"
   },
   "systemNotice": {
     "sender": "Команда",

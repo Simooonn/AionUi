@@ -18,7 +18,8 @@
     "deleteSuccess": "تیم حذف شد",
     "archive": "Archive",
     "archiveSuccess": "Team archived",
-    "archiveFailed": "Failed to archive team"
+    "archiveFailed": "Failed to archive team",
+    "emptyHint": "No teams yet"
   },
   "newAgent": "عامل جدید",
   "noMessages": "هنوز پیامی وجود ندارد.",
@@ -147,6 +148,11 @@
       "notApplied": "زمینه جدید آغاز نشد. زمینه فعلی حفظ شد.",
       "failed": "شروع زمینه جدید ناموفق بود. دوباره تلاش کنید."
     }
+  },
+  "memberList": {
+    "searchPlaceholder": "Search members",
+    "noResults": "No members found",
+    "collapsedCount": "More members"
   },
   "systemNotice": {
     "sender": "تیم",

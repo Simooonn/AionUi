@@ -36,6 +36,17 @@ const teams: TTeam[] = [
     created_at: 1,
     updated_at: 1,
   },
+  {
+    id: 'no-workspace-team',
+    user_id: 'user-1',
+    name: 'No workspace team',
+    workspace: '',
+    workspace_mode: 'shared',
+    leader_assistant_id: 'no-ws-lead',
+    assistants: [],
+    created_at: 1,
+    updated_at: 1,
+  },
 ];
 
 vi.mock('@renderer/pages/team/hooks/useTeamList', () => ({
@@ -57,12 +68,26 @@ vi.mock('@renderer/components/layout/Sider/useSiderTeamRunning', () => ({
 vi.mock('@renderer/components/layout/Sider/SiderItem', async () => {
   const ReactModule = await vi.importActual<typeof import('react')>('react');
   return {
-    default: ({ icon, name, pinned }: { icon: React.ReactNode; name: string; pinned?: boolean }) =>
+    default: ({
+      icon,
+      name,
+      pinned,
+      workspaceLabel,
+      workspacePath,
+    }: {
+      icon: React.ReactNode;
+      name: string;
+      pinned?: boolean;
+      workspaceLabel?: string;
+      workspacePath?: string;
+    }) =>
       ReactModule.createElement(
         'div',
         {
           'data-testid': `sider-item-${name}`,
           'data-pinned': String(Boolean(pinned)),
+          'data-workspace-label': workspaceLabel ?? '',
+          'data-workspace-path': workspacePath ?? '',
         },
         icon
       ),
@@ -175,5 +200,23 @@ describe('TeamSiderSection running state', () => {
 
     expect(screen.getByTestId('collapsed-team-icon-idle-team')).toHaveAttribute('data-mock-icon', 'Peoples');
     expect(screen.queryByTestId('collapsed-team-spinner-idle-team')).not.toBeInTheDocument();
+  });
+
+  it('passes the workspace basename and full path to SiderItem for a team with a workspace', () => {
+    localStorage.setItem('team-section-expanded', 'true');
+    renderSection(false);
+
+    const row = screen.getByTestId('sider-item-Idle team');
+    expect(row).toHaveAttribute('data-workspace-label', 'idle');
+    expect(row).toHaveAttribute('data-workspace-path', '/tmp/idle');
+  });
+
+  it('passes no workspace label for a team with an empty workspace', () => {
+    localStorage.setItem('team-section-expanded', 'true');
+    renderSection(false);
+
+    const row = screen.getByTestId('sider-item-No workspace team');
+    expect(row).toHaveAttribute('data-workspace-label', '');
+    expect(row).toHaveAttribute('data-workspace-path', '');
   });
 });

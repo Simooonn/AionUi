@@ -110,7 +110,8 @@
     "archiving": "Archiving...",
     "folderStatusWaiting": "Conversations waiting for action",
     "folderStatusGenerating": "Conversations in progress",
-    "folderStatusUnread": "Conversations with unread results"
+    "folderStatusUnread": "Conversations with unread results",
+    "projectsEmpty": "No projects yet"
   },
   "historySearch": {
     "tooltip": "Search messages",
@@ -836,5 +837,10 @@
     "progress": "{{completed}}/{{total}}",
     "expand": "Expand plan",
     "collapse": "Collapse plan"
+  },
+  "sider": {
+    "tabRecent": "Recent",
+    "tabTeam": "Teams",
+    "tabProject": "Projects"
   }
 }

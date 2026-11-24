@@ -110,7 +110,8 @@
     "archiving": "Archiving...",
     "folderStatusWaiting": "작업 대기 중인 대화 있음",
     "folderStatusGenerating": "진행 중인 대화 있음",
-    "folderStatusUnread": "읽지 않은 완료 대화 있음"
+    "folderStatusUnread": "읽지 않은 완료 대화 있음",
+    "projectsEmpty": "No projects yet"
   },
   "historySearch": {
     "tooltip": "메시지 검색",
@@ -836,5 +837,10 @@
     "progress": "{{completed}}/{{total}}",
     "expand": "계획 펼치기",
     "collapse": "계획 접기"
+  },
+  "sider": {
+    "tabRecent": "Recent",
+    "tabTeam": "Teams",
+    "tabProject": "Projects"
   }
 }

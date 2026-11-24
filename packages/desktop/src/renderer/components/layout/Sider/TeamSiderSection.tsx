@@ -21,6 +21,7 @@ import { ipcBridge } from '@/common';
 import SiderItem from './SiderItem';
 import type { SiderMenuItem } from './SiderItem';
 import { useSiderTeamRunning } from './useSiderTeamRunning';
+import { getWorkspaceDisplayName } from '@renderer/utils/workspace/workspace';
 
 const TEAM_PINNED_KEY = 'team-pinned-ids';
 
@@ -259,6 +260,11 @@ const TeamSiderSection: React.FC<TeamSiderSectionProps> = ({
                     name={team.name}
                     selected={pathname.startsWith(`/team/${team.id}`)}
                     pinned={isPinned && !isRunning}
+                    // ace:start workspace-label — show the last path segment of the team's
+                    // workspace after its name; full path on hover. No label when workspace is empty.
+                    workspaceLabel={team.workspace ? getWorkspaceDisplayName(team.workspace, false, t) : undefined}
+                    workspacePath={team.workspace || undefined}
+                    // ace:end
                     menuItems={menuItems}
                     onMenuAction={(key) => {
                       if (key === 'pin') {
@@ -284,6 +290,25 @@ const TeamSiderSection: React.FC<TeamSiderSectionProps> = ({
                 </div>
               );
             })}
+          {/* ace:start sidebar-tabs — empty-state card on the team tab when there are no teams */}
+          {expanded && sortedTeams.length === 0 && (
+            <div
+              data-testid='team-tab-empty-state'
+              className='flex flex-col items-center gap-8px rounded-10px border border-dashed border-[color:var(--border-3)] px-12px py-16px'
+            >
+              <Peoples theme='outline' size='20' fill='currentColor' className='text-t-tertiary' />
+              <span className='text-13px text-t-secondary text-center'>{t('team.sider.emptyHint')}</span>
+              <button
+                type='button'
+                data-testid='team-tab-empty-create'
+                className='px-12px py-4px rounded-6px text-12px font-500 text-t-primary bg-fill-2 hover:bg-fill-3 cursor-pointer'
+                onClick={() => setCreateTeamVisible(true)}
+              >
+                {t('team.sider.createTeam')}
+              </button>
+            </div>
+          )}
+          {/* ace:end */}
         </div>
       )}
       <TeamCreateModal

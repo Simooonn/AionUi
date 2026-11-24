@@ -110,7 +110,8 @@
     "archiving": "歸檔中...",
     "folderStatusWaiting": "有對話等待操作",
     "folderStatusGenerating": "有對話進行中",
-    "folderStatusUnread": "有對話完成未讀"
+    "folderStatusUnread": "有對話完成未讀",
+    "projectsEmpty": "還沒有專案"
   },
   "historySearch": {
     "tooltip": "搜尋訊息",
@@ -836,5 +837,10 @@
     "progress": "{{completed}}/{{total}}",
     "expand": "展開計劃",
     "collapse": "收合計劃"
+  },
+  "sider": {
+    "tabRecent": "最近會話",
+    "tabTeam": "團隊",
+    "tabProject": "專案"
   }
 }

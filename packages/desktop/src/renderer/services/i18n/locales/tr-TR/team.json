@@ -18,7 +18,8 @@
     "deleteSuccess": "Takım silindi",
     "archive": "Archive",
     "archiveSuccess": "Team archived",
-    "archiveFailed": "Failed to archive team"
+    "archiveFailed": "Failed to archive team",
+    "emptyHint": "No teams yet"
   },
   "newAgent": "Yeni Asistan",
   "noMessages": "No messages yet.",
@@ -147,6 +148,11 @@
       "notApplied": "Yeni bağlam başlatılamadı. Mevcut bağlam korundu.",
       "failed": "Yeni bağlam başlatılamadı. Lütfen tekrar deneyin."
     }
+  },
+  "memberList": {
+    "searchPlaceholder": "Search members",
+    "noResults": "No members found",
+    "collapsedCount": "More members"
   },
   "systemNotice": {
     "sender": "Takım",

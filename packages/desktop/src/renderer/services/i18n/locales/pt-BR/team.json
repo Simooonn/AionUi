@@ -18,7 +18,8 @@
     "deleteSuccess": "Equipe excluída",
     "archive": "Archive",
     "archiveSuccess": "Team archived",
-    "archiveFailed": "Failed to archive team"
+    "archiveFailed": "Failed to archive team",
+    "emptyHint": "No teams yet"
   },
   "newAgent": "Novo Assistente",
   "noMessages": "Nenhuma mensagem ainda.",
@@ -147,6 +148,11 @@
       "notApplied": "Não foi possível iniciar um novo contexto. O contexto atual foi mantido.",
       "failed": "Falha ao iniciar um novo contexto. Tente novamente."
     }
+  },
+  "memberList": {
+    "searchPlaceholder": "Search members",
+    "noResults": "No members found",
+    "collapsedCount": "More members"
   },
   "systemNotice": {
     "sender": "Equipe",

@@ -105,7 +105,8 @@
     "archiving": "Archiving...",
     "folderStatusWaiting": "Chats warten auf eine Aktion",
     "folderStatusGenerating": "Chats in Bearbeitung",
-    "folderStatusUnread": "Chats mit ungelesenen Ergebnissen"
+    "folderStatusUnread": "Chats mit ungelesenen Ergebnissen",
+    "projectsEmpty": "No projects yet"
   },
   "historySearch": {
     "tooltip": "Nachrichten durchsuchen",
@@ -813,5 +814,10 @@
     "progress": "{{completed}}/{{total}}",
     "expand": "Plan ausklappen",
     "collapse": "Plan einklappen"
+  },
+  "sider": {
+    "tabRecent": "Recent",
+    "tabTeam": "Teams",
+    "tabProject": "Projects"
   }
 }

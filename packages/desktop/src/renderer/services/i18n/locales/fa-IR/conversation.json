@@ -105,7 +105,8 @@
     "archiving": "Archiving...",
     "folderStatusWaiting": "گفتگوهای در انتظار اقدام",
     "folderStatusGenerating": "گفتگوهای در حال انجام",
-    "folderStatusUnread": "گفتگوهای دارای نتیجه خوانده‌نشده"
+    "folderStatusUnread": "گفتگوهای دارای نتیجه خوانده‌نشده",
+    "projectsEmpty": "No projects yet"
   },
   "historySearch": {
     "tooltip": "جستجوی پیام‌ها",
@@ -812,5 +813,10 @@
     "progress": "{{completed}}/{{total}}",
     "expand": "گسترش برنامه",
     "collapse": "جمع کردن برنامه"
+  },
+  "sider": {
+    "tabRecent": "Recent",
+    "tabTeam": "Teams",
+    "tabProject": "Projects"
   }
 }

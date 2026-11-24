@@ -114,7 +114,8 @@
     "archiving": "Archiving...",
     "folderStatusWaiting": "Беседы ожидают действия",
     "folderStatusGenerating": "Беседы выполняются",
-    "folderStatusUnread": "Беседы с непрочитанными результатами"
+    "folderStatusUnread": "Беседы с непрочитанными результатами",
+    "projectsEmpty": "No projects yet"
   },
   "historySearch": {
     "tooltip": "Поиск сообщений",
@@ -852,5 +853,10 @@
     "progress": "{{completed}}/{{total}}",
     "expand": "Развернуть план",
     "collapse": "Свернуть план"
+  },
+  "sider": {
+    "tabRecent": "Recent",
+    "tabTeam": "Teams",
+    "tabProject": "Projects"
   }
 }

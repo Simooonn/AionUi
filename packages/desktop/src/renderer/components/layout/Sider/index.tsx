@@ -10,8 +10,8 @@ import { useThemeContext } from '@renderer/hooks/context/ThemeContext';
 import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry, SiderAssistantEntry } from './SiderNav';
 import SiderFooter from './SiderFooter';
 import TeamSiderSection from './TeamSiderSection';
-// ace:start sidebar-tabs — three-view tab bar below the pinned region
-import SiderTabBar from './tabs/SiderTabBar';
+// ace:start sidebar-tabs — active-tab state lives here; the tab bar itself renders
+// inside GroupedHistory, right after the pinned region.
 import { useSiderTab } from './tabs/useSiderTab';
 // ace:end
 import siderStyles from './Sider.module.css';
@@ -178,6 +178,7 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
     onBatchModeChange: setIsBatchMode,
     // ace:start sidebar-tabs
     activeTab,
+    onTabChange: setActiveTab,
     // ace:end
   };
 
@@ -233,11 +234,7 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
                 collapsed ? 'mx-6px' : 'mx-10px'
               )}
             />
-            {/* ace:start sidebar-tabs — the three-view tab bar sits between the divider
-                and the scrollable content; hidden when the sider is collapsed */}
-            {!collapsed && <SiderTabBar activeTab={activeTab} onTabChange={setActiveTab} disabled={isBatchMode} />}
-            {/* ace:end */}
-            {/* Scrollable content: pinned → team (slot) → projects → conversations */}
+            {/* Scrollable content: pinned → tab bar → tab content */}
             <div className={classNames('flex-1 min-h-0 overflow-y-auto', siderStyles.scrollArea)}>
               <Suspense fallback={<div className='min-h-200px' />}>
                 <WorkspaceGroupedHistory

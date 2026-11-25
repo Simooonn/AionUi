@@ -100,6 +100,8 @@ export type WorkspaceGroupedHistoryProps = {
   /** Active sidebar view tab. The pinned region stays visible across all tabs.
    *  When undefined (legacy direct usage), every section renders as before. */
   activeTab?: 'recent' | 'team' | 'project';
+  /** Change handler for the tab bar rendered after the pinned region. */
+  onTabChange?: (tab: 'recent' | 'team' | 'project') => void;
   // ace:end
 };
 

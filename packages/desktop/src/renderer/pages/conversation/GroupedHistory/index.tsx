@@ -27,6 +27,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import WorkspaceCollapse from '../components/WorkspaceCollapse';
 import ConversationRow from './ConversationRow';
+// ace:start sidebar-tabs — the tab bar renders right after the pinned region
+import SiderTabBar from '@renderer/components/layout/Sider/tabs/SiderTabBar';
+// ace:end
 import SortableConversationRow from './SortableConversationRow';
 import SortablePinnedProject from './SortablePinnedProject';
 import { useBatchSelection } from './hooks/useBatchSelection';
@@ -70,6 +73,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
   afterPinnedContent,
   // ace:start sidebar-tabs — undefined keeps the legacy all-sections behavior for direct callers
   activeTab,
+  onTabChange,
   // ace:end
 }) => {
   const { id } = useParams();
@@ -686,6 +690,9 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         {/* ace:start sidebar-tabs — the empty-state early return must respect the active tab
             the same way the main return does: team tab shows the team slot, project tab
             shows the project empty card, recent/legacy shows the generic no-history empty. */}
+        {onTabChange && !collapsed && (
+          <SiderTabBar activeTab={activeTab ?? 'recent'} onTabChange={onTabChange} disabled={batchMode} />
+        )}
         {showTeamTab && afterPinnedContent}
         {showProjectTab && activeTab === 'project' ? (
           <div
@@ -906,6 +913,13 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
             )}
           </div>
         )}
+
+        {/* ace:start sidebar-tabs — the tab bar sits right after the pinned region
+            (pinned conversations + pinned projects stay above it) */}
+        {onTabChange && !collapsed && (
+          <SiderTabBar activeTab={activeTab ?? 'recent'} onTabChange={onTabChange} disabled={batchMode} />
+        )}
+        {/* ace:end */}
 
         {/* ace:start recent-section — every conversation, newest first, above the Team slot */}
         {showRecentTab && showRecentSection && (
